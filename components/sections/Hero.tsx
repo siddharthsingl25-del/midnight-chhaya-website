@@ -50,7 +50,7 @@ export default function Hero() {
           text={SITE.name}
           by="letter"
           delay={0.9}
-          className="font-display text-5xl sm:text-7xl md:text-8xl lg:text-[8.5rem] leading-[1.05] text-bone uppercase"
+          className="font-display text-[clamp(2.5rem,11vw,8rem)] leading-[1.05] text-bone uppercase max-w-[92vw]"
         />
 
         {/* divider — animates in after headline */}

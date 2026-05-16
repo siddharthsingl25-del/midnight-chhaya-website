@@ -37,13 +37,14 @@ export default function HeroScene() {
         <ParticleField count={count} />
       </Canvas>
 
-      {/* volumetric fog tint behind the headline — pure CSS radial gradient */}
+      {/* Very faint atmospheric glow behind the headline — just enough to
+       * separate it from the particles, nowhere near a coloured wash. */}
       <div
         aria-hidden
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 60% 40% at 50% 55%, rgba(92, 26, 26, 0.25), transparent 70%), radial-gradient(ellipse 80% 50% at 50% 60%, rgba(42, 26, 58, 0.35), transparent 75%)",
+            "radial-gradient(ellipse 50% 35% at 50% 55%, rgba(184, 147, 90, 0.06), transparent 70%)",
         }}
       />
     </div>

@@ -32,34 +32,51 @@ export default function TextReveal({
   as = "span",
   triggerOnView = false,
 }: Props) {
-  const tokens = by === "word" ? text.split(" ") : Array.from(text);
   const Tag = motion[as];
+  const words = text.split(" ");
+  const gap = by === "word" ? stagger.loose : stagger.tight;
+  const duration = by === "word" ? durations.reveal : durations.heroReveal;
 
   return (
     <Tag
       className={className}
-      variants={staggerContainer(delay, by === "word" ? stagger.loose : stagger.tight)}
+      variants={staggerContainer(delay, gap)}
       initial="hidden"
       {...(triggerOnView
         ? { whileInView: "visible", viewport: { once: true, amount: 0.4 } }
         : { animate: "visible" })}
       aria-label={text}
     >
-      {tokens.map((token, i) => (
-        <motion.span
-          key={i}
-          variants={letterReveal}
+      {words.map((word, wi) => (
+        // Per-word wrapper keeps letters on the same line — without this
+        // an inline-block letter chain breaks anywhere on narrow viewports.
+        <span
+          key={wi}
+          className="inline-block whitespace-nowrap"
           aria-hidden
-          className="inline-block whitespace-pre"
-          // override letter duration for word mode (longer feels right)
-          transition={{
-            duration: by === "word" ? durations.reveal : durations.heroReveal,
-            ease: easeCinematic,
-          }}
         >
-          {token}
-          {by === "word" && i < tokens.length - 1 ? " " : ""}
-        </motion.span>
+          {by === "letter"
+            ? Array.from(word).map((ch, i) => (
+                <motion.span
+                  key={i}
+                  variants={letterReveal}
+                  className="inline-block"
+                  transition={{ duration, ease: easeCinematic }}
+                >
+                  {ch}
+                </motion.span>
+              ))
+            : (
+                <motion.span
+                  variants={letterReveal}
+                  className="inline-block"
+                  transition={{ duration, ease: easeCinematic }}
+                >
+                  {word}
+                </motion.span>
+              )}
+          {wi < words.length - 1 ? " " : ""}
+        </span>
       ))}
     </Tag>
   );

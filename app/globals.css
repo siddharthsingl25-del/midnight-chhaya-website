@@ -47,11 +47,11 @@ html, body {
 
 body {
   font-family: var(--font-inter), Inter, system-ui, sans-serif;
-  /* subtle vignette + smoke wash, fixed so it stays put through scroll */
+  /* Pure deep-black with the faintest top-edge vignette.
+   * Colour comes from the hero particles + section accents, not the background. */
+  background-color: var(--ink);
   background-image:
-    radial-gradient(ellipse at top, rgba(42, 26, 58, 0.18), transparent 60%),
-    radial-gradient(ellipse at bottom, rgba(92, 26, 26, 0.10), transparent 70%),
-    linear-gradient(180deg, var(--ink) 0%, #050505 100%);
+    radial-gradient(ellipse 100% 50% at 50% 0%, rgba(255, 255, 255, 0.025), transparent 70%);
   background-attachment: fixed;
 }
 
