@@ -1,40 +1,36 @@
 "use client";
 
 /**
- * Hero — full-viewport.
- *  - R3F particle field (lazy-loaded, no SSR) for performance
- *  - Big gothic display headline with letter-by-letter blur-to-sharp reveal
- *  - Tagline + scroll indicator
- *  - Sequencing: scene fades up first, then headline letters cascade, then tagline + cue
+ * Hero — editorial / Pinterest-gothic.
+ *
+ *  - Moody darkened photograph as backdrop (slow Ken-Burns)
+ *  - Eyebrow → headline (letter reveal) → gold flourish → tagline (word reveal)
+ *  - Scroll cue at the bottom
+ *
+ * Sequencing is intentionally slow (~3.5s end-to-end) — gothic reads as
+ * restrained, not energetic.
  */
 
-import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import HeroBackground from "./HeroBackground";
 import TextReveal from "@/components/animations/TextReveal";
 import { easeCinematic, durations } from "@/lib/animations";
 import { SITE } from "@/lib/site";
 
-// R3F needs window — disable SSR. ssr:false must live inside a Client Component (Next 16).
-const HeroScene = dynamic(() => import("@/components/three/HeroScene"), {
-  ssr: false,
-  loading: () => null,
-});
-
 export default function Hero() {
   return (
     <section className="relative h-[100svh] min-h-[640px] w-full overflow-hidden">
-      {/* 3D ember field */}
+      {/* photographic backdrop fades in slightly slower than text appears */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 2.2, ease: easeCinematic, delay: 0.1 }}
+        transition={{ duration: 2.4, ease: easeCinematic, delay: 0.1 }}
         className="absolute inset-0"
       >
-        <HeroScene />
+        <HeroBackground />
       </motion.div>
 
-      {/* Headline content */}
       <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
         <motion.span
           initial={{ opacity: 0, y: 12 }}
@@ -42,7 +38,7 @@ export default function Hero() {
           transition={{ duration: durations.reveal, ease: easeCinematic, delay: 0.6 }}
           className="eyebrow mb-8"
         >
-          Est. in shadow
+          Volume I · MMXXVI
         </motion.span>
 
         <TextReveal
@@ -53,28 +49,47 @@ export default function Hero() {
           className="font-display text-[clamp(2.5rem,11vw,8rem)] leading-[1.05] text-bone uppercase max-w-[92vw]"
         />
 
-        {/* divider — animates in after headline */}
+        {/* Victorian flourish — thin gold lines with a centred lozenge.
+         * Each piece grows out from the centre to its width. */}
         <motion.div
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ duration: 1.4, ease: easeCinematic, delay: 2.0 }}
-          className="my-8 h-px w-24 origin-center bg-gold/60"
-        />
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, ease: easeCinematic, delay: 2.0 }}
+          className="my-8 flex items-center gap-3"
+        >
+          <motion.span
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 1.4, ease: easeCinematic, delay: 2.0 }}
+            className="block h-px w-16 origin-right bg-gold/60"
+          />
+          <motion.span
+            initial={{ scale: 0, rotate: 0 }}
+            animate={{ scale: 1, rotate: 45 }}
+            transition={{ duration: 0.9, ease: easeCinematic, delay: 2.4 }}
+            className="block h-1.5 w-1.5 bg-gold"
+          />
+          <motion.span
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: 1.4, ease: easeCinematic, delay: 2.0 }}
+            className="block h-px w-16 origin-left bg-gold/60"
+          />
+        </motion.div>
 
         <TextReveal
           as="p"
           text={SITE.tagline}
           by="word"
-          delay={2.3}
-          className="font-serif italic text-bone-dim text-lg sm:text-xl md:text-2xl tracking-wide"
+          delay={2.6}
+          className="font-serif italic text-bone-dim text-lg sm:text-xl md:text-2xl tracking-wide max-w-[92vw]"
         />
       </div>
 
-      {/* scroll cue */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.2, ease: easeCinematic, delay: 3.0 }}
+        transition={{ duration: 1.2, ease: easeCinematic, delay: 3.2 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-bone-dim"
       >
         <span className="eyebrow text-bone-dim">Scroll</span>
@@ -85,9 +100,6 @@ export default function Hero() {
           <ChevronDown className="h-4 w-4 text-gold" strokeWidth={1.5} />
         </motion.div>
       </motion.div>
-
-      {/* bottom fade into next section */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-ink" />
     </section>
   );
 }
