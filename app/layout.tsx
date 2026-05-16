@@ -42,16 +42,16 @@ export const metadata: Metadata = {
     description: SITE.description,
     url: SITE.url,
     siteName: SITE.name,
-    images: [{ url: "/brand/logo.svg", width: 512, height: 512, alt: SITE.name }],
+    images: [{ url: SITE.logoPath, width: 512, height: 512, alt: SITE.name }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: SITE.name,
     description: SITE.description,
-    images: ["/brand/logo.svg"],
+    images: [SITE.logoPath],
   },
-  icons: { icon: "/brand/logo.svg" },
+  icons: { icon: SITE.logoPath },
 };
 
 export const viewport: Viewport = {

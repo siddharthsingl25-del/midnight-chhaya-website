@@ -40,7 +40,7 @@ export default function Header() {
           className="flex items-center gap-3"
         >
           <Image
-            src="/brand/logo.svg"
+            src={SITE.logoPath}
             alt={SITE.name}
             width={40}
             height={40}

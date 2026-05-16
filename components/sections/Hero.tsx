@@ -1,27 +1,35 @@
 "use client";
 
 /**
- * Hero — editorial / Pinterest-gothic.
+ * Hero — Pinterest-gothic with a "ghost" reveal animation.
  *
- *  - Moody darkened photograph as backdrop (slow Ken-Burns)
- *  - Eyebrow → headline (letter reveal) → gold flourish → tagline (word reveal)
- *  - Scroll cue at the bottom
+ *  - Photographic backdrop (darkened, slow Ken-Burns)
+ *  - HeroAtmosphere overlay: drifting white ash + falling water droplets
+ *  - "Ghost" reveal for the headline: snaps into existence with a brief
+ *    bright/blurred flash that resolves into the bone-white letterform
+ *  - Eyebrow + Victorian gold flourish + italic tagline fade in around it
  *
- * Sequencing is intentionally slow (~3.5s end-to-end) — gothic reads as
- * restrained, not energetic.
+ * Sequencing is short and sudden — the apparition lands fast, then the
+ * details settle in.
  */
 
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import HeroBackground from "./HeroBackground";
-import TextReveal from "@/components/animations/TextReveal";
 import { easeCinematic, durations } from "@/lib/animations";
 import { SITE } from "@/lib/site";
+
+// R3F + CSS droplets — client-only (ssr:false must live in a client component in Next 16)
+const HeroAtmosphere = dynamic(() => import("@/components/three/HeroAtmosphere"), {
+  ssr: false,
+  loading: () => null,
+});
 
 export default function Hero() {
   return (
     <section className="relative h-[100svh] min-h-[640px] w-full overflow-hidden">
-      {/* photographic backdrop fades in slightly slower than text appears */}
+      {/* photo backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -29,6 +37,16 @@ export default function Hero() {
         className="absolute inset-0"
       >
         <HeroBackground />
+      </motion.div>
+
+      {/* ash + droplets — fade in after the photo */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.6, ease: easeCinematic, delay: 1.2 }}
+        className="absolute inset-0"
+      >
+        <HeroAtmosphere />
       </motion.div>
 
       <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
@@ -41,55 +59,57 @@ export default function Hero() {
           Volume I · MMXXVI
         </motion.span>
 
-        <TextReveal
-          as="h1"
-          text={SITE.name}
-          by="letter"
-          delay={0.9}
-          className="font-display text-[clamp(2.5rem,11vw,8rem)] leading-[1.05] text-bone uppercase max-w-[92vw]"
-        />
+        {/* Ghost reveal — snaps into existence with bright blur flash.
+         * CSS keyframes (.ghost-in) handle the whole animation. */}
+        <h1
+          className="ghost-in font-display text-[clamp(2.5rem,11vw,8rem)] leading-[1.05] text-bone uppercase max-w-[92vw]"
+          style={{ animationDelay: "1.4s" }}
+        >
+          <span className="inline-block whitespace-nowrap">Midnight</span>{" "}
+          <span className="inline-block whitespace-nowrap">Chhaya</span>
+        </h1>
 
-        {/* Victorian flourish — thin gold lines with a centred lozenge.
-         * Each piece grows out from the centre to its width. */}
+        {/* Victorian flourish */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, ease: easeCinematic, delay: 2.0 }}
+          transition={{ duration: 1.0, ease: easeCinematic, delay: 2.2 }}
           className="my-8 flex items-center gap-3"
         >
           <motion.span
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ duration: 1.4, ease: easeCinematic, delay: 2.0 }}
+            transition={{ duration: 1.2, ease: easeCinematic, delay: 2.2 }}
             className="block h-px w-16 origin-right bg-gold/60"
           />
           <motion.span
             initial={{ scale: 0, rotate: 0 }}
             animate={{ scale: 1, rotate: 45 }}
-            transition={{ duration: 0.9, ease: easeCinematic, delay: 2.4 }}
+            transition={{ duration: 0.8, ease: easeCinematic, delay: 2.5 }}
             className="block h-1.5 w-1.5 bg-gold"
           />
           <motion.span
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ duration: 1.4, ease: easeCinematic, delay: 2.0 }}
+            transition={{ duration: 1.2, ease: easeCinematic, delay: 2.2 }}
             className="block h-px w-16 origin-left bg-gold/60"
           />
         </motion.div>
 
-        <TextReveal
-          as="p"
-          text={SITE.tagline}
-          by="word"
-          delay={2.6}
-          className="font-serif italic text-bone-dim text-lg sm:text-xl md:text-2xl tracking-wide max-w-[92vw]"
-        />
+        {/* Tagline — also ghost-in for thematic consistency, smaller flash */}
+        <p
+          className="ghost-in font-serif italic text-bone-dim text-lg sm:text-xl md:text-2xl tracking-wide max-w-[92vw]"
+          style={{ animationDelay: "2.8s" }}
+        >
+          {SITE.tagline}
+        </p>
       </div>
 
+      {/* scroll cue */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.2, ease: easeCinematic, delay: 3.2 }}
+        transition={{ duration: 1.2, ease: easeCinematic, delay: 3.6 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-bone-dim"
       >
         <span className="eyebrow text-bone-dim">Scroll</span>

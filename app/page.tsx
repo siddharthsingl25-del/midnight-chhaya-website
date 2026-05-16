@@ -1,16 +1,19 @@
 import Hero from "@/components/sections/Hero";
+import FeaturedPieces from "@/components/sections/FeaturedPieces";
+import BrandTeaser from "@/components/sections/BrandTeaser";
+import LookbookPreview from "@/components/sections/LookbookPreview";
+import InstagramCTA from "@/components/sections/InstagramCTA";
+import Footer from "@/components/ui/Footer";
 
 export default function Home() {
   return (
     <>
       <Hero />
-      {/* Featured Pieces, Brand teaser, Lookbook preview, Instagram CTA, Footer
-          land in Phase 2. */}
-      <section className="min-h-[40vh] flex items-center justify-center px-6 py-32">
-        <p className="eyebrow text-bone-dim text-center">
-          Next sections coming after hero is approved.
-        </p>
-      </section>
+      <FeaturedPieces />
+      <BrandTeaser />
+      <LookbookPreview />
+      <InstagramCTA />
+      <Footer />
     </>
   );
 }

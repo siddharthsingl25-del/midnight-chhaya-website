@@ -11,6 +11,8 @@ export const SITE = {
   instagramHandle: "@midnight_chhaya",
   email: "hello@midnightchhaya.com",
   currency: { code: "INR", symbol: "₹" },
+  /** Logo file. Swap to "/brand/logo.png" once the real PNG is dropped in /public/brand/. */
+  logoPath: "/brand/logo.svg",
 } as const;
 
 export const NAV = [
@@ -19,3 +21,9 @@ export const NAV = [
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ] as const;
+
+/** Format an INR price. Returns "Inquire" when price is null. */
+export function formatPrice(price: number | null): string {
+  if (price == null) return "Inquire";
+  return `${SITE.currency.symbol}${price.toLocaleString("en-IN")}`;
+}
