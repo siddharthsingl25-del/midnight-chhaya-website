@@ -111,6 +111,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/chunky-red-heart-charm-1.jpg"],
   },
   {
+    slug: "red-flame-cross",
+    name: "Red Flame Cross",
+    category: "chains",
+    price: 300,
+    shortDescription: "Crucifix wrapped in red enamel flame.",
+    description:
+      "A silver cross caught mid-burn — wrapped in tongues of deep red enamel that lick upward and trail down into a long flame. Worn on a fine snake chain.",
+    materials: ["Silver-tone alloy", "Red enamel"],
+    images: ["/products/red-flame-cross-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
