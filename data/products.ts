@@ -163,7 +163,7 @@ export const PRODUCTS: Product[] = [
     description:
       "A fleur-de-lis crucifix in polished silver — four lily heads tipping each arm of the cross, a single hot pink stone burning at the centre. Hangs from a fine snake chain.",
     materials: ["Silver-tone alloy", "Pink crystal"],
-    images: ["/products/red-chrome-cross-1.jpg"],
+    images: ["/products/red-chrome-cross-1-v2.jpg"],
   },
   {
     slug: "red-chrome-heart",
