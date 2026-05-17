@@ -301,6 +301,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/skeleton-cross-1.jpg"],
   },
   {
+    slug: "spider-medallion",
+    name: "Spider Medallion",
+    category: "chains",
+    price: 200,
+    shortDescription: "Etched spider on a black enamel coin.",
+    description:
+      "A circular pendant — silver spider etched onto a glossy black enamel face, framed by a polished silver bezel. Small, neat, instantly recognisable.",
+    materials: ["Silver-tone alloy", "Black enamel"],
+    images: ["/products/spider-medallion-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
