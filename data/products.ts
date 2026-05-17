@@ -134,14 +134,14 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "pookie-cross-charm",
-    name: "Pookie Cross Charm",
+    name: "Black Pookie Cross",
     category: "chains",
     price: 300,
     shortDescription: "Pink and onyx-black crystals on silver.",
     description:
       "Soft and sharp at once — a silver cross set with pink stones at the inner rim and small jet-black crystals at the cardinal points. A heart frames the centre. Hangs from a fine snake chain.",
     materials: ["Silver-tone alloy", "Pink and black crystals"],
-    images: ["/products/pookie-cross-charm-1.jpg"],
+    images: ["/products/pookie-cross-charm-1-v2.jpg"],
   },
   {
     slug: "red-rose-cross-charm",
