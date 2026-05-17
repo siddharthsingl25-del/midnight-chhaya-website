@@ -224,6 +224,28 @@ export const PRODUCTS: Product[] = [
     ],
   },
   {
+    slug: "clover-cross",
+    name: "Clover Cross",
+    category: "chains",
+    price: 300,
+    shortDescription: "Fleur-de-lis cross with diamond-faceted tips.",
+    description:
+      "A heraldic silver cross — every arm capped with a clover-shaped fleur-de-lis around a faceted diamond point, a small floral medallion at the centre. Antique-finished.",
+    materials: ["Oxidised silver-tone alloy"],
+    images: ["/products/clover-cross-1.jpg"],
+  },
+  {
+    slug: "black-star",
+    name: "Black Star",
+    category: "chains",
+    price: 250,
+    shortDescription: "Asymmetric jet star in a silver frame.",
+    description:
+      "A lopsided five-point star — deep black enamel set inside a polished silver frame with a long, drawn-out lower point. Small, sharp, distinctly off-balance.",
+    materials: ["Silver-tone alloy", "Black enamel"],
+    images: ["/products/black-star-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
