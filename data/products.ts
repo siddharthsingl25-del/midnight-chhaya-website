@@ -152,7 +152,7 @@ export const PRODUCTS: Product[] = [
     description:
       "A cross of silver roses with a single red glass heart at the centre — three blooms at the arms and one trailing below. Hangs from a heavy box chain.",
     materials: ["Silver-tone alloy", "Red glass"],
-    images: ["/products/red-rose-cross-charm-1.jpg"],
+    images: ["/products/red-rose-cross-charm-1-v2.jpg"],
   },
   {
     slug: "red-chrome-cross",
