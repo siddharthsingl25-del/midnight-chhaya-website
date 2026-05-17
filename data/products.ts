@@ -174,7 +174,7 @@ export const PRODUCTS: Product[] = [
     description:
       "An old reliquary heart — deep red glass cradled inside a silver filigree cage, crowned with a small flame and finished with a tiny cherub at the foot. Hangs from a heavy box chain.",
     materials: ["Silver-tone alloy", "Red glass"],
-    images: ["/products/red-chrome-heart-1.jpg"],
+    images: ["/products/red-chrome-heart-1-v2.jpg"],
   },
   {
     slug: "gothic-butterfly",
