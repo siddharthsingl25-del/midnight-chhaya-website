@@ -236,7 +236,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "black-star",
-    name: "Black Star",
+    name: "Majnu Black Star",
     category: "chains",
     price: 250,
     shortDescription: "Asymmetric jet star in a silver frame.",
