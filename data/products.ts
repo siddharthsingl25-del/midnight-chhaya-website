@@ -263,6 +263,17 @@ export const PRODUCTS: Product[] = [
 
   // —— Keychains ——
   {
+    slug: "car-keychain",
+    name: "Race Car Keychain",
+    category: "keychains",
+    price: 50,
+    shortDescription: "Mini diecast race car — random colour, sent as one.",
+    description:
+      "A pocket-size diecast race car on a steel split-ring. Each keychain ships in a random colour and livery — the design you receive will not be the one shown in the photo. One car per order.",
+    materials: ["Diecast metal", "Steel ring"],
+    images: ["/products/car-keychain-1.jpg"],
+  },
+  {
     slug: "iron-thorn-keychain",
     name: "Iron Thorn Keychain",
     category: "keychains",
