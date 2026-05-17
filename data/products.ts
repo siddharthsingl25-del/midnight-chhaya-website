@@ -185,7 +185,7 @@ export const PRODUCTS: Product[] = [
     description:
       "A pale enamel butterfly trapped inside a red glass heart — framed by a curling silver filigree edge. Hangs from a fine snake chain.",
     materials: ["Silver-tone alloy", "Red and white enamel"],
-    images: ["/products/gothic-butterfly-1.jpg"],
+    images: ["/products/gothic-butterfly-1-v2.jpg"],
   },
   {
     slug: "spider-charm",
