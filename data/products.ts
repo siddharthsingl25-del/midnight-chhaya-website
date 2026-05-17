@@ -312,6 +312,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/spider-medallion-1.jpg"],
   },
   {
+    slug: "blue-butterfly-moon",
+    name: "Blue Butterfly Moon",
+    category: "chains",
+    price: 300,
+    shortDescription: "Iridescent blue moon, white rose, silver drips.",
+    description:
+      "A small piece with a lot happening — an opalescent blue moonstone cabochon, a pale white rose set into a crescent of silver, butterfly-wing flourishes at the top, and molten silver tears running off the lower edge.",
+    materials: ["Silver-tone alloy", "Moonstone-effect resin", "Resin rose"],
+    images: ["/products/blue-butterfly-moon-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
