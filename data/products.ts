@@ -323,6 +323,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/blue-butterfly-moon-1.jpg"],
   },
   {
+    slug: "black-heart-cross",
+    name: "Black Heart Cross",
+    category: "chains",
+    price: 280,
+    shortDescription: "Molten gunmetal cross with a faceted black heart.",
+    description:
+      "A cross cast as if poured molten — soft wavy edges in dark gunmetal silver, a single faceted jet-black heart set at the centre. Heavier than it looks.",
+    materials: ["Gunmetal silver-tone alloy", "Black crystal"],
+    images: ["/products/black-heart-cross-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
