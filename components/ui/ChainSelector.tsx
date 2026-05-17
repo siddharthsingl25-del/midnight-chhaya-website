@@ -113,7 +113,9 @@ export default function ChainSelector({
                 </button>
 
                 {/* magnify button — opens full-size preview, stops the
-                 * event so the underlying select button does not fire */}
+                 * event so the underlying select button does not fire.
+                 * Always visible on touch (no hover); fades in on hover
+                 * on hover-capable devices. */}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -122,13 +124,14 @@ export default function ChainSelector({
                   }}
                   data-cursor="View"
                   aria-label={`View ${opt.name} at full size`}
-                  className="absolute top-3 left-3 grid place-items-center w-7 h-7
+                  className="absolute top-3 left-3 grid place-items-center w-8 h-8
                              bg-ink/70 backdrop-blur-sm text-bone
-                             opacity-0 group-hover:opacity-100 focus:opacity-100
+                             opacity-0 [@media(hover:none)]:opacity-100
+                             group-hover:opacity-100 focus:opacity-100
                              hover:bg-gold hover:text-ink
                              transition-all duration-300"
                 >
-                  <Maximize2 size={12} strokeWidth={1.75} />
+                  <Maximize2 size={14} strokeWidth={1.75} />
                 </button>
               </div>
             );
