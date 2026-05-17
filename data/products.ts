@@ -144,6 +144,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/pookie-cross-charm-1.jpg"],
   },
   {
+    slug: "red-rose-cross-charm",
+    name: "Red Rose Cross Charm",
+    category: "chains",
+    price: 300,
+    shortDescription: "Silver roses framing a red heart.",
+    description:
+      "A cross of silver roses with a single red glass heart at the centre — three blooms at the arms and one trailing below. Hangs from a heavy box chain.",
+    materials: ["Silver-tone alloy", "Red glass"],
+    images: ["/products/red-rose-cross-charm-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
