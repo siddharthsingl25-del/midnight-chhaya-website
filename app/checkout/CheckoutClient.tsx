@@ -228,7 +228,9 @@ export default function CheckoutClient() {
           </Reveal>
 
           <fieldset className="flex flex-col gap-8">
-            <legend className="eyebrow text-gold mb-2">Customer</legend>
+            <legend className="font-display uppercase text-gold text-xl md:text-2xl tracking-wide mb-4">
+              Customer
+            </legend>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-8">
               <Field
                 label="Name"
@@ -248,7 +250,9 @@ export default function CheckoutClient() {
           </fieldset>
 
           <fieldset className="flex flex-col gap-8">
-            <legend className="eyebrow text-gold mb-2">Deliver to</legend>
+            <legend className="font-display uppercase text-gold text-xl md:text-2xl tracking-wide mb-4">
+              Deliver to
+            </legend>
             <div className="flex flex-col gap-8">
               <Field
                 label="Address line 1"
@@ -411,13 +415,18 @@ function Field({
   autoComplete?: string;
   inputMode?: "text" | "numeric" | "tel" | "email";
 }) {
+  /* Bigger, bolder inputs for checkout — easy to read while filling. */
   const shared =
-    "peer w-full bg-transparent border-b border-bone/20 px-1 py-3 font-body text-bone " +
+    "w-full bg-transparent border-b-2 border-bone/30 px-1 py-3 " +
+    "font-body text-bone text-lg md:text-xl font-medium " +
+    "placeholder:text-bone-dim/50 placeholder:font-normal " +
     "focus:outline-none focus:border-gold transition-colors duration-500";
+
   return (
     <label className="relative block">
-      <span className="eyebrow block mb-2 text-bone-dim">
-        {label} {required ? <span className="text-oxblood/80">·</span> : null}
+      <span className="block mb-3 font-body text-bone text-base font-semibold tracking-wide">
+        {label}{" "}
+        {required ? <span className="text-gold ml-0.5">*</span> : null}
       </span>
       {multiline ? (
         <textarea
