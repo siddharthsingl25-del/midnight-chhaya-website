@@ -279,6 +279,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/melting-heart-1.jpg"],
   },
   {
+    slug: "star-charm",
+    name: "Star Charm",
+    category: "chains",
+    price: 200,
+    shortDescription: "Jet-black star in a silver frame.",
+    description:
+      "A small five-point star — matte black enamel inside a polished silver bezel. Simple, clean, sits well alongside any of the cross charms.",
+    materials: ["Silver-tone alloy", "Black enamel"],
+    images: ["/products/star-charm-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
