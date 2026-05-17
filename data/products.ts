@@ -199,6 +199,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/spider-charm-1.jpg"],
   },
   {
+    slug: "rose-cross",
+    name: "Rose Cross",
+    category: "chains",
+    price: 300,
+    shortDescription: "Antique silver cross wrapped in a single rose.",
+    description:
+      "A gothic cross in oxidised silver — fluted arms curling outward, a single full-bloom rose crowning the centre. Heavy in the hand, soft in detail.",
+    materials: ["Oxidised silver-tone alloy"],
+    images: ["/products/rose-cross-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
