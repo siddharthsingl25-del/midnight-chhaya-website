@@ -123,7 +123,7 @@ export const PRODUCTS: Product[] = [
   },
   {
     slug: "pink-cross-charm",
-    name: "Pink Cross Charm",
+    name: "Pookie Cross",
     category: "chains",
     price: 300,
     shortDescription: "Silver cross set in pink, blue, yellow crystals.",
