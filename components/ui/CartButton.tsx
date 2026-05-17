@@ -52,10 +52,10 @@ export default function CartButton() {
   const copyOrder = async () => {
     const text = [
       `Hi Midnight Chhaya — I'd like to inquire about:`,
-      ...lines.map(
-        ({ line, product }) =>
-          `• ${product.name} × ${line.qty} (${formatPrice(product.price)})`
-      ),
+      ...lines.map(({ line, product, chain, unitPrice }) => {
+        const chainSuffix = chain ? ` (chain: ${chain.name})` : "";
+        return `• ${product.name}${chainSuffix} × ${line.qty} (${formatPrice(unitPrice)})`;
+      }),
       ``,
       `Total: ${formatPrice(grandTotal)}`,
     ].join("\n");
@@ -141,68 +141,76 @@ export default function CartButton() {
             ) : (
               <>
                 <ul className="flex-1 overflow-y-auto divide-y divide-bone/5">
-                  {lines.map(({ line, product }) => (
-                    <li key={line.slug} className="flex gap-4 px-6 py-4">
-                      <Link
-                        href={`/collections/${product.slug}`}
-                        onClick={() => setOpen(false)}
-                        className="relative w-16 h-20 flex-shrink-0 overflow-hidden bg-charcoal"
-                      >
-                        <Image
-                          src={product.images[0]}
-                          alt={product.name}
-                          fill
-                          sizes="64px"
-                          className="object-cover"
-                        />
-                      </Link>
-                      <div className="flex-1 min-w-0">
+                  {lines.map(({ line, product, chain, unitPrice }) => {
+                    const lineKey = `${line.slug}|${line.chainId ?? ""}`;
+                    return (
+                      <li key={lineKey} className="flex gap-4 px-6 py-4">
                         <Link
                           href={`/collections/${product.slug}`}
                           onClick={() => setOpen(false)}
-                          className="block font-display text-sm text-bone hover:text-gold transition-colors truncate"
+                          className="relative w-16 h-20 flex-shrink-0 overflow-hidden bg-charcoal"
                         >
-                          {product.name}
+                          <Image
+                            src={product.images[0]}
+                            alt={product.name}
+                            fill
+                            sizes="64px"
+                            className="object-cover"
+                          />
                         </Link>
-                        <span className="block text-xs text-bone-dim mt-1">
-                          {formatPrice(product.price)}
-                        </span>
-                        <div className="mt-2 flex items-center gap-3">
-                          <div className="inline-flex items-center border border-bone/15">
-                            <button
-                              onClick={() => setQty(product.slug, line.qty - 1)}
-                              aria-label="Decrease"
-                              className="p-1.5 text-bone-dim hover:text-gold transition-colors"
-                            >
-                              <Minus size={12} strokeWidth={1.5} />
-                            </button>
-                            <span className="px-2 text-xs text-bone min-w-[20px] text-center">
-                              {line.qty}
+                        <div className="flex-1 min-w-0">
+                          <Link
+                            href={`/collections/${product.slug}`}
+                            onClick={() => setOpen(false)}
+                            className="block font-display text-sm text-bone hover:text-gold transition-colors truncate"
+                          >
+                            {product.name}
+                          </Link>
+                          {chain ? (
+                            <span className="block text-[10px] uppercase tracking-[0.2em] text-gold-soft mt-0.5">
+                              {chain.name}
                             </span>
+                          ) : null}
+                          <span className="block text-xs text-bone-dim mt-1">
+                            {formatPrice(unitPrice)}
+                          </span>
+                          <div className="mt-2 flex items-center gap-3">
+                            <div className="inline-flex items-center border border-bone/15">
+                              <button
+                                onClick={() => setQty(line.slug, line.qty - 1, line.chainId)}
+                                aria-label="Decrease"
+                                className="p-1.5 text-bone-dim hover:text-gold transition-colors"
+                              >
+                                <Minus size={12} strokeWidth={1.5} />
+                              </button>
+                              <span className="px-2 text-xs text-bone min-w-[20px] text-center">
+                                {line.qty}
+                              </span>
+                              <button
+                                onClick={() => setQty(line.slug, line.qty + 1, line.chainId)}
+                                aria-label="Increase"
+                                className="p-1.5 text-bone-dim hover:text-gold transition-colors"
+                              >
+                                <Plus size={12} strokeWidth={1.5} />
+                              </button>
+                            </div>
                             <button
-                              onClick={() => setQty(product.slug, line.qty + 1)}
-                              aria-label="Increase"
-                              className="p-1.5 text-bone-dim hover:text-gold transition-colors"
+                              onClick={() => remove(line.slug, line.chainId)}
+                              aria-label="Remove"
+                              className="text-bone-dim hover:text-oxblood transition-colors"
                             >
-                              <Plus size={12} strokeWidth={1.5} />
+                              <Trash2 size={14} strokeWidth={1.5} />
                             </button>
                           </div>
-                          <button
-                            onClick={() => remove(product.slug)}
-                            aria-label="Remove"
-                            className="text-bone-dim hover:text-oxblood transition-colors"
-                          >
-                            <Trash2 size={14} strokeWidth={1.5} />
-                          </button>
                         </div>
-                      </div>
-                      <span className="text-sm text-gold whitespace-nowrap">
-                        {product.price != null
-                          ? formatPrice(product.price * line.qty)
-                          : "Inquire"}
-                      </span>
-                    </li>
-                  ))}
+                        <span className="text-sm text-gold whitespace-nowrap">
+                          {unitPrice != null
+                            ? formatPrice(unitPrice * line.qty)
+                            : "Inquire"}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 <div className="border-t border-bone/10 px-6 py-5">

@@ -15,10 +15,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Plus } from "lucide-react";
+import { ArrowRight, Check, Plus } from "lucide-react";
 import { easeHover } from "@/lib/animations";
 import { formatPrice } from "@/lib/site";
 import { useCart } from "@/lib/cart";
+import { hasChainOptions } from "@/data/chains";
 import type { Product } from "@/data/products";
 
 export default function ProductCard({
@@ -32,7 +33,7 @@ export default function ProductCard({
   const [added, setAdded] = useState(false);
 
   const onAdd = () => {
-    add(product.slug, 1);
+    add(product.slug, { qty: 1 });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
@@ -87,32 +88,49 @@ export default function ProductCard({
         </div>
       </Link>
 
-      {/* Add to cart — outside the <Link> so clicking does not navigate */}
-      <button
-        type="button"
-        onClick={onAdd}
-        data-cursor={added ? "Added" : "Add to cart"}
-        aria-label={`Add ${product.name} to cart`}
-        className={[
-          "mt-3 w-full inline-flex items-center justify-center gap-2 py-2.5",
-          "border transition-colors duration-500",
-          added
-            ? "border-gold text-gold bg-gold/5"
-            : "border-bone/15 text-bone-dim hover:border-gold hover:text-gold",
-        ].join(" ")}
-      >
-        {added ? (
-          <>
-            <Check size={14} strokeWidth={1.5} />
-            <span className="eyebrow text-[10px]">Added</span>
-          </>
-        ) : (
-          <>
-            <Plus size={14} strokeWidth={1.5} />
-            <span className="eyebrow text-[10px]">Add to cart</span>
-          </>
-        )}
-      </button>
+      {/* Add to cart — chains must pick a variant on the detail page, so
+       * for those the button becomes a "Choose chain →" link. Non-chain
+       * products quick-add inline. */}
+      {product.category === "chains" && hasChainOptions() ? (
+        <Link
+          href={`/collections/${product.slug}`}
+          data-cursor="Choose chain"
+          aria-label={`Choose chain for ${product.name}`}
+          className="mt-3 w-full inline-flex items-center justify-center gap-2 py-2.5
+                     border border-bone/15 text-bone-dim
+                     hover:border-gold hover:text-gold
+                     transition-colors duration-500"
+        >
+          <span className="eyebrow text-[10px]">Choose chain</span>
+          <ArrowRight size={14} strokeWidth={1.5} />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={onAdd}
+          data-cursor={added ? "Added" : "Add to cart"}
+          aria-label={`Add ${product.name} to cart`}
+          className={[
+            "mt-3 w-full inline-flex items-center justify-center gap-2 py-2.5",
+            "border transition-colors duration-500",
+            added
+              ? "border-gold text-gold bg-gold/5"
+              : "border-bone/15 text-bone-dim hover:border-gold hover:text-gold",
+          ].join(" ")}
+        >
+          {added ? (
+            <>
+              <Check size={14} strokeWidth={1.5} />
+              <span className="eyebrow text-[10px]">Added</span>
+            </>
+          ) : (
+            <>
+              <Plus size={14} strokeWidth={1.5} />
+              <span className="eyebrow text-[10px]">Add to cart</span>
+            </>
+          )}
+        </button>
+      )}
     </motion.div>
   );
 }

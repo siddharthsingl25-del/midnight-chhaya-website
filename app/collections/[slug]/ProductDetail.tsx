@@ -14,12 +14,14 @@ import { useRef, useState } from "react";
 import { ArrowLeft, Check, Plus } from "lucide-react";
 import InstagramIcon from "@/components/ui/icons/InstagramIcon";
 import ProductCard from "@/components/ui/ProductCard";
+import ChainSelector from "@/components/ui/ChainSelector";
 import Reveal from "@/components/animations/Reveal";
 import TextReveal from "@/components/animations/TextReveal";
 import { useMagnetic } from "@/lib/useMagnetic";
 import { easeCinematic } from "@/lib/animations";
 import { formatPrice, SITE } from "@/lib/site";
 import { useCart } from "@/lib/cart";
+import { CHAIN_OPTIONS, chainById, hasChainOptions } from "@/data/chains";
 import type { Product } from "@/data/products";
 
 export default function ProductDetail({
@@ -33,6 +35,19 @@ export default function ProductDetail({
   const [justAdded, setJustAdded] = useState(false);
   const { add: addToCart } = useCart();
   const imageRef = useRef<HTMLDivElement>(null);
+
+  /* Chain selector applies only to chains-category products, and only when
+   * at least one chain option has been published in data/chains.ts. */
+  const chainPicker =
+    product.category === "chains" && hasChainOptions();
+  const [chainId, setChainId] = useState<string | null>(
+    chainPicker ? CHAIN_OPTIONS[0]?.id ?? null : null
+  );
+  const selectedChain = chainById(chainId);
+  const displayedUnitPrice =
+    product.price == null
+      ? null
+      : product.price + (selectedChain?.priceModifier ?? 0);
   const { scrollYProgress } = useScroll({
     target: imageRef,
     offset: ["start end", "end start"],
@@ -125,7 +140,7 @@ export default function ProductDetail({
             />
             <Reveal delay={0.15}>
               <p className="font-serif italic text-gold text-2xl">
-                {formatPrice(product.price)}
+                {formatPrice(displayedUnitPrice)}
               </p>
             </Reveal>
             <Reveal delay={0.2}>
@@ -133,6 +148,12 @@ export default function ProductDetail({
                 {product.description}
               </p>
             </Reveal>
+
+            {chainPicker ? (
+              <Reveal delay={0.25}>
+                <ChainSelector value={chainId} onChange={setChainId} />
+              </Reveal>
+            ) : null}
 
             <Reveal delay={0.3}>
               <dl className="grid grid-cols-1 gap-y-4 mt-2 border-t border-bone/10 pt-6">
@@ -159,7 +180,10 @@ export default function ProductDetail({
                 <button
                   type="button"
                   onClick={() => {
-                    addToCart(product.slug, 1);
+                    addToCart(product.slug, {
+                      chainId: chainPicker ? chainId ?? undefined : undefined,
+                      qty: 1,
+                    });
                     setJustAdded(true);
                     setTimeout(() => setJustAdded(false), 1800);
                   }}
