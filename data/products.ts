@@ -89,6 +89,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/spike-red-chain-1.jpg"],
   },
   {
+    slug: "pinteresty-cross-charm",
+    name: "Pinteresty Cross Charm",
+    category: "chains",
+    price: 300,
+    shortDescription: "Flame-cut tribal cross on a box chain.",
+    description:
+      "A cross carved in tongues of flame — sharp silver tribal curves cut into the form of a gothic crucifix. Worn long on a heavy box chain.",
+    materials: ["Silver-tone alloy"],
+    images: ["/products/pinteresty-cross-charm-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
