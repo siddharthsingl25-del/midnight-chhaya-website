@@ -78,6 +78,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/red-cross-chain-1.jpg"],
   },
   {
+    slug: "spike-red-chain",
+    name: "Spike Red Chain",
+    category: "chains",
+    price: 300,
+    shortDescription: "Heart of red set in a silver sunburst.",
+    description:
+      "A burning heart wreathed in silver spikes — a sacred-heart pendant crowned with flame and set with a deep red stone. Hangs from a fine snake chain.",
+    materials: ["Silver-tone alloy", "Red crystal"],
+    images: ["/products/spike-red-chain-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
