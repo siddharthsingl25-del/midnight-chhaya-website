@@ -88,7 +88,7 @@ export default function Hero() {
                 width={776}
                 height={321}
                 priority
-                className="logo-glow block h-auto w-[clamp(300px,68vw,820px)] mx-auto select-none"
+                className="logo-glow block h-auto w-[clamp(380px,86vw,1100px)] mx-auto select-none"
               />
               {/* metallic shimmer sweep — masked to the logo's alpha channel.
                * --logo-src is the same file the <Image> renders; CSS reads it

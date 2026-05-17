@@ -117,16 +117,21 @@ html { scrollbar-width: thin; scrollbar-color: var(--gold) var(--ink); }
   animation: logo-glow 3.4s ease-in-out 2.2s infinite;
   will-change: filter;
 }
+/* Brightness + contrast lift the dark metallic letterforms so they read
+ * clearly over the photo backdrop; the glow halo pulses on top of that
+ * static lift. Adjust brightness for "more visible" — higher = paler. */
 @keyframes logo-glow {
   0%, 100% {
     filter:
-      drop-shadow(0 0 18px rgba(244, 241, 234, 0.30))
-      drop-shadow(0 0 48px rgba(184, 147, 90, 0.18));
+      brightness(1.35) contrast(1.18) saturate(1.1)
+      drop-shadow(0 0 22px rgba(244, 241, 234, 0.45))
+      drop-shadow(0 0 60px rgba(184, 147, 90, 0.28));
   }
   50% {
     filter:
-      drop-shadow(0 0 36px rgba(244, 241, 234, 0.62))
-      drop-shadow(0 0 90px rgba(184, 147, 90, 0.42));
+      brightness(1.55) contrast(1.22) saturate(1.15)
+      drop-shadow(0 0 44px rgba(244, 241, 234, 0.78))
+      drop-shadow(0 0 110px rgba(184, 147, 90, 0.5));
   }
 }
 
