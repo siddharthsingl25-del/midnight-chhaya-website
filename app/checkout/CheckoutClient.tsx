@@ -22,7 +22,7 @@ import Image from "next/image";
 import { useState, type FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check, ShoppingBag } from "lucide-react";
-import InstagramIcon from "@/components/ui/icons/InstagramIcon";
+import WhatsAppIcon from "@/components/ui/icons/WhatsAppIcon";
 import Reveal from "@/components/animations/Reveal";
 import { easeCinematic } from "@/lib/animations";
 import { useCart } from "@/lib/cart";
@@ -102,19 +102,29 @@ export default function CheckoutClient() {
       .join("\n");
   };
 
+  /* WhatsApp deep link to the merchant's number with the order pre-filled.
+   * The customer's WhatsApp opens (mobile app or wa.me Web) showing the
+   * order ready to send — they hit Send and the order lands in the
+   * merchant's WhatsApp with their phone number attached. */
+  const whatsappLink = (text: string) =>
+    `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(text)}`;
+
   const placeOrder = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (lines.length === 0) return;
     setStatus("submitting");
     const text = buildOrderText();
     setOrderText(text);
+    // best-effort clipboard copy as a fallback for the rare case where
+    // WhatsApp doesn't open and the customer needs to paste manually
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      /* clipboard may be blocked; the order text is shown on screen as a fallback */
+      /* ignore */
     }
-    // brief delay so the spinner feels intentional
+    // brief delay so the spinner feels intentional, then open WhatsApp
     await new Promise((r) => setTimeout(r, 500));
+    window.open(whatsappLink(text), "_blank", "noopener,noreferrer");
     setStatus("ready");
   };
 
@@ -157,27 +167,27 @@ export default function CheckoutClient() {
             <Check size={24} strokeWidth={1.5} />
           </motion.span>
           <h2 className="font-display uppercase text-bone text-3xl md:text-4xl">
-            Order ready.
+            Order sent.
           </h2>
           <p className="font-serif italic text-bone-dim text-lg max-w-md leading-relaxed">
-            Your order has been copied to the clipboard. Open Instagram and
-            paste it into a DM — we&apos;ll reply within a day to confirm
+            Your order has opened in WhatsApp — tap <strong className="not-italic font-semibold text-bone">Send</strong> there
+            to deliver it to us. We&apos;ll reply within a day to confirm
             availability and arrange payment + delivery.
           </p>
 
           <a
-            href={SITE.instagram}
+            href={`https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(orderText)}`}
             target="_blank"
             rel="noopener noreferrer"
-            data-cursor="Open"
+            data-cursor="Open WhatsApp"
             data-cursor-magnetic
             className="inline-flex items-center gap-3 px-8 py-4
                        bg-gold text-ink
                        transition-all duration-500
                        hover:shadow-[0_0_36px_-6px_rgba(184,147,90,0.6)]"
           >
-            <InstagramIcon size={18} />
-            <span className="eyebrow text-ink">Open Instagram</span>
+            <WhatsAppIcon size={18} />
+            <span className="eyebrow text-ink">Open WhatsApp again</span>
           </a>
 
           <details className="text-left w-full max-w-md mt-4">
@@ -329,10 +339,9 @@ export default function CheckoutClient() {
           </button>
 
           <p className="font-serif italic text-bone-dim text-sm max-w-md leading-relaxed">
-            Online checkout is coming soon. Placing the order will copy a
-            complete summary to your clipboard and open Instagram — paste
-            it into our DM and we&apos;ll reply within a day to confirm and
-            arrange payment + delivery.
+            Online checkout is coming soon. Placing the order opens WhatsApp
+            with your order ready to send — we&apos;ll reply within a day to
+            confirm availability and arrange payment + delivery.
           </p>
         </form>
 
