@@ -417,3 +417,4 @@ export const FEATURED_SLUGS = [
 
 export const featured = () =>
   FEATURED_SLUGS.map(productBySlug).filter((p): p is Product => Boolean(p));
+// Build trigger: 2026-05-17T11:56:56Z
