@@ -257,6 +257,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/sword-heart-charm-1.jpg"],
   },
   {
+    slug: "stone-cross",
+    name: "Stone Cross",
+    category: "chains",
+    price: 280,
+    shortDescription: "Silver cross paved in clear crystals.",
+    description:
+      "A small silver crucifix with flared fleur tips — every arm and the centre paved with clear crystals that catch every light. Delicate, deliberate, sharp at the edges.",
+    materials: ["Silver-tone alloy", "Clear crystals"],
+    images: ["/products/stone-cross-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
