@@ -230,7 +230,7 @@ export default function CartButton() {
                                transition-all duration-500
                                hover:shadow-[0_0_24px_-4px_rgba(184,147,90,0.55)]"
                   >
-                    <span className="eyebrow text-[11px]">Checkout · {formatPrice(grandTotal)}</span>
+                    <span className="eyebrow text-[11px] text-ink">Checkout · {formatPrice(grandTotal)}</span>
                   </Link>
 
                   <div className="grid grid-cols-2 gap-2 mt-3">

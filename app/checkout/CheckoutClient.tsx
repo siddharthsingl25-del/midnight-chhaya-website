@@ -177,7 +177,7 @@ export default function CheckoutClient() {
                        hover:shadow-[0_0_36px_-6px_rgba(184,147,90,0.6)]"
           >
             <InstagramIcon size={18} />
-            <span className="eyebrow">Open Instagram</span>
+            <span className="eyebrow text-ink">Open Instagram</span>
           </a>
 
           <details className="text-left w-full max-w-md mt-4">
@@ -317,7 +317,7 @@ export default function CheckoutClient() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.35, ease: easeCinematic }}
-                className="eyebrow"
+                className="eyebrow text-ink"
               >
                 {status === "submitting" ? "Preparing…" : `Place order · ${formatPrice(grandTotal)}`}
               </motion.span>

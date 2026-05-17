@@ -197,12 +197,12 @@ export default function ProductDetail({
                   {justAdded ? (
                     <>
                       <Check size={18} strokeWidth={1.75} />
-                      <span className="eyebrow">Added to cart</span>
+                      <span className="eyebrow text-ink">Added to cart</span>
                     </>
                   ) : (
                     <>
                       <Plus size={18} strokeWidth={1.75} />
-                      <span className="eyebrow">Add to cart</span>
+                      <span className="eyebrow text-ink">Add to cart</span>
                     </>
                   )}
                 </button>
