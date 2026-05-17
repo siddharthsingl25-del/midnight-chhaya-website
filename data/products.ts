@@ -246,6 +246,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/black-star-1.jpg"],
   },
   {
+    slug: "sword-heart-charm",
+    name: "Sword Heart Charm",
+    category: "chains",
+    price: 280,
+    shortDescription: "Red heart run through by a skull-hilt dagger.",
+    description:
+      "A small dagger driven straight through a deep red enamel heart — twisted silver grip, tiny skull at the pommel, blade tip exposed below. The classic tattoo motif, made small.",
+    materials: ["Silver-tone alloy", "Red enamel"],
+    images: ["/products/sword-heart-charm-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
