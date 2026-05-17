@@ -20,8 +20,11 @@ export type ChainOption = {
 };
 
 export const CHAIN_OPTIONS: ChainOption[] = [
-  // Populated as photos arrive. Each will look like:
-  // { id: "snake", name: "Snake chain · 18\"", image: "/chains/snake.jpg" },
+  {
+    id: "box-24",
+    name: "Box chain · 24\"",
+    image: "/chains/box-24.jpg",
+  },
 ];
 
 export const chainById = (id?: string | null): ChainOption | undefined =>
