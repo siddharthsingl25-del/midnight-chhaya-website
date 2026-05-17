@@ -75,7 +75,7 @@ export const PRODUCTS: Product[] = [
     description:
       "A small cathedral worn at the throat — an ornate silver cross etched with filigree and curls, a single red stone set at the heart. Hangs from a fine snake chain.",
     materials: ["Silver-tone alloy", "Red crystal"],
-    images: ["/products/red-cross-chain-1.jpg"],
+    images: ["/products/red-cross-chain-1-v2.jpg"],
   },
   {
     slug: "spike-red-chain",
@@ -86,7 +86,7 @@ export const PRODUCTS: Product[] = [
     description:
       "A burning heart wreathed in silver spikes — a sacred-heart pendant crowned with flame and set with a deep red stone. Hangs from a fine snake chain.",
     materials: ["Silver-tone alloy", "Red crystal"],
-    images: ["/products/spike-red-chain-1.jpg"],
+    images: ["/products/spike-red-chain-1-v2.jpg"],
   },
   {
     slug: "pinteresty-cross-charm",
@@ -97,7 +97,7 @@ export const PRODUCTS: Product[] = [
     description:
       "A cross carved in tongues of flame — sharp silver tribal curves cut into the form of a gothic crucifix. Worn long on a heavy box chain.",
     materials: ["Silver-tone alloy"],
-    images: ["/products/pinteresty-cross-charm-1.jpg"],
+    images: ["/products/pinteresty-cross-charm-1-v2.jpg"],
   },
   {
     slug: "chunky-red-heart-charm",
@@ -108,7 +108,7 @@ export const PRODUCTS: Product[] = [
     description:
       "A sacred-heart relic — a heavy red glass heart wrapped in a crown of silver thorns and crowned with a small cross. Hangs from a heavy box chain.",
     materials: ["Silver-tone alloy", "Red enamel glass"],
-    images: ["/products/chunky-red-heart-charm-1.jpg"],
+    images: ["/products/chunky-red-heart-charm-1-v2.jpg"],
   },
   {
     slug: "red-flame-cross",
@@ -119,7 +119,7 @@ export const PRODUCTS: Product[] = [
     description:
       "A silver cross caught mid-burn — wrapped in tongues of deep red enamel that lick upward and trail down into a long flame. Worn on a fine snake chain.",
     materials: ["Silver-tone alloy", "Red enamel"],
-    images: ["/products/red-flame-cross-1.jpg"],
+    images: ["/products/red-flame-cross-1-v2.jpg"],
   },
   {
     slug: "pink-cross-charm",
@@ -130,7 +130,7 @@ export const PRODUCTS: Product[] = [
     description:
       "A small reliquary cross studded all over in coloured stones — pink centre, blue and yellow at the points, with a small silver heart framing the heart stone. Hangs from a fine snake chain.",
     materials: ["Silver-tone alloy", "Mixed crystals"],
-    images: ["/products/pink-cross-charm-1.jpg"],
+    images: ["/products/pink-cross-charm-1-v2.jpg"],
   },
   {
     slug: "pookie-cross-charm",
