@@ -155,6 +155,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/red-rose-cross-charm-1.jpg"],
   },
   {
+    slug: "red-chrome-cross",
+    name: "Red Chrome Cross",
+    category: "chains",
+    price: 300,
+    shortDescription: "Fleur-de-lis cross with a hot pink stone.",
+    description:
+      "A fleur-de-lis crucifix in polished silver — four lily heads tipping each arm of the cross, a single hot pink stone burning at the centre. Hangs from a fine snake chain.",
+    materials: ["Silver-tone alloy", "Pink crystal"],
+    images: ["/products/red-chrome-cross-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
