@@ -67,6 +67,17 @@ export const PRODUCTS: Product[] = [
 
   // —— Chains ——
   {
+    slug: "red-cross-chain",
+    name: "Red Cross Chain",
+    category: "chains",
+    price: 300,
+    shortDescription: "Filigree silver cross, single red stone.",
+    description:
+      "A small cathedral worn at the throat — an ornate silver cross etched with filigree and curls, a single red stone set at the heart. Hangs from a fine snake chain.",
+    materials: ["Silver-tone alloy", "Red crystal"],
+    images: ["/products/red-cross-chain-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
