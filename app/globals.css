@@ -151,7 +151,7 @@ html { scrollbar-width: thin; scrollbar-color: var(--gold) var(--ink); }
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
-  animation: logo-shimmer 4.5s ease-in-out 2.6s infinite;
+  animation: logo-shimmer 2s ease-in-out 2.4s infinite;
   mix-blend-mode: overlay;
 }
 @keyframes logo-shimmer {
