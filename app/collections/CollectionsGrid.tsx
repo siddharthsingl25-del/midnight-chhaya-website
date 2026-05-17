@@ -1,13 +1,34 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import ProductCard from "@/components/ui/ProductCard";
 import { CATEGORIES, PRODUCTS, type Category } from "@/data/products";
 import { easeCinematic } from "@/lib/animations";
 
+type Filter = Category | "all";
+
 export default function CollectionsGrid() {
-  const [active, setActive] = useState<Category | "all">("all");
+  const router = useRouter();
+  const params = useSearchParams();
+
+  // initial filter from `?cat=…` (linked from header dropdown), else "all"
+  const fromUrl = (params.get("cat") ?? "all") as Filter;
+  const valid = CATEGORIES.some((c) => c.id === fromUrl);
+  const [active, setActive] = useState<Filter>(valid ? fromUrl : "all");
+
+  // keep state in sync if the URL changes (back/forward)
+  useEffect(() => {
+    const fromUrl = (params.get("cat") ?? "all") as Filter;
+    if (CATEGORIES.some((c) => c.id === fromUrl)) setActive(fromUrl);
+  }, [params]);
+
+  const onSelect = (id: Filter) => {
+    setActive(id);
+    const next = id === "all" ? "/collections" : `/collections?cat=${id}`;
+    router.replace(next, { scroll: false });
+  };
 
   const items = useMemo(
     () => (active === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.category === active)),
@@ -17,14 +38,13 @@ export default function CollectionsGrid() {
   return (
     <section className="px-6 md:px-10 pb-32">
       <div className="mx-auto max-w-[1400px]">
-        {/* filter rail */}
         <div className="flex flex-wrap gap-x-8 gap-y-3 mb-16 border-b border-bone/10 pb-6">
           {CATEGORIES.map((c) => {
             const selected = c.id === active;
             return (
               <button
                 key={c.id}
-                onClick={() => setActive(c.id)}
+                onClick={() => onSelect(c.id)}
                 data-cursor={c.label}
                 className={[
                   "relative eyebrow transition-colors duration-500",
