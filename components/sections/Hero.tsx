@@ -60,22 +60,45 @@ export default function Hero() {
           Volume I · MMXXVI
         </motion.span>
 
-        {/* Logo as the hero mark with the same ghost-flash reveal.
-         * Transparent PNG — no blend mode needed. */}
+        {/* Logo as the hero mark.
+         *   1. ghost-in   — sudden bright/blurred apparition (CSS)
+         *   2. logo-glow  — pulsing warm halo, loops after reveal (CSS)
+         *   3. logo-shimmer — diagonal metallic sweep masked to letterforms (CSS)
+         *   4. y-bounce   — gentle continuous "hop" via framer-motion */}
         <h1 className="m-0">
           <span className="sr-only">{SITE.name}</span>
           <span
             className="ghost-in block"
             style={{ animationDelay: "1.4s" }}
           >
-            <Image
-              src={SITE.logoPath}
-              alt={SITE.name}
-              width={776}
-              height={321}
-              priority
-              className="block h-auto w-[clamp(300px,68vw,820px)] mx-auto select-none"
-            />
+            <motion.div
+              className="relative inline-block"
+              initial={{ y: 0 }}
+              animate={{ y: [0, -14, 0] }}
+              transition={{
+                duration: 3.6,
+                ease: "easeInOut",
+                repeat: Infinity,
+                delay: 2.2, // wait for ghost reveal to settle
+              }}
+            >
+              <Image
+                src={SITE.logoPath}
+                alt={SITE.name}
+                width={776}
+                height={321}
+                priority
+                className="logo-glow block h-auto w-[clamp(300px,68vw,820px)] mx-auto select-none"
+              />
+              {/* metallic shimmer sweep — masked to the logo's alpha channel.
+               * --logo-src is the same file the <Image> renders; CSS reads it
+               * via mask-image so light only paints the letterforms. */}
+              <span
+                className="logo-shimmer"
+                style={{ "--logo-src": `url(${SITE.logoPath})` } as React.CSSProperties}
+                aria-hidden
+              />
+            </motion.div>
           </span>
         </h1>
 

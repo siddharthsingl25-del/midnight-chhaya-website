@@ -103,6 +103,64 @@ html { scrollbar-width: thin; scrollbar-color: var(--gold) var(--ink); }
   100% { transform: translateY(120vh); opacity: 0; }
 }
 
+/* ---------------------------------------------------------------------------
+ * Logo "shine + jump" — composed of two looping effects that start AFTER
+ * the ghost reveal finishes (animation-delay ≈ 2.2s).
+ *
+ *   .logo-glow    pulsing warm halo via drop-shadow (works on transparent
+ *                 PNGs because drop-shadow respects the alpha channel)
+ *   .logo-shimmer a diagonal bright stripe that sweeps across the logo,
+ *                 masked to the logo silhouette so it only highlights the
+ *                 letterforms (no glare on the surrounding void)
+ * ------------------------------------------------------------------------- */
+.logo-glow {
+  animation: logo-glow 3.4s ease-in-out 2.2s infinite;
+  will-change: filter;
+}
+@keyframes logo-glow {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 18px rgba(244, 241, 234, 0.30))
+      drop-shadow(0 0 48px rgba(184, 147, 90, 0.18));
+  }
+  50% {
+    filter:
+      drop-shadow(0 0 36px rgba(244, 241, 234, 0.62))
+      drop-shadow(0 0 90px rgba(184, 147, 90, 0.42));
+  }
+}
+
+.logo-shimmer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* a thin diagonal bright stripe over a doubled-width track */
+  background-image: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 62%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  background-position: 200% 0;
+  /* clip to the logo's alpha channel — light only paints the letterforms */
+  -webkit-mask-image: var(--logo-src);
+  mask-image: var(--logo-src);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  animation: logo-shimmer 4.5s ease-in-out 2.6s infinite;
+  mix-blend-mode: overlay;
+}
+@keyframes logo-shimmer {
+  0%   { background-position: 200% 0; opacity: 0; }
+  10%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { background-position: -120% 0; opacity: 0; }
+}
+
 /* "Ghost" reveal — sudden materialisation with a brief brightness flash.
  * Apply to elements that should snap into existence rather than fade in. */
 .ghost-in {
