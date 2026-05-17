@@ -6,6 +6,7 @@ import SmoothScroll from "@/components/animations/SmoothScroll";
 import Header from "@/components/ui/Header";
 import FilmGrain from "@/components/ui/FilmGrain";
 import CustomCursor from "@/components/ui/CustomCursor";
+import { CartProvider } from "@/lib/cart";
 import { SITE } from "@/lib/site";
 
 /* Cinzel — display headings (gothic serif).
@@ -69,12 +70,14 @@ export default function RootLayout({
       className={`${cinzel.variable} ${cormorant.variable} ${inter.variable}`}
     >
       <body className="bg-ink text-bone min-h-screen overflow-x-hidden">
-        <SmoothScroll>
-          <Header />
-          <main>{children}</main>
-        </SmoothScroll>
-        <FilmGrain />
-        <CustomCursor />
+        <CartProvider>
+          <SmoothScroll>
+            <Header />
+            <main>{children}</main>
+          </SmoothScroll>
+          <FilmGrain />
+          <CustomCursor />
+        </CartProvider>
       </body>
     </html>
   );

@@ -13,7 +13,7 @@ const blocks: PolicyBlock[] = [
   { type: "p", text: "We collect basic customer information such as:" },
   {
     type: "list",
-    items: ["Name", "Address", "Phone number", "Email address"],
+    items: ["Name", "Address", "Instagram handle"],
   },
   { type: "p", text: "This information is used only for:" },
   {

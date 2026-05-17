@@ -9,8 +9,6 @@ export const SITE = {
   url: "https://midnightchhaya.com",
   instagram: "https://www.instagram.com/midnight_chhaya/",
   instagramHandle: "@midnight_chhaya",
-  whatsapp: "https://wa.me/919999999999", // TODO: replace with real WhatsApp number
-  email: "hello@midnightchhaya.com",
   currency: { code: "INR", symbol: "₹" },
   /** Logo file. Transparent PNG, sits cleanly on any background. */
   logoPath: "/brand/logo.png",

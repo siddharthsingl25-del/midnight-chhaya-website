@@ -30,10 +30,10 @@ export default function InquiryForm() {
   return (
     <Reveal as="div" className="w-full">
       <form onSubmit={onSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-8">
-        <Field name="name"    label="Name"    autoComplete="name" />
-        <Field name="email"   label="Email"   type="email" required autoComplete="email" />
-        <Field name="piece"   label="Piece (optional)" placeholder="e.g. Crow Talon Ring" className="sm:col-span-2" />
-        <Field name="message" label="Message" multiline className="sm:col-span-2" required />
+        <Field name="name"      label="Name" required autoComplete="name" />
+        <Field name="instagram" label="Instagram handle" required placeholder="@yourname" />
+        <Field name="piece"     label="Piece (optional)" placeholder="e.g. Red Cross Chain" className="sm:col-span-2" />
+        <Field name="message"   label="Message" multiline className="sm:col-span-2" required />
 
         <div className="sm:col-span-2 flex items-center justify-between gap-6 pt-2">
           <p className="font-serif italic text-bone-dim text-sm max-w-md">

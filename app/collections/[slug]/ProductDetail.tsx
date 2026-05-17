@@ -11,7 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check, Plus } from "lucide-react";
 import InstagramIcon from "@/components/ui/icons/InstagramIcon";
 import ProductCard from "@/components/ui/ProductCard";
 import Reveal from "@/components/animations/Reveal";
@@ -19,6 +19,7 @@ import TextReveal from "@/components/animations/TextReveal";
 import { useMagnetic } from "@/lib/useMagnetic";
 import { easeCinematic } from "@/lib/animations";
 import { formatPrice, SITE } from "@/lib/site";
+import { useCart } from "@/lib/cart";
 import type { Product } from "@/data/products";
 
 export default function ProductDetail({
@@ -29,6 +30,8 @@ export default function ProductDetail({
   related: Product[];
 }) {
   const [active, setActive] = useState(0);
+  const [justAdded, setJustAdded] = useState(false);
+  const { add: addToCart } = useCart();
   const imageRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: imageRef,
@@ -151,23 +154,54 @@ export default function ProductDetail({
             </Reveal>
 
             <Reveal delay={0.4}>
-              <motion.div ref={magRef} style={{ x, y }} className="inline-block">
-                <a
-                  href={dmHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-cursor="Inquire"
-                  data-cursor-magnetic
-                  className="group inline-flex items-center gap-4 px-8 py-4
-                             border border-gold/60 text-gold
-                             transition-colors duration-500
-                             hover:bg-gold hover:text-ink
-                             hover:shadow-[0_0_36px_-6px_rgba(184,147,90,0.55)]"
+              <div className="flex flex-wrap items-stretch gap-3">
+                {/* Add to cart — primary, filled gold */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    addToCart(product.slug, 1);
+                    setJustAdded(true);
+                    setTimeout(() => setJustAdded(false), 1800);
+                  }}
+                  data-cursor={justAdded ? "Added" : "Add to cart"}
+                  className="group inline-flex items-center gap-3 px-8 py-4
+                             bg-gold text-ink
+                             transition-all duration-500
+                             hover:shadow-[0_0_36px_-6px_rgba(184,147,90,0.6)]
+                             disabled:opacity-70"
                 >
-                  <InstagramIcon size={20} />
-                  <span className="eyebrow">Inquire on Instagram</span>
-                </a>
-              </motion.div>
+                  {justAdded ? (
+                    <>
+                      <Check size={18} strokeWidth={1.75} />
+                      <span className="eyebrow">Added to cart</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={18} strokeWidth={1.75} />
+                      <span className="eyebrow">Add to cart</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Inquire — secondary, outlined, magnetic */}
+                <motion.div ref={magRef} style={{ x, y }} className="inline-block">
+                  <a
+                    href={dmHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-cursor="Inquire"
+                    data-cursor-magnetic
+                    className="group inline-flex items-center gap-3 px-8 py-4
+                               border border-gold/60 text-gold h-full
+                               transition-colors duration-500
+                               hover:bg-gold hover:text-ink
+                               hover:shadow-[0_0_36px_-6px_rgba(184,147,90,0.55)]"
+                  >
+                    <InstagramIcon size={18} />
+                    <span className="eyebrow">Inquire on Instagram</span>
+                  </a>
+                </motion.div>
+              </div>
             </Reveal>
           </div>
         </div>

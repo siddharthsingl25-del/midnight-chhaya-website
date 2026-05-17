@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import PageHeader from "@/components/sections/PageHeader";
 import Footer from "@/components/ui/Footer";
 import InquiryForm from "./InquiryForm";
@@ -31,29 +30,16 @@ export default function ContactPage() {
           <aside className="lg:col-span-5 flex flex-col gap-10 lg:pt-12 lg:border-l lg:border-bone/10 lg:pl-12">
             <Reveal>
               <div>
-                <span className="eyebrow block mb-3">Direct</span>
-                <Link
-                  href={`mailto:${SITE.email}`}
-                  data-cursor="Write us"
-                  className="font-display text-bone text-xl gold-underline inline-block"
-                >
-                  {SITE.email}
-                </Link>
-              </div>
-            </Reveal>
-
-            <Reveal delay={0.1}>
-              <div>
-                <span className="eyebrow block mb-3">Faster</span>
+                <span className="eyebrow block mb-3">Reach us</span>
                 <p className="font-serif italic text-bone-dim text-lg leading-relaxed max-w-sm mb-5">
-                  Instagram is where the new pieces appear first. DMs are
-                  usually answered within a day.
+                  Instagram is where new pieces appear first and where every
+                  inquiry is answered. DMs are usually replied to within a day.
                 </p>
                 <InstagramButton variant="label" label={SITE.instagramHandle} />
               </div>
             </Reveal>
 
-            <Reveal delay={0.2}>
+            <Reveal delay={0.15}>
               <div>
                 <span className="eyebrow block mb-3">Hours</span>
                 <p className="font-serif text-bone-dim text-lg leading-relaxed max-w-sm">

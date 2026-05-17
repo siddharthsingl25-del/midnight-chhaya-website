@@ -28,15 +28,6 @@ const blocks: PolicyBlock[] = [
     text: (
       <>
         For any shipping-related questions, contact us on{" "}
-        <a
-          href={SITE.whatsapp}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-gold gold-underline"
-        >
-          WhatsApp
-        </a>{" "}
-        or{" "}
         <Link
           href={SITE.instagram}
           target="_blank"

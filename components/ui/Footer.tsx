@@ -22,13 +22,6 @@ export default function Footer() {
             {SITE.tagline}
           </p>
           <div className="flex flex-col gap-3 mt-2">
-            <a
-              href={`mailto:${SITE.email}`}
-              data-cursor="Write us"
-              className="font-body text-sm text-bone hover:text-gold transition-colors duration-500 gold-underline self-start"
-            >
-              {SITE.email}
-            </a>
             <InstagramButton variant="label" label={SITE.instagramHandle} />
           </div>
         </div>
