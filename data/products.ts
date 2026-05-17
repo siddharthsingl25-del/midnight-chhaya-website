@@ -268,6 +268,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/stone-cross-1.jpg"],
   },
   {
+    slug: "melting-heart",
+    name: "Melting Heart",
+    category: "chains",
+    price: 250,
+    shortDescription: "Caged purple heart with dripping silver tears.",
+    description:
+      "A dark amethyst-toned heart caught inside a tangle of silver thorns, mounted on a padlock-shaped bail with molten silver tears running off the bottom edge. Strange and small.",
+    materials: ["Silver-tone alloy", "Purple-black resin"],
+    images: ["/products/melting-heart-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
