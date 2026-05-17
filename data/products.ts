@@ -188,6 +188,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/gothic-butterfly-1.jpg"],
   },
   {
+    slug: "spider-charm",
+    name: "Spider Charm",
+    category: "chains",
+    price: 250,
+    shortDescription: "Stainless steel spider, polished edges.",
+    description:
+      "A small silver spider with long curved legs — cut from polished stainless steel, light enough to forget you're wearing it. Pairs with any of our chains.",
+    materials: ["Stainless steel"],
+    images: ["/products/spider-charm-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
