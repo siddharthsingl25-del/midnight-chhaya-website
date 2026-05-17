@@ -40,6 +40,11 @@ export const CHAIN_OPTIONS: ChainOption[] = [
     name: "Silver flat snake chain · 18\"",
     image: "/chains/silver-flat-snake-18.jpg",
   },
+  {
+    id: "flat-22",
+    name: "Stainless steel flat chain · 22\"",
+    image: "/chains/flat-22.jpg",
+  },
 ];
 
 export const chainById = (id?: string | null): ChainOption | undefined =>
