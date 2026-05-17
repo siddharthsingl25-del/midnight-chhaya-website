@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE.url}/lookbook`,    lastModified: now, priority: 0.8,  changeFrequency: "monthly" },
     { url: `${SITE.url}/about`,       lastModified: now, priority: 0.7,  changeFrequency: "yearly" },
     { url: `${SITE.url}/contact`,     lastModified: now, priority: 0.6,  changeFrequency: "yearly" },
+    { url: `${SITE.url}/checkout`,    lastModified: now, priority: 0.5,  changeFrequency: "yearly" },
     { url: `${SITE.url}/privacy`,     lastModified: now, priority: 0.4,  changeFrequency: "yearly" },
     { url: `${SITE.url}/shipping`,    lastModified: now, priority: 0.4,  changeFrequency: "yearly" },
     { url: `${SITE.url}/returns`,     lastModified: now, priority: 0.4,  changeFrequency: "yearly" },

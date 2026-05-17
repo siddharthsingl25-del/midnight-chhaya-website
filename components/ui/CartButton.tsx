@@ -220,23 +220,31 @@ export default function CartButton() {
                       {formatPrice(grandTotal)}
                     </span>
                   </div>
-                  <p className="font-serif italic text-bone-dim text-xs mb-4 leading-relaxed">
-                    Online checkout is coming soon. For now, copy your order
-                    below and send it to us on Instagram — we&apos;ll confirm
-                    availability and arrange payment + shipping.
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
+
+                  <Link
+                    href="/checkout"
+                    onClick={() => setOpen(false)}
+                    data-cursor="Checkout"
+                    className="inline-flex items-center justify-center gap-3 w-full px-5 py-3
+                               bg-gold text-ink
+                               transition-all duration-500
+                               hover:shadow-[0_0_24px_-4px_rgba(184,147,90,0.55)]"
+                  >
+                    <span className="eyebrow text-[11px]">Checkout · {formatPrice(grandTotal)}</span>
+                  </Link>
+
+                  <div className="grid grid-cols-2 gap-2 mt-3">
                     <button
                       onClick={copyOrder}
                       data-cursor={copied ? "Copied" : "Copy"}
-                      className="inline-flex items-center justify-center gap-2 px-3 py-3
+                      className="inline-flex items-center justify-center gap-2 px-3 py-2.5
                                  border border-bone/20 text-bone-dim
                                  transition-colors duration-500
                                  hover:border-bone hover:text-bone"
                     >
                       {copied ? (
                         <>
-                          <Check size={14} strokeWidth={1.5} />
+                          <Check size={12} strokeWidth={1.5} />
                           <span className="eyebrow text-[10px]">Copied</span>
                         </>
                       ) : (
@@ -248,12 +256,12 @@ export default function CartButton() {
                       target="_blank"
                       rel="noopener noreferrer"
                       data-cursor="Inquire"
-                      className="inline-flex items-center justify-center gap-2 px-3 py-3
-                                 border border-gold/60 text-gold
+                      className="inline-flex items-center justify-center gap-2 px-3 py-2.5
+                                 border border-bone/20 text-bone-dim
                                  transition-colors duration-500
-                                 hover:bg-gold hover:text-ink"
+                                 hover:border-bone hover:text-bone"
                     >
-                      <InstagramIcon size={14} />
+                      <InstagramIcon size={12} />
                       <span className="eyebrow text-[10px]">Inquire</span>
                     </a>
                   </div>
