@@ -185,13 +185,19 @@ html { scrollbar-width: thin; scrollbar-color: var(--gold) var(--ink); }
 .font-serif   { font-family: var(--font-cormorant), "Cormorant Garamond", serif; }
 .font-body    { font-family: var(--font-inter), Inter, system-ui, sans-serif; }
 
-.eyebrow {
-  font-family: var(--font-inter), Inter, sans-serif;
-  font-size: 0.7rem;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  color: var(--gold);
-  font-weight: 500;
+/* `.eyebrow` lives in the @layer components so Tailwind colour utilities
+ * (text-ink, text-bone, etc.) win over its default gold. Without this, a
+ * gold button's `text-ink` would lose to .eyebrow's gold colour and the
+ * label would render invisible. */
+@layer components {
+  .eyebrow {
+    font-family: var(--font-inter), Inter, sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 500;
+  }
 }
 
 /* gold underline that animates in under links */
