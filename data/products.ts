@@ -290,6 +290,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/star-charm-1.jpg"],
   },
   {
+    slug: "skeleton-cross",
+    name: "Skeleton Cross",
+    category: "chains",
+    price: 250,
+    shortDescription: "Red enamel cross with a silver skeleton crucified across it.",
+    description:
+      "A blood-red cross with a small silver skeleton draped across the centre — head bowed, ribs and limbs hand-detailed. Memento mori, made wearable.",
+    materials: ["Silver-tone alloy", "Red enamel"],
+    images: ["/products/skeleton-cross-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
