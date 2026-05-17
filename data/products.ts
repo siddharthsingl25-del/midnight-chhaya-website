@@ -122,6 +122,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/red-flame-cross-1.jpg"],
   },
   {
+    slug: "pink-cross-charm",
+    name: "Pink Cross Charm",
+    category: "chains",
+    price: 300,
+    shortDescription: "Silver cross set in pink, blue, yellow crystals.",
+    description:
+      "A small reliquary cross studded all over in coloured stones — pink centre, blue and yellow at the points, with a small silver heart framing the heart stone. Hangs from a fine snake chain.",
+    materials: ["Silver-tone alloy", "Mixed crystals"],
+    images: ["/products/pink-cross-charm-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
