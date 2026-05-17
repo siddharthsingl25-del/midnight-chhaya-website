@@ -100,6 +100,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/pinteresty-cross-charm-1.jpg"],
   },
   {
+    slug: "chunky-red-heart-charm",
+    name: "Chunky Red Heart Charm",
+    category: "chains",
+    price: 300,
+    shortDescription: "Deep red heart bound in silver thorns.",
+    description:
+      "A sacred-heart relic — a heavy red glass heart wrapped in a crown of silver thorns and crowned with a small cross. Hangs from a heavy box chain.",
+    materials: ["Silver-tone alloy", "Red enamel glass"],
+    images: ["/products/chunky-red-heart-charm-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
