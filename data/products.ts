@@ -177,6 +177,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/red-chrome-heart-1.jpg"],
   },
   {
+    slug: "gothic-butterfly",
+    name: "Gothic Butterfly",
+    category: "chains",
+    price: 300,
+    shortDescription: "White butterfly inside a red filigree heart.",
+    description:
+      "A pale enamel butterfly trapped inside a red glass heart — framed by a curling silver filigree edge. Hangs from a fine snake chain.",
+    materials: ["Silver-tone alloy", "Red and white enamel"],
+    images: ["/products/gothic-butterfly-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
