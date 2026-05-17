@@ -333,54 +333,6 @@ export const PRODUCTS: Product[] = [
     materials: ["Gunmetal silver-tone alloy", "Black crystal"],
     images: ["/products/black-heart-cross-1.jpg"],
   },
-  {
-    slug: "reliquary-pendant",
-    name: "Reliquary Chain",
-    category: "chains",
-    price: 5200,
-    shortDescription: "Locket of smoked glass on silver.",
-    description:
-      "A small reliquary on a long chain — smoked glass behind silver filigree. Carry whatever the night gives you.",
-    materials: ["Sterling silver", "Smoked glass"],
-    dimensions: "Pendant 28mm · chain 70cm",
-    images: [placeholder("reliquary-1"), placeholder("reliquary-2")],
-  },
-  {
-    slug: "ember-pendant",
-    name: "Ember Drop Chain",
-    category: "chains",
-    price: 3900,
-    shortDescription: "Single garnet on a hammered drop.",
-    description:
-      "One drop of garnet caught in a hammered silver teardrop. The stone catches candlelight like an ember.",
-    materials: ["Sterling silver", "Garnet"],
-    images: [placeholder("ember-1"), placeholder("ember-2")],
-  },
-  {
-    slug: "midnight-choker",
-    name: "Midnight Choker",
-    category: "chains",
-    price: 7200,
-    shortDescription: "Velvet ribbon, antique gold clasp.",
-    description:
-      "Deep black velvet finished with a brass clasp inspired by Victorian mourning jewellery. A cameo of darkness at the throat.",
-    materials: ["Velvet", "Brass"],
-    dimensions: "Adjustable 32–40cm",
-    images: [placeholder("choker-1", 900, 900), placeholder("choker-2", 900, 900)],
-  },
-  {
-    slug: "cathedral-choker",
-    name: "Cathedral Chain",
-    category: "chains",
-    price: null, // one-of-one
-    shortDescription: "One-of-one — silver lattice, jet beads.",
-    description:
-      "A one-of-one piece: a fine silver lattice studded with antique jet beads. Made once, sold once. Inquire for current availability.",
-    materials: ["Sterling silver", "Antique jet"],
-    images: [placeholder("cathedral-1"), placeholder("cathedral-2")],
-    exclusive: true,
-  },
-
   // —— Bracelets ——
   {
     slug: "wraith-cuff",
@@ -457,10 +409,10 @@ export const exclusiveProducts = () =>
 
 /** Featured pieces (home page). */
 export const FEATURED_SLUGS = [
-  "crow-talon-ring",
-  "reliquary-pendant",
-  "midnight-choker",
-  "ember-pendant",
+  "red-rose-cross-charm",
+  "dragon-cross",
+  "blue-butterfly-moon",
+  "chunky-red-heart-charm",
 ];
 
 export const featured = () =>
