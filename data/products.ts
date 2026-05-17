@@ -210,6 +210,20 @@ export const PRODUCTS: Product[] = [
     images: ["/products/rose-cross-1.jpg"],
   },
   {
+    slug: "dragon-cross",
+    name: "Dragon Cross",
+    category: "chains",
+    price: 300,
+    shortDescription: "Crucifix coiled by a silver dragon, skull at the heart.",
+    description:
+      "An ornate Celtic-patterned cross with a small skull medallion at the centre — a silver dragon coils around its arms, body looping behind and tail trailing down. Heavy detail, small piece.",
+    materials: ["Oxidised silver-tone alloy"],
+    images: [
+      "/products/dragon-cross-1.jpg",
+      "/products/dragon-cross-2.jpg",
+    ],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
