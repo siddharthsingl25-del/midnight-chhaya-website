@@ -14,6 +14,7 @@
  */
 
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import HeroBackground from "./HeroBackground";
@@ -59,14 +60,24 @@ export default function Hero() {
           Volume I · MMXXVI
         </motion.span>
 
-        {/* Ghost reveal — snaps into existence with bright blur flash.
-         * CSS keyframes (.ghost-in) handle the whole animation. */}
-        <h1
-          className="ghost-in font-display text-[clamp(2.5rem,11vw,8rem)] leading-[1.05] text-bone uppercase max-w-[92vw]"
-          style={{ animationDelay: "1.4s" }}
-        >
-          <span className="inline-block whitespace-nowrap">Midnight</span>{" "}
-          <span className="inline-block whitespace-nowrap">Chhaya</span>
+        {/* Logo as the hero mark, using the same ghost-flash reveal.
+         * Reads from SITE.logoPath — swap that constant in lib/site.ts
+         * to point at the real PNG and it appears here automatically. */}
+        <h1 className="m-0">
+          <span className="sr-only">{SITE.name}</span>
+          <span
+            className="ghost-in block"
+            style={{ animationDelay: "1.4s" }}
+          >
+            <Image
+              src={SITE.logoPath}
+              alt={SITE.name}
+              width={800}
+              height={800}
+              priority
+              className="block h-auto w-[clamp(180px,32vw,460px)] mx-auto select-none"
+            />
+          </span>
         </h1>
 
         {/* Victorian flourish */}
