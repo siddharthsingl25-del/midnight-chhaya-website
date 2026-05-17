@@ -60,9 +60,9 @@ export default function Hero() {
           Volume I · MMXXVI
         </motion.span>
 
-        {/* Logo as the hero mark, using the same ghost-flash reveal.
-         * Reads from SITE.logoPath — swap that constant in lib/site.ts
-         * to point at the real PNG and it appears here automatically. */}
+        {/* Logo as the hero mark with the same ghost-flash reveal.
+         * mix-blend-mode: screen makes the logo's black background drop out
+         * over the dark hero photo so only the metallic wordmark shows. */}
         <h1 className="m-0">
           <span className="sr-only">{SITE.name}</span>
           <span
@@ -72,10 +72,10 @@ export default function Hero() {
             <Image
               src={SITE.logoPath}
               alt={SITE.name}
-              width={800}
-              height={800}
+              width={1600}
+              height={663}
               priority
-              className="block h-auto w-[clamp(180px,32vw,460px)] mx-auto select-none"
+              className="block h-auto w-[clamp(300px,68vw,820px)] mx-auto select-none mix-blend-screen"
             />
           </span>
         </h1>

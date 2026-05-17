@@ -9,17 +9,14 @@ export default function Footer() {
       <div className="mx-auto max-w-[1400px] grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-6 items-start">
         {/* brand */}
         <div className="flex flex-col gap-5">
-          <Link href="/" className="flex items-center gap-3" data-cursor="Home">
+          <Link href="/" className="flex items-center" data-cursor="Home">
             <Image
               src={SITE.logoPath}
               alt={SITE.name}
-              width={36}
-              height={36}
-              className="opacity-90"
+              width={1600}
+              height={663}
+              className="h-8 w-auto mix-blend-screen select-none"
             />
-            <span className="font-display text-xs tracking-[0.4em] uppercase text-bone">
-              {SITE.name}
-            </span>
           </Link>
           <p className="font-serif italic text-bone-dim max-w-xs">
             {SITE.tagline}

@@ -11,8 +11,12 @@ export const SITE = {
   instagramHandle: "@midnight_chhaya",
   email: "hello@midnightchhaya.com",
   currency: { code: "INR", symbol: "₹" },
-  /** Logo file. Swap to "/brand/logo.png" once the real PNG is dropped in /public/brand/. */
-  logoPath: "/brand/logo.svg",
+  /** Logo file. The shipped JPG has a solid black background; consuming
+   * components use `mix-blend-mode: screen` to drop the black and render
+   * only the metallic wordmark over the dark scene. */
+  logoPath: "/brand/logo.jpg",
+  /** Intrinsic logo aspect (width / height). Used to size next/image. */
+  logoAspect: 1600 / 663,
 } as const;
 
 export const NAV = [

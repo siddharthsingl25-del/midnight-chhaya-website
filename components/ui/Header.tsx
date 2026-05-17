@@ -37,19 +37,18 @@ export default function Header() {
           href="/"
           aria-label={`${SITE.name} — home`}
           data-cursor="Home"
-          className="flex items-center gap-3"
+          className="flex items-center"
         >
+          {/* Wordmark logo — width derived from height × intrinsic aspect.
+           * mix-blend-screen drops the JPG's black background. */}
           <Image
             src={SITE.logoPath}
             alt={SITE.name}
-            width={40}
-            height={40}
+            width={1600}
+            height={663}
             priority
-            className="opacity-90"
+            className="h-7 sm:h-8 w-auto mix-blend-screen select-none"
           />
-          <span className="font-display text-xs tracking-[0.4em] uppercase text-bone hidden sm:inline">
-            Midnight Chhaya
-          </span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-10">
