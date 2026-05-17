@@ -166,6 +166,17 @@ export const PRODUCTS: Product[] = [
     images: ["/products/red-chrome-cross-1.jpg"],
   },
   {
+    slug: "red-chrome-heart",
+    name: "Red Chrome Heart",
+    category: "chains",
+    price: 300,
+    shortDescription: "Filigree heart caging a red stone, cherub below.",
+    description:
+      "An old reliquary heart — deep red glass cradled inside a silver filigree cage, crowned with a small flame and finished with a tiny cherub at the foot. Hangs from a heavy box chain.",
+    materials: ["Silver-tone alloy", "Red glass"],
+    images: ["/products/red-chrome-heart-1.jpg"],
+  },
+  {
     slug: "reliquary-pendant",
     name: "Reliquary Chain",
     category: "chains",
