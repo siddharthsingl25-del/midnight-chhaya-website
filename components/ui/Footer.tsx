@@ -13,9 +13,9 @@ export default function Footer() {
             <Image
               src={SITE.logoPath}
               alt={SITE.name}
-              width={1600}
-              height={663}
-              className="h-8 w-auto mix-blend-screen select-none"
+              width={776}
+              height={321}
+              className="h-8 w-auto select-none"
             />
           </Link>
           <p className="font-serif italic text-bone-dim max-w-xs">

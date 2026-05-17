@@ -11,12 +11,10 @@ export const SITE = {
   instagramHandle: "@midnight_chhaya",
   email: "hello@midnightchhaya.com",
   currency: { code: "INR", symbol: "₹" },
-  /** Logo file. The shipped JPG has a solid black background; consuming
-   * components use `mix-blend-mode: screen` to drop the black and render
-   * only the metallic wordmark over the dark scene. */
-  logoPath: "/brand/logo.jpg",
+  /** Logo file. Transparent PNG, sits cleanly on any background. */
+  logoPath: "/brand/logo.png",
   /** Intrinsic logo aspect (width / height). Used to size next/image. */
-  logoAspect: 1600 / 663,
+  logoAspect: 776 / 321,
 } as const;
 
 export const NAV = [

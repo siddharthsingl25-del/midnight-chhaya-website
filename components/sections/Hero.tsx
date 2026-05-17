@@ -61,8 +61,7 @@ export default function Hero() {
         </motion.span>
 
         {/* Logo as the hero mark with the same ghost-flash reveal.
-         * mix-blend-mode: screen makes the logo's black background drop out
-         * over the dark hero photo so only the metallic wordmark shows. */}
+         * Transparent PNG — no blend mode needed. */}
         <h1 className="m-0">
           <span className="sr-only">{SITE.name}</span>
           <span
@@ -72,10 +71,10 @@ export default function Hero() {
             <Image
               src={SITE.logoPath}
               alt={SITE.name}
-              width={1600}
-              height={663}
+              width={776}
+              height={321}
               priority
-              className="block h-auto w-[clamp(300px,68vw,820px)] mx-auto select-none mix-blend-screen"
+              className="block h-auto w-[clamp(300px,68vw,820px)] mx-auto select-none"
             />
           </span>
         </h1>

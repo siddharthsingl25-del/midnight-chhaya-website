@@ -39,15 +39,14 @@ export default function Header() {
           data-cursor="Home"
           className="flex items-center"
         >
-          {/* Wordmark logo — width derived from height × intrinsic aspect.
-           * mix-blend-screen drops the JPG's black background. */}
+          {/* Wordmark logo — width derived from height × intrinsic aspect. */}
           <Image
             src={SITE.logoPath}
             alt={SITE.name}
-            width={1600}
-            height={663}
+            width={776}
+            height={321}
             priority
-            className="h-7 sm:h-8 w-auto mix-blend-screen select-none"
+            className="h-7 sm:h-8 w-auto select-none"
           />
         </Link>
 
