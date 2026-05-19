@@ -73,12 +73,8 @@ export default function ProductCard({
               fill
               priority={priority}
               sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
-              className={[
-                "object-cover transition-[filter] duration-700",
-                soldOut
-                  ? "grayscale brightness-[0.6]"
-                  : "grayscale-[0.25] group-hover:grayscale-0",
-              ].join(" ")}
+              className="object-cover grayscale-[0.25] group-hover:grayscale-0
+                         transition-[filter] duration-700"
             />
           </motion.div>
 
