@@ -115,15 +115,22 @@ export default function CheckoutClient() {
      * push notification. Headers control the notification's title,
      * priority, and tag (shopping bag emoji). Body is the order text.
      *
+     * IMPORTANT: HTTP header values must be ASCII-only. The rupee
+     * symbol and middle dot we use in the visible UI cannot live in
+     * the Title header — browsers reject the fetch. Use "Rs." and
+     * dashes here; full UTF-8 is fine in the body.
+     *
      * If the network call fails (offline, ad-blocker, etc.) we still
      * show the success screen so the customer isn't penalised — the
      * order text is exposed in <details> so they can copy and send
      * to us on Instagram as a manual fallback. */
+    const asciiName = (form.name || "anon").replace(/[^\x20-\x7E]/g, "");
+    const asciiTitle = `New order - Rs.${grandTotal} - ${asciiName}`;
     try {
       await fetch(`https://ntfy.sh/${SITE.notifyTopic}`, {
         method: "POST",
         headers: {
-          "Title": `New order · ${formatPrice(grandTotal)} · ${form.name || "anon"}`,
+          "Title": asciiTitle,
           "Priority": "high",
           "Tags": "shopping_bags,sparkles",
         },
