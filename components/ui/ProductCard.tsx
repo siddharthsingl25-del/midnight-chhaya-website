@@ -6,9 +6,12 @@
  * Hover: card lifts ~6px, image inside scales to 1.04, gold underline
  * animates in under the product name.
  *
- * The image + name area is wrapped in <Link> to the detail page. The
- * "Add to cart" button sits outside that Link so clicking + doesn't
- * navigate the user away.
+ * Live stock from useStock(slug):
+ *   - null  → unknown (Supabase not yet loaded / not configured) → behave
+ *             as before, no badge
+ *   - 0     → "Sold out" badge over the image; Add-to-cart disabled
+ *   - 1..3  → "Only N left" gold badge top-left
+ *   - 4+    → no badge
  */
 
 import Link from "next/link";
@@ -19,6 +22,7 @@ import { ArrowRight, Check, Plus } from "lucide-react";
 import { easeHover } from "@/lib/animations";
 import { formatPrice } from "@/lib/site";
 import { useCart } from "@/lib/cart";
+import { useStock } from "@/lib/stock";
 import { hasChainOptions } from "@/data/chains";
 import type { Product } from "@/data/products";
 
@@ -31,8 +35,11 @@ export default function ProductCard({
 }) {
   const { add } = useCart();
   const [added, setAdded] = useState(false);
+  const stock = useStock(product.slug);
+  const soldOut = stock === 0;
 
   const onAdd = () => {
+    if (soldOut) return;
     add(product.slug, { qty: 1 });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
@@ -40,14 +47,14 @@ export default function ProductCard({
 
   return (
     <motion.div
-      whileHover="hover"
+      whileHover={soldOut ? undefined : "hover"}
       initial="rest"
       animate="rest"
       className="group block"
     >
       <Link
         href={`/collections/${product.slug}`}
-        data-cursor="View"
+        data-cursor={soldOut ? "Sold out" : "View"}
         className="block"
       >
         <motion.div
@@ -66,10 +73,26 @@ export default function ProductCard({
               fill
               priority={priority}
               sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
-              className="object-cover grayscale-[0.25] group-hover:grayscale-0
-                         transition-[filter] duration-700"
+              className={[
+                "object-cover transition-[filter] duration-700",
+                soldOut
+                  ? "grayscale brightness-[0.6]"
+                  : "grayscale-[0.25] group-hover:grayscale-0",
+              ].join(" ")}
             />
           </motion.div>
+
+          {/* Stock badges */}
+          {soldOut ? (
+            <span className="absolute top-3 left-3 px-3 py-1.5 bg-oxblood text-bone text-[10px] uppercase tracking-[0.25em] font-medium">
+              Sold out
+            </span>
+          ) : stock !== null && stock <= 3 ? (
+            <span className="absolute top-3 left-3 px-3 py-1.5 bg-gold/90 text-ink text-[10px] uppercase tracking-[0.25em] font-medium">
+              Only {stock} left
+            </span>
+          ) : null}
+
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         </motion.div>
 
@@ -88,10 +111,16 @@ export default function ProductCard({
         </div>
       </Link>
 
-      {/* Chains need a variant picked on the detail page, so the card's
-       * action navigates there ("Choose chain →"). Non-chain products
-       * quick-add inline. */}
-      {product.category === "chains" && hasChainOptions() ? (
+      {/* Action: sold-out > chain picker > inline add */}
+      {soldOut ? (
+        <div
+          aria-label={`${product.name} sold out`}
+          className="mt-3 w-full inline-flex items-center justify-center gap-2 py-2.5
+                     border border-oxblood/40 text-oxblood/80"
+        >
+          <span className="eyebrow text-[10px]">Sold out</span>
+        </div>
+      ) : product.category === "chains" && hasChainOptions() ? (
         <Link
           href={`/collections/${product.slug}`}
           data-cursor="Choose chain"

@@ -21,6 +21,7 @@ import { useMagnetic } from "@/lib/useMagnetic";
 import { easeCinematic } from "@/lib/animations";
 import { formatPrice, SITE } from "@/lib/site";
 import { useCart } from "@/lib/cart";
+import { useStock } from "@/lib/stock";
 import { CHAIN_OPTIONS, chainById, hasChainOptions } from "@/data/chains";
 import type { Product } from "@/data/products";
 
@@ -34,6 +35,8 @@ export default function ProductDetail({
   const [active, setActive] = useState(0);
   const [justAdded, setJustAdded] = useState(false);
   const { add: addToCart } = useCart();
+  const stock = useStock(product.slug);
+  const soldOut = stock === 0;
   const imageRef = useRef<HTMLDivElement>(null);
 
   /* Chain selector applies only to chains-category products, and only when
@@ -174,12 +177,23 @@ export default function ProductDetail({
               </dl>
             </Reveal>
 
+            {/* Stock status */}
+            <Reveal delay={0.32}>
+              {soldOut ? (
+                <p className="eyebrow text-oxblood">Sold out — message us to be notified.</p>
+              ) : stock !== null && stock <= 3 ? (
+                <p className="eyebrow text-gold">Only {stock} left in stock.</p>
+              ) : null}
+            </Reveal>
+
             <Reveal delay={0.4}>
               <div className="flex flex-wrap items-stretch gap-3">
-                {/* Add to cart — primary, filled gold */}
+                {/* Add to cart — primary, filled gold (disabled when sold out) */}
                 <button
                   type="button"
+                  disabled={soldOut}
                   onClick={() => {
+                    if (soldOut) return;
                     addToCart(product.slug, {
                       chainId: chainPicker ? chainId ?? undefined : undefined,
                       qty: 1,
@@ -187,14 +201,18 @@ export default function ProductDetail({
                     setJustAdded(true);
                     setTimeout(() => setJustAdded(false), 1800);
                   }}
-                  data-cursor={justAdded ? "Added" : "Add to cart"}
+                  data-cursor={
+                    soldOut ? "Sold out" : justAdded ? "Added" : "Add to cart"
+                  }
                   className="group inline-flex items-center gap-3 px-8 py-4
                              bg-gold text-ink
                              transition-all duration-500
                              hover:shadow-[0_0_36px_-6px_rgba(184,147,90,0.6)]
-                             disabled:opacity-70"
+                             disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
                 >
-                  {justAdded ? (
+                  {soldOut ? (
+                    <span className="eyebrow text-ink">Sold out</span>
+                  ) : justAdded ? (
                     <>
                       <Check size={18} strokeWidth={1.75} />
                       <span className="eyebrow text-ink">Added to cart</span>

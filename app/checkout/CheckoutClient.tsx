@@ -28,6 +28,7 @@ import { ArrowLeft, Check, ShoppingBag } from "lucide-react";
 import Reveal from "@/components/animations/Reveal";
 import { easeCinematic } from "@/lib/animations";
 import { useCart } from "@/lib/cart";
+import { useStockRefresh } from "@/lib/stock";
 import { computeShipping, formatPrice, SHIPPING_THRESHOLD, SITE } from "@/lib/site";
 
 type Form = {
@@ -56,10 +57,11 @@ const EMPTY: Form = {
   notes: "",
 };
 
-type Status = "idle" | "submitting" | "ready";
+type Status = "idle" | "submitting" | "ready" | "error";
 
 export default function CheckoutClient() {
   const { detailed, total, clear, count } = useCart();
+  const refreshStock = useStockRefresh();
   const lines = detailed();
   const subtotal = total();
   const shipping = computeShipping(subtotal);
@@ -67,6 +69,7 @@ export default function CheckoutClient() {
   const [form, setForm] = useState<Form>(EMPTY);
   const [status, setStatus] = useState<Status>("idle");
   const [orderText, setOrderText] = useState<string>("");
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
   const set = (k: keyof Form, v: string) =>
     setForm((prev) => ({ ...prev, [k]: v }));
@@ -118,40 +121,58 @@ export default function CheckoutClient() {
     e.preventDefault();
     if (lines.length === 0) return;
     setStatus("submitting");
+    setErrorMsg("");
     const text = buildOrderText();
     setOrderText(text);
 
-    /* Ping the merchant's ntfy.sh topic so they get an instant phone
-     * push notification. Headers control the notification's title,
-     * priority, and tag (shopping bag emoji). Body is the order text.
-     *
-     * IMPORTANT: HTTP header values must be ASCII-only. The rupee
-     * symbol and middle dot we use in the visible UI cannot live in
-     * the Title header — browsers reject the fetch. Use "Rs." and
-     * dashes here; full UTF-8 is fine in the body.
-     *
-     * If the network call fails (offline, ad-blocker, etc.) we still
-     * show the success screen so the customer isn't penalised — the
-     * order text is exposed in <details> so they can copy and send
-     * to us on Instagram as a manual fallback. */
+    /* Server-side: atomically decrement stock for every line, then fire
+     * the ntfy push notification. If anything is out of stock, the API
+     * returns 409 with the offending slug — show the customer which
+     * piece sold out and refresh stock so the UI reflects it. */
     const asciiName = (form.name || "anon").replace(/[^\x20-\x7E]/g, "");
     const asciiTitle = `New order - Rs.${grandTotal} - ${asciiName}`;
+
     try {
-      await fetch(`https://ntfy.sh/${SITE.notifyTopic}`, {
+      const res = await fetch("/api/order", {
         method: "POST",
-        headers: {
-          "Title": asciiTitle,
-          "Priority": "high",
-          "Tags": "shopping_bags,sparkles",
-        },
-        body: text,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: lines.map(({ line }) => ({
+            slug: line.slug,
+            qty: line.qty,
+            chainId: line.chainId,
+          })),
+          orderText: text,
+          titleSummary: asciiTitle,
+        }),
       });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          slug?: string;
+        };
+        if (res.status === 409 && data.slug) {
+          // out of stock — find the human name of the failing item
+          const failed = lines.find(({ line }) => line.slug === data.slug);
+          setErrorMsg(
+            `Sorry — ${failed?.product.name ?? data.slug} just went out of stock. Remove it from your cart and try again.`
+          );
+        } else {
+          setErrorMsg(data.error || "Order failed. Please try again.");
+        }
+        await refreshStock();
+        setStatus("error");
+        return;
+      }
     } catch {
-      /* swallowed — success screen still shows */
+      setErrorMsg("Network error. Please check your connection and try again.");
+      setStatus("error");
+      return;
     }
 
-    // brief delay so the spinner feels intentional
-    await new Promise((r) => setTimeout(r, 400));
+    // success — refresh stock for everyone, show confirmation
+    await refreshStock();
     setStatus("ready");
   };
 
@@ -344,6 +365,12 @@ export default function CheckoutClient() {
               />
             </div>
           </fieldset>
+
+          {status === "error" && errorMsg ? (
+            <div className="border border-oxblood/60 bg-oxblood/10 text-bone px-4 py-3 text-sm">
+              {errorMsg}
+            </div>
+          ) : null}
 
           <button
             type="submit"
