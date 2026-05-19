@@ -406,7 +406,7 @@ export default function CheckoutClient() {
                       Qty {line.qty}
                     </span>
                   </div>
-                  <span className="text-sm text-gold whitespace-nowrap">
+                  <span className="text-sm text-bone whitespace-nowrap">
                     {unitPrice != null
                       ? formatPrice(unitPrice * line.qty)
                       : "Inquire"}
@@ -417,7 +417,7 @@ export default function CheckoutClient() {
 
             <div className="mt-6 pt-6 border-t border-bone/10 flex items-baseline justify-between">
               <span className="eyebrow text-bone-dim">Total</span>
-              <span className="font-display text-2xl text-gold">
+              <span className="font-display text-2xl text-bone">
                 {formatPrice(grandTotal)}
               </span>
             </div>

@@ -82,7 +82,7 @@ export default function ProductCard({
               {product.shortDescription}
             </p>
           </div>
-          <span className="font-body text-sm text-gold whitespace-nowrap pt-1">
+          <span className="font-body text-sm text-bone whitespace-nowrap pt-1">
             {formatPrice(product.price)}
           </span>
         </div>

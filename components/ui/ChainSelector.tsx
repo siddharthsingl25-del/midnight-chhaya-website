@@ -105,7 +105,7 @@ export default function ChainSelector({
                       {opt.name}
                     </span>
                     {opt.priceModifier ? (
-                      <span className="text-[10px] text-gold uppercase tracking-[0.2em]">
+                      <span className="text-[10px] text-bone uppercase tracking-[0.2em]">
                         +{formatPrice(opt.priceModifier)}
                       </span>
                     ) : null}

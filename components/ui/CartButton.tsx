@@ -203,7 +203,7 @@ export default function CartButton() {
                             </button>
                           </div>
                         </div>
-                        <span className="text-sm text-gold whitespace-nowrap">
+                        <span className="text-sm text-bone whitespace-nowrap">
                           {unitPrice != null
                             ? formatPrice(unitPrice * line.qty)
                             : "Inquire"}
@@ -216,7 +216,7 @@ export default function CartButton() {
                 <div className="border-t border-bone/10 px-6 py-5">
                   <div className="flex items-baseline justify-between mb-4">
                     <span className="eyebrow text-bone-dim">Total</span>
-                    <span className="font-display text-lg text-gold">
+                    <span className="font-display text-lg text-bone">
                       {formatPrice(grandTotal)}
                     </span>
                   </div>

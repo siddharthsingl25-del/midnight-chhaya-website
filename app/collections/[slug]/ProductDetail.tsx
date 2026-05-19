@@ -139,7 +139,7 @@ export default function ProductDetail({
               className="font-display text-bone uppercase text-[clamp(2rem,5vw,3.5rem)] leading-[1.05]"
             />
             <Reveal delay={0.15}>
-              <p className="font-serif italic text-gold text-2xl">
+              <p className="font-serif italic text-bone text-2xl">
                 {formatPrice(displayedUnitPrice)}
               </p>
             </Reveal>
