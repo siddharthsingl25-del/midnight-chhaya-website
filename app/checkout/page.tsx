@@ -15,7 +15,7 @@ export default function CheckoutPage() {
       <PageHeader
         eyebrow="Checkout"
         title="Place your order."
-        lede="A few delivery details — the order then opens in WhatsApp for you to send to us. We confirm and arrange payment + shipping within a day."
+        lede="A few delivery details and you&apos;re done. We reach out on Instagram within a day to confirm and arrange payment + shipping."
       />
       <CheckoutClient />
       <Footer />

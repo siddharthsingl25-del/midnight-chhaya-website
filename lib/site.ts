@@ -9,8 +9,9 @@ export const SITE = {
   url: "https://midnightchhaya.com",
   instagram: "https://www.instagram.com/midnight_chhaya/",
   instagramHandle: "@midnight_chhaya",
-  /** WhatsApp number for receiving orders. Country code first, digits only. */
-  whatsapp: "917009308099",
+  /** ntfy.sh push-notification topic — install the ntfy app on your phone
+   * and subscribe to this topic. New orders ping it instantly. */
+  notifyTopic: "mc-orders-ca56afb850fc2d37",
   currency: { code: "INR", symbol: "₹" },
   /** Logo file. Transparent PNG, sits cleanly on any background. */
   logoPath: "/brand/logo.png",
