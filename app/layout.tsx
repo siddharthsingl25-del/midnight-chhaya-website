@@ -5,7 +5,6 @@ import "./globals.css";
 import SmoothScroll from "@/components/animations/SmoothScroll";
 import Header from "@/components/ui/Header";
 import FilmGrain from "@/components/ui/FilmGrain";
-import CustomCursor from "@/components/ui/CustomCursor";
 import { CartProvider } from "@/lib/cart";
 import { SITE } from "@/lib/site";
 
@@ -76,7 +75,6 @@ export default function RootLayout({
             <main>{children}</main>
           </SmoothScroll>
           <FilmGrain />
-          <CustomCursor />
         </CartProvider>
       </body>
     </html>
