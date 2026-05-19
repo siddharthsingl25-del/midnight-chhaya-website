@@ -28,7 +28,7 @@ import { ArrowLeft, Check, ShoppingBag } from "lucide-react";
 import Reveal from "@/components/animations/Reveal";
 import { easeCinematic } from "@/lib/animations";
 import { useCart } from "@/lib/cart";
-import { formatPrice, SITE } from "@/lib/site";
+import { computeShipping, formatPrice, SHIPPING_THRESHOLD, SITE } from "@/lib/site";
 
 type Form = {
   name: string;
@@ -61,7 +61,9 @@ type Status = "idle" | "submitting" | "ready";
 export default function CheckoutClient() {
   const { detailed, total, clear, count } = useCart();
   const lines = detailed();
-  const grandTotal = total();
+  const subtotal = total();
+  const shipping = computeShipping(subtotal);
+  const grandTotal = subtotal + shipping;
   const [form, setForm] = useState<Form>(EMPTY);
   const [status, setStatus] = useState<Status>("idle");
   const [orderText, setOrderText] = useState<string>("");
@@ -94,6 +96,8 @@ export default function CheckoutClient() {
       ``,
       items,
       ``,
+      `Subtotal: ${formatPrice(subtotal)}`,
+      `Shipping: ${shipping === 0 ? "Free" : formatPrice(shipping)}`,
       `Total: ${formatPrice(grandTotal)}`,
       ``,
       `— Customer —`,
@@ -415,15 +419,29 @@ export default function CheckoutClient() {
               ))}
             </ul>
 
-            <div className="mt-6 pt-6 border-t border-bone/10 flex items-baseline justify-between">
-              <span className="eyebrow text-bone-dim">Total</span>
-              <span className="font-display text-2xl text-bone">
-                {formatPrice(grandTotal)}
-              </span>
+            <div className="mt-6 pt-6 border-t border-bone/10 flex flex-col gap-2">
+              <div className="flex items-baseline justify-between">
+                <span className="eyebrow text-bone-dim">Subtotal</span>
+                <span className="text-sm text-bone">{formatPrice(subtotal)}</span>
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="eyebrow text-bone-dim">Shipping</span>
+                <span className={`text-sm ${shipping === 0 ? "text-gold" : "text-bone"}`}>
+                  {shipping === 0 ? "Free" : formatPrice(shipping)}
+                </span>
+              </div>
+              {shipping > 0 ? (
+                <p className="text-[10px] text-bone-dim italic">
+                  Add {formatPrice(SHIPPING_THRESHOLD - subtotal)} more to your cart for free shipping.
+                </p>
+              ) : null}
+              <div className="flex items-baseline justify-between pt-3 mt-1 border-t border-bone/10">
+                <span className="eyebrow text-bone-dim">Total</span>
+                <span className="font-display text-2xl text-bone">
+                  {formatPrice(grandTotal)}
+                </span>
+              </div>
             </div>
-            <p className="text-[10px] text-bone-dim tracking-[0.2em] uppercase mt-2 text-right">
-              Shipping confirmed via DM
-            </p>
           </div>
         </aside>
       </div>

@@ -79,3 +79,13 @@ export function formatPrice(price: number | null): string {
   if (price == null) return "Inquire";
   return `${SITE.currency.symbol}${price.toLocaleString("en-IN")}`;
 }
+
+/** Shipping is free above this subtotal threshold (INR). */
+export const SHIPPING_THRESHOLD = 999;
+/** Flat shipping fee when subtotal is below the threshold (INR). */
+export const SHIPPING_FEE = 100;
+
+/** Shipping fee for a given subtotal. 0 once the threshold is met. */
+export function computeShipping(subtotal: number): number {
+  return subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+}

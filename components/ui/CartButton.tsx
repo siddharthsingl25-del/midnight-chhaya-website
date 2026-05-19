@@ -22,7 +22,7 @@ import { Minus, Plus, ShoppingBag, Trash2, X, Check } from "lucide-react";
 import InstagramIcon from "./icons/InstagramIcon";
 import { easeCinematic } from "@/lib/animations";
 import { useCart } from "@/lib/cart";
-import { formatPrice, SITE } from "@/lib/site";
+import { computeShipping, formatPrice, SHIPPING_THRESHOLD, SITE } from "@/lib/site";
 
 export default function CartButton() {
   const [open, setOpen] = useState(false);
@@ -30,7 +30,9 @@ export default function CartButton() {
   const rootRef = useRef<HTMLDivElement>(null);
   const { count, total, detailed, setQty, remove, ready } = useCart();
   const lines = detailed();
-  const grandTotal = total();
+  const subtotal = total();
+  const shipping = computeShipping(subtotal);
+  const grandTotal = subtotal + shipping;
 
   // close when clicking outside / on Escape
   useEffect(() => {
@@ -57,6 +59,8 @@ export default function CartButton() {
         return `• ${product.name}${chainSuffix} × ${line.qty} (${formatPrice(unitPrice)})`;
       }),
       ``,
+      `Subtotal: ${formatPrice(subtotal)}`,
+      `Shipping: ${shipping === 0 ? "Free" : formatPrice(shipping)}`,
       `Total: ${formatPrice(grandTotal)}`,
     ].join("\n");
     try {
@@ -214,7 +218,24 @@ export default function CartButton() {
                 </ul>
 
                 <div className="border-t border-bone/10 px-6 py-5">
-                  <div className="flex items-baseline justify-between mb-4">
+                  <div className="flex items-baseline justify-between mb-2">
+                    <span className="eyebrow text-bone-dim text-[10px]">Subtotal</span>
+                    <span className="text-sm text-bone">
+                      {formatPrice(subtotal)}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between mb-2">
+                    <span className="eyebrow text-bone-dim text-[10px]">Shipping</span>
+                    <span className={`text-sm ${shipping === 0 ? "text-gold" : "text-bone"}`}>
+                      {shipping === 0 ? "Free" : formatPrice(shipping)}
+                    </span>
+                  </div>
+                  {shipping > 0 ? (
+                    <p className="text-[10px] text-bone-dim italic mb-3">
+                      Add {formatPrice(SHIPPING_THRESHOLD - subtotal)} more for free shipping.
+                    </p>
+                  ) : null}
+                  <div className="flex items-baseline justify-between mb-4 pt-2 border-t border-bone/10">
                     <span className="eyebrow text-bone-dim">Total</span>
                     <span className="font-display text-lg text-bone">
                       {formatPrice(grandTotal)}
