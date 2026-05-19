@@ -1,25 +1,30 @@
 "use client";
 
 /**
- * Custom cursor — small gold circle, grows + shows a label over interactive
- * elements that opt-in via `data-cursor="<label>"`.
+ * Hover label cursor.
  *
- * Magnetic pull on `data-cursor-magnetic` elements (primary CTAs).
- * Hidden on touch devices and reduced-motion via CSS (.desktop-only).
+ * Native cursor stays as-is everywhere. When the pointer enters an
+ * element that has `data-cursor="<label>"`, a large gold disc fades in
+ * at the cursor position with the label text inside it. Leaving the
+ * element fades it out again.
+ *
+ * Hidden entirely on touch devices and `prefers-reduced-motion` users
+ * via the `.desktop-only` utility in globals.css.
  */
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useMotionValue, useSpring } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
+
+const SIZE = 140; // diameter, px
 
 export default function CustomCursor() {
-  const x = useMotionValue(-100);
-  const y = useMotionValue(-100);
-  // springs make the cursor feel weighted, not snappy
+  const x = useMotionValue(-200);
+  const y = useMotionValue(-200);
+  // springs make the disc feel weighted as it trails the cursor
   const sx = useSpring(x, { stiffness: 350, damping: 28, mass: 0.4 });
   const sy = useSpring(y, { stiffness: 350, damping: 28, mass: 0.4 });
 
   const [label, setLabel] = useState<string | null>(null);
-  const [hovering, setHovering] = useState(false);
   const labelRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -29,22 +34,15 @@ export default function CustomCursor() {
     };
 
     const onOver = (e: MouseEvent) => {
-      const el = (e.target as HTMLElement)?.closest<HTMLElement>(
-        "[data-cursor], a, button"
+      // Only opt-in elements (data-cursor="<label>") trigger the disc.
+      // No fallback to button text — keeps the rest of the UI clean.
+      const el = (e.target as HTMLElement | null)?.closest<HTMLElement>(
+        "[data-cursor]"
       );
-      if (!el) {
-        if (labelRef.current !== null) {
-          labelRef.current = null;
-          setLabel(null);
-          setHovering(false);
-        }
-        return;
-      }
-      const next = el.dataset.cursor ?? "";
+      const next = el?.dataset.cursor || null;
       if (labelRef.current !== next) {
         labelRef.current = next;
-        setLabel(next || null);
-        setHovering(true);
+        setLabel(next);
       }
     };
 
@@ -59,27 +57,30 @@ export default function CustomCursor() {
   return (
     <motion.div
       aria-hidden
-      className="desktop-only pointer-events-none fixed top-0 left-0 z-[100] flex items-center justify-center"
+      className="desktop-only pointer-events-none fixed top-0 left-0 z-[100]"
       style={{ x: sx, y: sy, translateX: "-50%", translateY: "-50%" }}
     >
-      <motion.div
-        className="rounded-full border border-gold/80 bg-gold/10 backdrop-blur-[1px]"
-        animate={{
-          width: hovering ? (label ? 96 : 36) : 14,
-          height: hovering ? (label ? 96 : 36) : 14,
-          opacity: hovering ? 1 : 0.85,
-        }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      />
-      {label ? (
-        <motion.span
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute text-[10px] tracking-[0.3em] uppercase text-gold-soft font-body"
-        >
-          {label}
-        </motion.span>
-      ) : null}
+      <AnimatePresence>
+        {label ? (
+          <motion.div
+            key="disc"
+            initial={{ opacity: 0, scale: 0.4 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.4 }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            className="grid place-items-center rounded-full bg-gold
+                       shadow-[0_0_60px_-12px_rgba(184,147,90,0.7)]"
+            style={{ width: SIZE, height: SIZE }}
+          >
+            <span
+              className="font-body uppercase text-ink text-[11px] tracking-[0.25em] font-semibold
+                         text-center px-5 leading-tight"
+            >
+              {label}
+            </span>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </motion.div>
   );
 }
