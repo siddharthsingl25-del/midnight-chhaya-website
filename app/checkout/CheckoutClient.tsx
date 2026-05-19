@@ -117,6 +117,20 @@ export default function CheckoutClient() {
       .join("\n");
   };
 
+  /** Lazy-load Razorpay's checkout script on first click. */
+  const loadRazorpay = (): Promise<boolean> =>
+    new Promise((resolve) => {
+      if (typeof window === "undefined") return resolve(false);
+      const w = window as unknown as { Razorpay?: unknown };
+      if (w.Razorpay) return resolve(true);
+      const s = document.createElement("script");
+      s.src = "https://checkout.razorpay.com/v1/checkout.js";
+      s.async = true;
+      s.onload = () => resolve(true);
+      s.onerror = () => resolve(false);
+      document.body.appendChild(s);
+    });
+
   const placeOrder = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (lines.length === 0) return;
@@ -125,15 +139,20 @@ export default function CheckoutClient() {
     const text = buildOrderText();
     setOrderText(text);
 
-    /* Server-side: atomically decrement stock for every line, then fire
-     * the ntfy push notification. If anything is out of stock, the API
-     * returns 409 with the offending slug — show the customer which
-     * piece sold out and refresh stock so the UI reflects it. */
     const asciiName = (form.name || "anon").replace(/[^\x20-\x7E]/g, "");
-    const asciiTitle = `New order - Rs.${grandTotal} - ${asciiName}`;
+    const asciiTitle = `Paid - Rs.${grandTotal} - ${asciiName}`;
 
+    /* 1. Server creates a Razorpay order using authoritative prices.
+     *    Also stock-checks here so we don't open a payment modal for
+     *    items that just sold out. */
+    let createData: {
+      razorpayOrderId: string;
+      amountPaise: number;
+      currency: string;
+      keyId: string;
+    };
     try {
-      const res = await fetch("/api/order", {
+      const res = await fetch("/api/payment/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -142,38 +161,121 @@ export default function CheckoutClient() {
             qty: line.qty,
             chainId: line.chainId,
           })),
-          orderText: text,
-          titleSummary: asciiTitle,
+          customer: {
+            name: form.name,
+            instagram: form.instagram,
+            phone: form.phone,
+            email: form.email,
+          },
         }),
       });
-
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as {
           error?: string;
           slug?: string;
+          name?: string;
         };
         if (res.status === 409 && data.slug) {
-          // out of stock — find the human name of the failing item
-          const failed = lines.find(({ line }) => line.slug === data.slug);
           setErrorMsg(
-            `Sorry — ${failed?.product.name ?? data.slug} just went out of stock. Remove it from your cart and try again.`
+            `Sorry — ${data.name ?? data.slug} just went out of stock. Remove it from your cart and try again.`
           );
         } else {
-          setErrorMsg(data.error || "Order failed. Please try again.");
+          setErrorMsg(data.error || "Could not start payment. Please try again.");
         }
         await refreshStock();
         setStatus("error");
         return;
       }
+      createData = await res.json();
     } catch {
       setErrorMsg("Network error. Please check your connection and try again.");
       setStatus("error");
       return;
     }
 
-    // success — refresh stock for everyone, show confirmation
-    await refreshStock();
-    setStatus("ready");
+    /* 2. Load Razorpay's checkout script and open the modal. */
+    const ok = await loadRazorpay();
+    if (!ok) {
+      setErrorMsg("Couldn't load the payment widget. Disable ad-blockers and retry.");
+      setStatus("error");
+      return;
+    }
+
+    const RazorpayCtor = (window as unknown as {
+      Razorpay: new (opts: Record<string, unknown>) => { open: () => void };
+    }).Razorpay;
+
+    const itemsForVerify = lines.map(({ line }) => ({
+      slug: line.slug,
+      qty: line.qty,
+      chainId: line.chainId,
+    }));
+
+    const rzp = new RazorpayCtor({
+      key: createData.keyId,
+      amount: createData.amountPaise,
+      currency: createData.currency,
+      order_id: createData.razorpayOrderId,
+      name: SITE.name,
+      description: `${lines.length} item${lines.length === 1 ? "" : "s"}`,
+      image: SITE.logoPath,
+      prefill: {
+        name: form.name,
+        email: form.email,
+        contact: form.phone,
+      },
+      notes: { instagram: form.instagram },
+      theme: { color: "#b8935a" },
+
+      /* Razorpay calls this after a successful payment. We verify the
+       * signature server-side, decrement stock, and ping ntfy. */
+      handler: async (resp: {
+        razorpay_payment_id: string;
+        razorpay_order_id: string;
+        razorpay_signature: string;
+      }) => {
+        try {
+          const verifyRes = await fetch("/api/payment/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...resp,
+              items: itemsForVerify,
+              orderText: text,
+              titleSummary: asciiTitle,
+            }),
+          });
+          if (!verifyRes.ok) {
+            const data = (await verifyRes.json().catch(() => ({}))) as {
+              error?: string;
+              paymentId?: string;
+            };
+            setErrorMsg(
+              `Payment succeeded but post-payment processing failed. Save this Payment ID and message us on Instagram: ${data.paymentId ?? resp.razorpay_payment_id}`
+            );
+            setStatus("error");
+            return;
+          }
+          await refreshStock();
+          setStatus("ready");
+        } catch {
+          setErrorMsg(
+            `Network error during verification. Your payment may have gone through — save Payment ID ${resp.razorpay_payment_id} and message us on Instagram.`
+          );
+          setStatus("error");
+        }
+      },
+
+      /* If the customer closes the modal without paying, return to idle
+       * so they can retry without a stuck spinner. */
+      modal: {
+        ondismiss: () => {
+          setStatus("idle");
+        },
+      },
+    });
+
+    rzp.open();
   };
 
   // —— EMPTY CART STATE ————————————————————————————
@@ -218,9 +320,8 @@ export default function CheckoutClient() {
             Order received.
           </h2>
           <p className="font-serif italic text-bone-dim text-lg max-w-md leading-relaxed">
-            Your order has been sent to us. We&apos;ll reach out on Instagram
-            at <strong className="not-italic font-semibold text-bone">{form.instagram || "your handle"}</strong> within a day to confirm
-            availability and arrange payment + delivery.
+            Payment confirmed. Your order ships within 1–3 business days —
+            we&apos;ll DM <strong className="not-italic font-semibold text-bone">{form.instagram || "your Instagram"}</strong> with the tracking link as soon as it&apos;s dispatched.
           </p>
 
           <details className="text-left w-full max-w-md mt-2">
@@ -392,15 +493,15 @@ export default function CheckoutClient() {
                 transition={{ duration: 0.35, ease: easeCinematic }}
                 className="eyebrow text-ink"
               >
-                {status === "submitting" ? "Preparing…" : `Place order · ${formatPrice(grandTotal)}`}
+                {status === "submitting" ? "Opening payment…" : `Pay · ${formatPrice(grandTotal)}`}
               </motion.span>
             </AnimatePresence>
           </button>
 
           <p className="font-serif italic text-bone-dim text-sm max-w-md leading-relaxed">
-            Online checkout is coming soon. Placing the order sends it
-            directly to us — we&apos;ll DM you on Instagram within a day to
-            confirm availability and arrange payment + delivery.
+            Secure payment via Razorpay — UPI, cards, netbanking, wallets all
+            supported. Your order ships within 1–3 business days; we&apos;ll DM
+            you on Instagram with tracking once dispatched.
           </p>
         </form>
 

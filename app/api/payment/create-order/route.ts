@@ -1,0 +1,156 @@
+/**
+ * POST /api/payment/create-order
+ *
+ * Called from the checkout client when the customer clicks "Pay".
+ * Validates stock availability (without decrementing) and computes the
+ * total server-side from authoritative data (the client cannot inflate
+ * the amount), then creates a Razorpay order via the REST API.
+ *
+ * Returns { razorpayOrderId, amountPaise, keyId, currency } — the
+ * client uses these to open Razorpay's checkout modal.
+ *
+ * Stock is NOT decremented yet. That happens only after payment is
+ * verified in /api/payment/verify, so abandoned cart attempts don't
+ * touch inventory.
+ */
+
+import { NextResponse } from "next/server";
+import Razorpay from "razorpay";
+import { supabaseAdmin } from "@/lib/supabase";
+import { PRODUCTS } from "@/data/products";
+import { chainById } from "@/data/chains";
+import { computeShipping } from "@/lib/site";
+
+type IncomingItem = { slug: string; qty: number; chainId?: string };
+
+type Body = {
+  items: IncomingItem[];
+  customer: {
+    name: string;
+    instagram: string;
+    phone: string;
+    email: string;
+  };
+};
+
+export async function POST(req: Request) {
+  const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!keyId || !keySecret) {
+    return NextResponse.json(
+      { error: "Razorpay not configured" },
+      { status: 500 }
+    );
+  }
+
+  let body: Body;
+  try {
+    body = (await req.json()) as Body;
+  } catch {
+    return NextResponse.json({ error: "Bad JSON" }, { status: 400 });
+  }
+
+  const items = Array.isArray(body.items) ? body.items : [];
+  if (items.length === 0) {
+    return NextResponse.json({ error: "Empty cart" }, { status: 400 });
+  }
+
+  // 1. Resolve every line server-side. Reject if a slug doesn't exist or
+  //    has a null price (inquire-only).
+  const lines: { slug: string; qty: number; unitPaise: number; name: string }[] = [];
+  for (const { slug, qty, chainId } of items) {
+    if (typeof slug !== "string" || typeof qty !== "number" || qty <= 0) {
+      return NextResponse.json({ error: "Bad item" }, { status: 400 });
+    }
+    const product = PRODUCTS.find((p) => p.slug === slug);
+    if (!product || product.price == null) {
+      return NextResponse.json({ error: `Unavailable: ${slug}` }, { status: 400 });
+    }
+    const chain = chainById(chainId);
+    const unitInr = product.price + (chain?.priceModifier ?? 0);
+    lines.push({
+      slug,
+      qty,
+      unitPaise: Math.round(unitInr * 100),
+      name: product.name,
+    });
+  }
+
+  // 2. Stock check — read current levels for every slug.
+  const slugs = Array.from(new Set(lines.map((l) => l.slug)));
+  const { data: stockRows, error: stockErr } = await supabaseAdmin()
+    .from("inventory")
+    .select("slug, stock")
+    .in("slug", slugs);
+  if (stockErr) {
+    return NextResponse.json({ error: stockErr.message }, { status: 500 });
+  }
+  const stockBySlug = new Map(
+    (stockRows ?? []).map((r) => [r.slug as string, r.stock as number])
+  );
+  // Sum requested qty per slug (lines may repeat if same product appears multiple times)
+  const requested = new Map<string, number>();
+  for (const l of lines) {
+    requested.set(l.slug, (requested.get(l.slug) ?? 0) + l.qty);
+  }
+  for (const [slug, qty] of requested) {
+    if ((stockBySlug.get(slug) ?? 0) < qty) {
+      const failed = PRODUCTS.find((p) => p.slug === slug);
+      return NextResponse.json(
+        {
+          error: "Out of stock",
+          slug,
+          name: failed?.name ?? slug,
+        },
+        { status: 409 }
+      );
+    }
+  }
+
+  // 3. Total + shipping computed server-side from authoritative prices.
+  const subtotalPaise = lines.reduce(
+    (sum, l) => sum + l.unitPaise * l.qty,
+    0
+  );
+  const subtotalInr = subtotalPaise / 100;
+  const shippingPaise = computeShipping(subtotalInr) * 100;
+  const amountPaise = subtotalPaise + shippingPaise;
+
+  // 4. Create the Razorpay order.
+  const rzp = new Razorpay({ key_id: keyId, key_secret: keySecret });
+  // receipt must be <= 40 chars
+  const receipt = `mc_${Date.now().toString(36)}`;
+
+  try {
+    const order = await rzp.orders.create({
+      amount: amountPaise,
+      currency: "INR",
+      receipt,
+      notes: {
+        customer_name: body.customer?.name?.slice(0, 100) ?? "",
+        customer_phone: body.customer?.phone?.slice(0, 30) ?? "",
+        customer_email: body.customer?.email?.slice(0, 100) ?? "",
+        instagram: body.customer?.instagram?.slice(0, 50) ?? "",
+        items: lines
+          .map((l) => `${l.name} x${l.qty}`)
+          .join(", ")
+          .slice(0, 500),
+      },
+    });
+
+    return NextResponse.json({
+      razorpayOrderId: order.id,
+      amountPaise,
+      currency: "INR",
+      keyId,
+    });
+  } catch (e: unknown) {
+    const message =
+      e && typeof e === "object" && "error" in e
+        ? JSON.stringify((e as { error: unknown }).error)
+        : e instanceof Error
+          ? e.message
+          : "Razorpay order creation failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

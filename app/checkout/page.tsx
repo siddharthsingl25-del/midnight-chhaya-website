@@ -15,7 +15,7 @@ export default function CheckoutPage() {
       <PageHeader
         eyebrow="Checkout"
         title="Place your order."
-        lede="A few delivery details and you&apos;re done. We reach out on Instagram within a day to confirm and arrange payment + shipping."
+        lede="A few delivery details and you&apos;re done. Pay securely via Razorpay — UPI, card, netbanking. We ship within 1–3 business days."
       />
       <CheckoutClient />
       <Footer />
