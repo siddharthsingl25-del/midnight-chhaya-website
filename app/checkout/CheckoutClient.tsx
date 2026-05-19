@@ -33,6 +33,8 @@ import { formatPrice, SITE } from "@/lib/site";
 type Form = {
   name: string;
   instagram: string;
+  phone: string;
+  email: string;
   address1: string;
   address2: string;
   city: string;
@@ -44,6 +46,8 @@ type Form = {
 const EMPTY: Form = {
   name: "",
   instagram: "",
+  phone: "",
+  email: "",
   address1: "",
   address2: "",
   city: "",
@@ -95,6 +99,8 @@ export default function CheckoutClient() {
       `— Customer —`,
       `Name: ${form.name}`,
       `Instagram: ${form.instagram}`,
+      `Phone: ${form.phone}`,
+      `Email: ${form.email}`,
       ``,
       `— Deliver to —`,
       address,
@@ -258,6 +264,26 @@ export default function CheckoutClient() {
                 required
                 placeholder="@yourname"
               />
+              <Field
+                label="Phone number"
+                value={form.phone}
+                onChange={(v) => set("phone", v)}
+                required
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="+91 98765 43210"
+              />
+              <Field
+                label="Email"
+                value={form.email}
+                onChange={(v) => set("email", v)}
+                required
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+              />
             </div>
           </fieldset>
 
@@ -416,6 +442,7 @@ function Field({
   placeholder,
   autoComplete,
   inputMode,
+  type = "text",
 }: {
   label: string;
   value: string;
@@ -425,6 +452,7 @@ function Field({
   placeholder?: string;
   autoComplete?: string;
   inputMode?: "text" | "numeric" | "tel" | "email";
+  type?: "text" | "tel" | "email";
 }) {
   /* Bigger, bolder inputs for checkout — easy to read while filling. */
   const shared =
@@ -452,7 +480,7 @@ function Field({
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          type="text"
+          type={type}
           required={required}
           placeholder={placeholder}
           autoComplete={autoComplete}
