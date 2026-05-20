@@ -18,7 +18,8 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Maximize2, X } from "lucide-react";
-import { CHAIN_OPTIONS, hasChainOptions, type ChainOption } from "@/data/chains";
+import { useChains } from "@/lib/catalog-context";
+import type { ChainOption } from "@/lib/types";
 import { easeCinematic } from "@/lib/animations";
 import { formatPrice } from "@/lib/site";
 
@@ -29,6 +30,7 @@ export default function ChainSelector({
   value: string | null;
   onChange: (id: string) => void;
 }) {
+  const CHAIN_OPTIONS = useChains();
   const [preview, setPreview] = useState<ChainOption | null>(null);
 
   // auto-pick the first chain on mount so the cart always has a variant
@@ -36,7 +38,7 @@ export default function ChainSelector({
     if (!value && CHAIN_OPTIONS.length > 0) {
       onChange(CHAIN_OPTIONS[0].id);
     }
-  }, [value, onChange]);
+  }, [value, onChange, CHAIN_OPTIONS]);
 
   // close preview on Escape, lock body scroll while open
   useEffect(() => {
@@ -53,7 +55,7 @@ export default function ChainSelector({
     };
   }, [preview]);
 
-  if (!hasChainOptions()) return null;
+  if (CHAIN_OPTIONS.length === 0) return null;
 
   return (
     <>

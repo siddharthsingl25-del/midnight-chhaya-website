@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
-import { PRODUCTS } from "@/data/products";
+import { getAllProducts } from "@/lib/catalog";
 import { SITE } from "@/lib/site";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const base: MetadataRoute.Sitemap = [
     { url: `${SITE.url}/`,            lastModified: now, priority: 1.0,  changeFrequency: "monthly" },
@@ -16,11 +16,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE.url}/shipping`,    lastModified: now, priority: 0.4,  changeFrequency: "yearly" },
     { url: `${SITE.url}/returns`,     lastModified: now, priority: 0.4,  changeFrequency: "yearly" },
   ];
-  const products: MetadataRoute.Sitemap = PRODUCTS.map((p) => ({
+  const products = await getAllProducts();
+  const productEntries: MetadataRoute.Sitemap = products.map((p) => ({
     url: `${SITE.url}/collections/${p.slug}`,
     lastModified: now,
     priority: 0.7,
     changeFrequency: "monthly",
   }));
-  return [...base, ...products];
+  return [...base, ...productEntries];
 }

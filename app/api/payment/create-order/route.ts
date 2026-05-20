@@ -17,8 +17,7 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { supabaseAdmin } from "@/lib/supabase";
-import { PRODUCTS } from "@/data/products";
-import { chainById } from "@/data/chains";
+import { getAllProducts, getChain } from "@/lib/catalog";
 import { computeShipping } from "@/lib/site";
 
 type IncomingItem = { slug: string; qty: number; chainId?: string };
@@ -57,16 +56,17 @@ export async function POST(req: Request) {
 
   // 1. Resolve every line server-side. Reject if a slug doesn't exist or
   //    has a null price (inquire-only).
+  const products = await getAllProducts();
   const lines: { slug: string; qty: number; unitPaise: number; name: string }[] = [];
   for (const { slug, qty, chainId } of items) {
     if (typeof slug !== "string" || typeof qty !== "number" || qty <= 0) {
       return NextResponse.json({ error: "Bad item" }, { status: 400 });
     }
-    const product = PRODUCTS.find((p) => p.slug === slug);
+    const product = products.find((p) => p.slug === slug);
     if (!product || product.price == null) {
       return NextResponse.json({ error: `Unavailable: ${slug}` }, { status: 400 });
     }
-    const chain = chainById(chainId);
+    const chain = chainId ? await getChain(chainId) : null;
     const unitInr = product.price + (chain?.priceModifier ?? 0);
     lines.push({
       slug,
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
   }
   for (const [slug, qty] of requested) {
     if ((stockBySlug.get(slug) ?? 0) < qty) {
-      const failed = PRODUCTS.find((p) => p.slug === slug);
+      const failed = products.find((p) => p.slug === slug);
       return NextResponse.json(
         {
           error: "Out of stock",

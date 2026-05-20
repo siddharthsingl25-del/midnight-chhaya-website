@@ -10,10 +10,12 @@ import Link from "next/link";
 import ProductCard from "@/components/ui/ProductCard";
 import SectionHeading from "@/components/ui/SectionHeading";
 import Reveal from "@/components/animations/Reveal";
-import { featured } from "@/data/products";
+import { useProducts } from "@/lib/catalog-context";
 
 export default function FeaturedPieces() {
-  const items = featured();
+  const products = useProducts();
+  const items = products.filter((p) => p.featured).slice(0, 4);
+  if (items.length === 0) return null;
   // vertical offsets in rem applied to each column (desktop only) for the
   // staggered-magazine feel. Keep 0/translate/0/translate pattern.
   const offsets = ["0rem", "3rem", "0rem", "4rem"];

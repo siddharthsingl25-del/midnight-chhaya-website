@@ -4,7 +4,7 @@ import PageHeader from "@/components/sections/PageHeader";
 import ProductCard from "@/components/ui/ProductCard";
 import Reveal from "@/components/animations/Reveal";
 import Footer from "@/components/ui/Footer";
-import { exclusiveProducts } from "@/data/products";
+import { getExclusiveProducts } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Exclusives",
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
     "One-of-one pieces and limited drops — made once, sold once.",
 };
 
-export default function ExclusivesPage() {
-  const items = exclusiveProducts();
+export default async function ExclusivesPage() {
+  const items = await getExclusiveProducts();
 
   return (
     <>

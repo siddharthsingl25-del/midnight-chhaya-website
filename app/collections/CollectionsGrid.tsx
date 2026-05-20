@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
 import ProductCard from "@/components/ui/ProductCard";
-import { CATEGORIES, PRODUCTS, type Category, type Product } from "@/data/products";
+import { useProducts } from "@/lib/catalog-context";
+import { CATEGORIES, type Category, type Product } from "@/lib/types";
 import { easeCinematic } from "@/lib/animations";
 
 type Filter = Category | "all";
@@ -37,8 +38,13 @@ export default function CollectionsGrid() {
     router.replace(next, { scroll: false });
   };
 
+  const products = useProducts();
+
   const items = useMemo<Product[]>(() => {
-    const base = active === "all" ? PRODUCTS : PRODUCTS.filter((p) => p.category === active);
+    const base =
+      active === "all"
+        ? products
+        : products.filter((p) => p.category === active);
     if (sort === "featured") return base;
     // Null prices ("Inquire") always sink to the end regardless of direction.
     return [...base].sort((a, b) => {
@@ -46,7 +52,7 @@ export default function CollectionsGrid() {
       const pb = b.price ?? Number.POSITIVE_INFINITY;
       return sort === "price-asc" ? pa - pb : pb - pa;
     });
-  }, [active, sort]);
+  }, [active, sort, products]);
 
   return (
     <section className="px-6 md:px-10 pb-32">

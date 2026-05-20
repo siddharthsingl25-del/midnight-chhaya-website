@@ -23,8 +23,8 @@ import { easeHover } from "@/lib/animations";
 import { formatPrice } from "@/lib/site";
 import { useCart } from "@/lib/cart";
 import { useStock } from "@/lib/stock";
-import { hasChainOptions } from "@/data/chains";
-import type { Product } from "@/data/products";
+import { useChains } from "@/lib/catalog-context";
+import type { Product } from "@/lib/types";
 
 export default function ProductCard({
   product,
@@ -37,6 +37,8 @@ export default function ProductCard({
   const [added, setAdded] = useState(false);
   const stock = useStock(product.slug);
   const soldOut = stock === 0;
+  const chains = useChains();
+  const hasChains = chains.length > 0;
 
   const onAdd = () => {
     if (soldOut) return;
@@ -116,7 +118,7 @@ export default function ProductCard({
         >
           <span className="eyebrow text-[10px]">Sold out</span>
         </div>
-      ) : product.category === "chains" && hasChainOptions() ? (
+      ) : product.category === "chains" && hasChains ? (
         <Link
           href={`/collections/${product.slug}`}
           data-cursor="Choose chain"

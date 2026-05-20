@@ -3,18 +3,16 @@
 /**
  * Cart — client-only context + hook with localStorage persistence.
  *
- * The site has no payment gateway yet, so "checkout" still routes to
- * Instagram for inquiry. The cart stores `(slug, chainId?, qty)` lines;
- * product details (name, base price, image) are looked up from PRODUCTS,
- * and the chain variant (if any) is looked up from CHAIN_OPTIONS, both at
- * render time so prices stay in sync if the catalog is edited.
+ * Cart state stores `(slug, chainId?, qty)` lines. Product details
+ * (name, price, image) and chain details (name, image, price modifier)
+ * are resolved at render time from the catalog context, so a cart line
+ * always reflects the latest catalog state. If a slug is deleted from
+ * the admin while a customer has it in their cart, the line is just
+ * silently dropped from `detailed()`.
  *
- * Two lines with the same product slug but different chain selections are
- * tracked as separate lines (different variants).
- *
- * To wire to real checkout later: replace the inquiry CTA in CartButton
- * with a call to your Razorpay / Stripe / Shopify create-order endpoint
- * using `useCart().items` and `useCart().total()` as the payload.
+ * To wire to real checkout: replace the inquiry CTA in CartButton with
+ * a call to your payment gateway (Razorpay create-order route) using
+ * `useCart().items` and `useCart().total()` as the payload.
  */
 
 import {
@@ -25,8 +23,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { PRODUCTS, type Product } from "@/data/products";
-import { chainById, type ChainOption } from "@/data/chains";
+import { useProducts, useChains } from "./catalog-context";
+import type { ChainOption, Product } from "./types";
 
 const STORAGE_KEY = "mc_cart_v2";
 
@@ -42,31 +40,27 @@ export type DetailedLine = {
 
 type CartCtx = {
   items: CartLine[];
-  /** sum of qty across all lines */
   count: number;
-  /** sum of unitPrice * qty across all lines that have a numeric unitPrice */
   total: () => number;
-  /** lines joined with their resolved product + chain */
   detailed: () => DetailedLine[];
   add: (slug: string, opts?: { chainId?: string; qty?: number }) => void;
   remove: (slug: string, chainId?: string) => void;
   setQty: (slug: string, qty: number, chainId?: string) => void;
   clear: () => void;
-  /** true after the client has rehydrated from localStorage */
   ready: boolean;
 };
 
 const Ctx = createContext<CartCtx | null>(null);
 
-/* Stable key for (slug + chain) match — handles undefined chainId. */
 const keyOf = (l: { slug: string; chainId?: string }) =>
   `${l.slug}|${l.chainId ?? ""}`;
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const products = useProducts();
+  const chains = useChains();
   const [items, setItems] = useState<CartLine[]>([]);
   const [ready, setReady] = useState(false);
 
-  // hydrate from localStorage once on mount
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -80,7 +74,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setReady(true);
   }, []);
 
-  // persist on change (skip until after hydration so we don't wipe storage)
   useEffect(() => {
     if (!ready) return;
     try {
@@ -125,9 +118,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const detailed = (): DetailedLine[] =>
       items
         .map((line): DetailedLine | null => {
-          const product = PRODUCTS.find((p) => p.slug === line.slug);
+          const product = products.find((p) => p.slug === line.slug);
           if (!product) return null;
-          const chain = chainById(line.chainId);
+          const chain = line.chainId
+            ? chains.find((c) => c.id === line.chainId)
+            : undefined;
           const unitPrice =
             product.price == null
               ? null
@@ -138,15 +133,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const total = () =>
       detailed().reduce(
-        (sum, { line, unitPrice }) =>
-          sum + (unitPrice ?? 0) * line.qty,
+        (sum, { line, unitPrice }) => sum + (unitPrice ?? 0) * line.qty,
         0
       );
 
     const count = items.reduce((s, l) => s + l.qty, 0);
 
     return { items, count, total, detailed, add, remove, setQty, clear, ready };
-  }, [items, ready]);
+  }, [items, ready, products, chains]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

@@ -6,12 +6,11 @@ import SmoothScroll from "@/components/animations/SmoothScroll";
 import Header from "@/components/ui/Header";
 import FilmGrain from "@/components/ui/FilmGrain";
 import { CartProvider } from "@/lib/cart";
+import { CatalogProvider } from "@/lib/catalog-context";
 import { StockProvider } from "@/lib/stock";
+import { getAllProducts, getAllChains } from "@/lib/catalog";
 import { SITE } from "@/lib/site";
 
-/* Cinzel — display headings (gothic serif).
- * Cormorant Garamond — body serif accents.
- * Inter — sans-serif body. All self-hosted via next/font (zero CLS). */
 const cinzel = Cinzel({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -61,24 +60,33 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Pre-fetch the catalog on the server so the first paint already has
+  // products + chains. The CatalogProvider keeps it fresh client-side.
+  const [products, chains] = await Promise.all([
+    getAllProducts(),
+    getAllChains(),
+  ]);
+
   return (
     <html
       lang="en"
       className={`${cinzel.variable} ${cormorant.variable} ${inter.variable}`}
     >
       <body className="bg-ink text-bone min-h-screen overflow-x-hidden">
-        <StockProvider>
-          <CartProvider>
-            <SmoothScroll>
-              <Header />
-              <main>{children}</main>
-            </SmoothScroll>
-            <FilmGrain />
-          </CartProvider>
-        </StockProvider>
+        <CatalogProvider initialProducts={products} initialChains={chains}>
+          <StockProvider>
+            <CartProvider>
+              <SmoothScroll>
+                <Header />
+                <main>{children}</main>
+              </SmoothScroll>
+              <FilmGrain />
+            </CartProvider>
+          </StockProvider>
+        </CatalogProvider>
       </body>
     </html>
   );

@@ -22,8 +22,8 @@ import { easeCinematic } from "@/lib/animations";
 import { formatPrice, SITE } from "@/lib/site";
 import { useCart } from "@/lib/cart";
 import { useStock } from "@/lib/stock";
-import { CHAIN_OPTIONS, chainById, hasChainOptions } from "@/data/chains";
-import type { Product } from "@/data/products";
+import { useChainById, useChains } from "@/lib/catalog-context";
+import type { Product } from "@/lib/types";
 
 export default function ProductDetail({
   product,
@@ -38,15 +38,15 @@ export default function ProductDetail({
   const stock = useStock(product.slug);
   const soldOut = stock === 0;
   const imageRef = useRef<HTMLDivElement>(null);
+  const chains = useChains();
 
-  /* Chain selector applies only to chains-category products, and only when
-   * at least one chain option has been published in data/chains.ts. */
-  const chainPicker =
-    product.category === "chains" && hasChainOptions();
+  /* Chain selector applies only to chains-category products, and only
+   * when at least one chain option has been published. */
+  const chainPicker = product.category === "chains" && chains.length > 0;
   const [chainId, setChainId] = useState<string | null>(
-    chainPicker ? CHAIN_OPTIONS[0]?.id ?? null : null
+    chainPicker ? chains[0]?.id ?? null : null
   );
-  const selectedChain = chainById(chainId);
+  const selectedChain = useChainById(chainId);
   const displayedUnitPrice =
     product.price == null
       ? null
