@@ -13,7 +13,6 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
 import { easeCinematic, durations } from "@/lib/animations";
 import { SITE } from "@/lib/site";
 
@@ -123,22 +122,6 @@ export default function Hero() {
           {SITE.tagline}
         </p>
       </div>
-
-      {/* scroll cue */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.2, ease: easeCinematic, delay: 3.6 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-bone-dim"
-      >
-        <span className="eyebrow text-bone-dim">Scroll</span>
-        <motion.div
-          animate={{ y: [0, 6, 0] }}
-          transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <ChevronDown className="h-4 w-4 text-gold" strokeWidth={1.5} />
-        </motion.div>
-      </motion.div>
     </section>
   );
 }
