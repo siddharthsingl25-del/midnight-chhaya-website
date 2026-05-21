@@ -18,7 +18,7 @@ const blocks: PolicyBlock[] = [
   {
     type: "p",
     text:
-      "Phone number and email are collected so that our courier partner can reach you for delivery and so we can send order updates. They are not used for marketing.",
+      "Phone number and email are collected so that our courier partner can reach you for delivery and so we can send order updates.",
   },
   { type: "p", text: "This information is used only for:" },
   {
