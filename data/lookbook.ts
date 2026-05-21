@@ -45,6 +45,18 @@ export const LOOKBOOK: LookbookImage[] = [
     alt: "Red enamel flame cross on a silver snake chain",
     ratio: 1.333,
   },
+  {
+    id: "06",
+    src: "/lookbook/sword-pierced-heart.webp",
+    alt: "Red enamel heart pierced by a silver sword on a snake chain",
+    ratio: 1.333,
+  },
+  {
+    id: "07",
+    src: "/lookbook/thorn-bound-heart.webp",
+    alt: "Red enamel heart bound in silver thorns, topped with a small cross",
+    ratio: 1.333,
+  },
 ];
 
 export const LOOKBOOK_PREVIEW = LOOKBOOK.slice(0, 4);
