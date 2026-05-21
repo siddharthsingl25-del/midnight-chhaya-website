@@ -124,23 +124,9 @@ export default function CartButton() {
 
             {lines.length === 0 ? (
               <div className="px-6 py-8">
-                <p className="font-serif italic text-bone-dim text-base leading-relaxed mb-5">
-                  Empty for now. Add pieces with the + button on any product,
-                  then send the list our way on Instagram.
+                <p className="font-serif italic text-bone-dim text-base leading-relaxed">
+                  Empty for now. Add pieces with the + button on any product.
                 </p>
-                <a
-                  href={SITE.instagram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-cursor="Inquire"
-                  className="inline-flex items-center gap-3 px-5 py-3
-                             border border-gold/60 text-gold w-full justify-center
-                             transition-colors duration-500
-                             hover:bg-gold hover:text-ink"
-                >
-                  <InstagramIcon size={16} />
-                  <span className="eyebrow">Inquire on Instagram</span>
-                </a>
               </div>
             ) : (
               <>
