@@ -60,7 +60,6 @@ export const FOOTER_NAV: readonly { heading: string; links: { label: string; hre
     heading: "Story",
     links: [
       { label: "About",    href: "/about" },
-      { label: "Lookbook", href: "/lookbook" },
       { label: "Contact",  href: "/contact" },
     ],
   },
