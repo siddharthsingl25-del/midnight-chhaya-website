@@ -12,7 +12,7 @@ import { useRef } from "react";
 import TextReveal from "@/components/animations/TextReveal";
 import Reveal from "@/components/animations/Reveal";
 
-const IMAGE = "https://picsum.photos/seed/mc-brand-teaser/1200/1500";
+const IMAGE = "/brand/atelier-pieces.webp";
 
 export default function BrandTeaser() {
   const ref = useRef<HTMLDivElement>(null);
@@ -35,10 +35,10 @@ export default function BrandTeaser() {
               <motion.div className="absolute inset-0 -top-[8%] -bottom-[8%]" style={{ y: imageY }}>
                 <Image
                   src={IMAGE}
-                  alt="A piece in progress, in candlelight"
+                  alt="A circle of red enamel pendants — hearts, crosses and a butterfly — laid on bone"
                   fill
                   sizes="(min-width:1024px) 45vw, 90vw"
-                  className="object-cover grayscale brightness-[0.7]"
+                  className="object-cover brightness-[0.85]"
                 />
               </motion.div>
               {/* gold corner tick — small editorial detail */}
