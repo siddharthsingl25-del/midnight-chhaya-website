@@ -96,12 +96,18 @@ export default function ProductDetail({
         </Reveal>
 
         <div className="mt-10 flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
-          {/* left: image + thumbs */}
-          <div className="w-full lg:w-[945px] lg:flex-shrink-0">
-            <Reveal scale={0.96} y={20} className="block">
+          {/* left: image + thumbs. Aspect locked to 945:1110, and on
+           * laptop the height is fixed to 78% of viewport height so
+           * the full pendant always fits on screen without scrolling.
+           * Width auto-derives from the height via aspect-ratio. */}
+          <div
+            className="w-full lg:w-auto lg:h-[78vh] lg:flex-shrink-0"
+            style={{ aspectRatio: "945 / 1110" }}
+          >
+            <Reveal scale={0.96} y={20} className="block h-full">
               <div
                 ref={imageRef}
-                className="relative w-full aspect-[945/1110] lg:aspect-auto lg:w-[945px] lg:h-[1110px] overflow-hidden bg-charcoal"
+                className="relative w-full h-full overflow-hidden bg-charcoal"
               >
                 <motion.div className="absolute inset-0 -top-[4%] -bottom-[4%]" style={{ y: imageY }}>
                   <Image
