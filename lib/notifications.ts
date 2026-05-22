@@ -33,7 +33,10 @@ export type OrderItem = {
 };
 
 export type OrderSnapshot = {
+  /** Raw Razorpay payment id — kept as a secondary reference. */
   paymentId: string;
+  /** Human-friendly order number (e.g. "MC-00042"). Falls back to paymentId. */
+  orderNumber: string;
   customer: {
     name: string;
     email: string;
@@ -61,7 +64,7 @@ export async function sendOrderConfirmationEmail(
     const { error } = await resend.emails.send({
       from,
       to: order.customer.email,
-      subject: `Order confirmed — ${SITE.name} (#${order.paymentId})`,
+      subject: `Order confirmed — ${SITE.name} (${order.orderNumber})`,
       html: renderOrderEmailHtml(order),
       text: renderOrderEmailText(order),
     });
@@ -111,7 +114,7 @@ export async function sendOrderConfirmationWhatsApp(
                 type: "body",
                 parameters: [
                   { type: "text", text: order.customer.name || "Customer" },
-                  { type: "text", text: order.paymentId },
+                  { type: "text", text: order.orderNumber },
                   { type: "text", text: totalFormatted },
                 ],
               },
@@ -167,7 +170,8 @@ function renderOrderEmailText(o: OrderSnapshot): string {
     ``,
     `Thank you — your ${SITE.name} order is confirmed.`,
     ``,
-    `Order ID: ${o.paymentId}`,
+    `Order number: ${o.orderNumber}`,
+    `Payment ref:  ${o.paymentId}`,
     ``,
     items,
     ``,
@@ -219,8 +223,9 @@ function renderOrderEmailHtml(o: OrderSnapshot): string {
         </td></tr>
 
         <tr><td style="padding:24px 32px 0;">
-          <div style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#8a8474;">Order ID</div>
-          <div style="font-family:Menlo,Consolas,monospace;color:#e8e2d4;font-size:13px;margin-top:6px;">${escapeHtml(o.paymentId)}</div>
+          <div style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#8a8474;">Order number</div>
+          <div style="font-family:Menlo,Consolas,monospace;color:#b8935a;font-size:22px;letter-spacing:0.08em;margin-top:6px;">${escapeHtml(o.orderNumber)}</div>
+          <div style="font-family:Georgia,serif;font-size:11px;color:#5a5650;margin-top:6px;">Quote this number for any support query.</div>
         </td></tr>
 
         <tr><td style="padding:24px 32px 0;">

@@ -69,6 +69,7 @@ export default function CheckoutClient() {
   const [form, setForm] = useState<Form>(EMPTY);
   const [status, setStatus] = useState<Status>("idle");
   const [orderText, setOrderText] = useState<string>("");
+  const [orderNumber, setOrderNumber] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string>("");
 
   const set = (k: keyof Form, v: string) =>
@@ -271,6 +272,8 @@ export default function CheckoutClient() {
               orderText: text,
               titleSummary: asciiTitle,
               snapshot,
+              instagram: form.instagram,
+              notes: form.notes,
             }),
           });
           if (!verifyRes.ok) {
@@ -284,6 +287,11 @@ export default function CheckoutClient() {
             setStatus("error");
             return;
           }
+          const verifyData = (await verifyRes.json().catch(() => ({}))) as {
+            orderNumber?: string;
+            paymentId?: string;
+          };
+          setOrderNumber(verifyData.orderNumber ?? verifyData.paymentId ?? resp.razorpay_payment_id);
           await refreshStock();
           setStatus("ready");
         } catch {
@@ -347,8 +355,21 @@ export default function CheckoutClient() {
           <h2 className="font-display uppercase text-bone text-3xl md:text-4xl">
             Order received.
           </h2>
+
+          {orderNumber ? (
+            <div className="border border-gold/40 bg-gold/5 px-8 py-5 flex flex-col items-center gap-1">
+              <span className="eyebrow text-bone-dim">Your order number</span>
+              <span className="font-display text-gold text-3xl md:text-4xl tracking-[0.08em]">
+                {orderNumber}
+              </span>
+              <span className="font-serif italic text-bone-dim text-xs mt-1">
+                Save this — quote it for any support query.
+              </span>
+            </div>
+          ) : null}
+
           <p className="font-serif italic text-bone-dim text-lg max-w-md leading-relaxed">
-            Payment confirmed. Your order ships within 1–3 business days —
+            Payment confirmed. A confirmation has been sent to your email and WhatsApp. Your order ships within 1–3 business days —
             we&apos;ll DM <strong className="not-italic font-semibold text-bone">{form.instagram || "your Instagram"}</strong> with the tracking link as soon as it&apos;s dispatched.
           </p>
 

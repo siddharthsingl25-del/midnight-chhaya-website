@@ -43,8 +43,11 @@ type Body = {
   items: Item[];
   orderText: string;
   titleSummary: string;
-  /** Structured order data for the customer-facing email + WhatsApp. */
-  snapshot?: Omit<OrderSnapshot, "paymentId">;
+  /** Structured order data for the customer-facing email + WhatsApp + DB row. */
+  snapshot?: Omit<OrderSnapshot, "paymentId" | "orderNumber">;
+  /** Optional fields persisted on the order row for merchant lookup. */
+  instagram?: string;
+  notes?: string;
 };
 
 export async function POST(req: Request) {
@@ -143,11 +146,43 @@ export async function POST(req: Request) {
     );
   }
 
-  // 3. Send the standard order notification -----------------------------------
+  // 3. Persist the order row → gives us the human-readable order number ------
+  // Falls back to the raw payment id if the insert fails (rare); the order is
+  // already paid, so we never want to error out here.
+  let orderNumber: string = razorpay_payment_id;
+  if (body.snapshot) {
+    const { data: orderRow, error: orderErr } = await sb
+      .from("orders")
+      .insert({
+        razorpay_payment_id,
+        razorpay_order_id,
+        customer_name: body.snapshot.customer.name ?? "",
+        customer_email: body.snapshot.customer.email ?? "",
+        customer_phone: body.snapshot.customer.phone ?? "",
+        customer_instagram: body.instagram ?? "",
+        delivery_address: body.snapshot.address ?? "",
+        items: body.snapshot.items,
+        subtotal: body.snapshot.subtotal,
+        shipping: body.snapshot.shipping,
+        total: body.snapshot.total,
+        notes: body.notes ?? "",
+      })
+      .select("order_number")
+      .single();
+    if (orderErr) {
+      console.error("[orders.insert]", razorpay_payment_id, orderErr.message);
+    } else if (orderRow?.order_number) {
+      orderNumber = orderRow.order_number;
+    }
+  }
+
+  // 4. Merchant push (ntfy) — title carries the order number so it shows on
+  // your lock screen and you can match it to a customer support query --------
   try {
-    const asciiTitle =
+    const asciiTitleSummary =
       (body.titleSummary || "Paid order").replace(/[^\x20-\x7E]/g, "") ||
       "Paid order";
+    const asciiTitle = `${orderNumber} - ${asciiTitleSummary}`;
     await fetch(`https://ntfy.sh/${SITE.notifyTopic}`, {
       method: "POST",
       headers: {
@@ -156,19 +191,21 @@ export async function POST(req: Request) {
         Tags: "shopping_bags,sparkles",
       },
       body:
-        `Payment ID: ${razorpay_payment_id}\n\n` + (body.orderText ?? "(no order text)"),
+        `Order: ${orderNumber}\nPayment ID: ${razorpay_payment_id}\n\n` +
+        (body.orderText ?? "(no order text)"),
     });
   } catch {
     /* swallowed — order is already booked + paid */
   }
 
-  // 4. Customer-facing confirmation: email + WhatsApp -------------------------
+  // 5. Customer-facing confirmation: email + WhatsApp -------------------------
   // Fire and forget — order is already paid; failures here must not break the
   // success response. Results are logged so the merchant can see misconfigs.
   if (body.snapshot) {
     const snapshot: OrderSnapshot = {
       ...body.snapshot,
       paymentId: razorpay_payment_id,
+      orderNumber,
     };
     const [emailRes, waRes] = await Promise.allSettled([
       sendOrderConfirmationEmail(snapshot),
@@ -185,12 +222,16 @@ export async function POST(req: Request) {
     };
     console.log(
       "[order-confirm]",
-      razorpay_payment_id,
+      orderNumber,
       summarize("email", emailRes),
       "|",
       summarize("whatsapp", waRes)
     );
   }
 
-  return NextResponse.json({ ok: true, paymentId: razorpay_payment_id });
+  return NextResponse.json({
+    ok: true,
+    paymentId: razorpay_payment_id,
+    orderNumber,
+  });
 }
