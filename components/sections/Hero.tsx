@@ -13,7 +13,7 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { easeCinematic, durations } from "@/lib/animations";
+import { easeCinematic } from "@/lib/animations";
 import { SITE } from "@/lib/site";
 
 // R3F + CSS droplets — client-only (ssr:false must live in a client component in Next 16)
@@ -39,23 +39,19 @@ export default function Hero() {
         <motion.span
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: durations.reveal, ease: easeCinematic, delay: 0.6 }}
+          transition={{ duration: 0.5, ease: easeCinematic }}
           className="eyebrow mb-8"
         >
           Volume I · MMXXVI
         </motion.span>
 
-        {/* Logo as the hero mark.
-         *   1. ghost-in   — sudden bright/blurred apparition (CSS)
-         *   2. logo-glow  — pulsing warm halo, loops after reveal (CSS)
-         *   3. logo-shimmer — diagonal metallic sweep masked to letterforms (CSS)
-         *   4. y-bounce   — gentle continuous "hop" via framer-motion */}
+        {/* Logo as the hero mark — paints instantly on first frame.
+         *   1. logo-glow    — pulsing warm halo, loops (CSS)
+         *   2. logo-shimmer — diagonal metallic sweep masked to letterforms (CSS)
+         *   3. y-bounce     — gentle continuous "hop" via framer-motion */}
         <h1 className="m-0">
           <span className="sr-only">{SITE.name}</span>
-          <span
-            className="ghost-in block"
-            style={{ animationDelay: "1.4s" }}
-          >
+          <span className="block">
             <motion.div
               className="relative inline-block"
               initial={{ y: 0 }}
@@ -64,7 +60,6 @@ export default function Hero() {
                 duration: 3.6,
                 ease: "easeInOut",
                 repeat: Infinity,
-                delay: 2.2, // wait for ghost reveal to settle
               }}
             >
               <Image
@@ -91,36 +86,38 @@ export default function Hero() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1.0, ease: easeCinematic, delay: 2.2 }}
+          transition={{ duration: 0.6, ease: easeCinematic, delay: 0.2 }}
           className="my-8 flex items-center gap-3"
         >
           <motion.span
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ duration: 1.2, ease: easeCinematic, delay: 2.2 }}
+            transition={{ duration: 0.7, ease: easeCinematic, delay: 0.2 }}
             className="block h-px w-16 origin-right bg-gold/60"
           />
           <motion.span
             initial={{ scale: 0, rotate: 0 }}
             animate={{ scale: 1, rotate: 45 }}
-            transition={{ duration: 0.8, ease: easeCinematic, delay: 2.5 }}
+            transition={{ duration: 0.5, ease: easeCinematic, delay: 0.4 }}
             className="block h-1.5 w-1.5 bg-gold"
           />
           <motion.span
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
-            transition={{ duration: 1.2, ease: easeCinematic, delay: 2.2 }}
+            transition={{ duration: 0.7, ease: easeCinematic, delay: 0.2 }}
             className="block h-px w-16 origin-left bg-gold/60"
           />
         </motion.div>
 
-        {/* Tagline — also ghost-in for thematic consistency, smaller flash */}
-        <p
-          className="ghost-in font-serif italic text-bone-dim text-lg sm:text-xl md:text-2xl tracking-wide max-w-[92vw]"
-          style={{ animationDelay: "2.8s" }}
+        {/* Tagline — short fade for thematic consistency */}
+        <motion.p
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: easeCinematic, delay: 0.3 }}
+          className="font-serif italic text-bone-dim text-lg sm:text-xl md:text-2xl tracking-wide max-w-[92vw]"
         >
           {SITE.tagline}
-        </p>
+        </motion.p>
       </div>
     </section>
   );
