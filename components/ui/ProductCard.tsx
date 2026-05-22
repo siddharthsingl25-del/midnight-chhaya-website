@@ -52,12 +52,12 @@ export default function ProductCard({
       whileHover={soldOut ? undefined : "hover"}
       initial="rest"
       animate="rest"
-      className="group block"
+      className="group h-full flex flex-col"
     >
       <Link
         href={`/collections/${product.slug}`}
         data-cursor={soldOut ? "Sold out" : "View"}
-        className="block"
+        className="block flex-1 flex flex-col"
       >
         <motion.div
           variants={{ rest: { y: 0 }, hover: { y: -6 } }}
@@ -93,14 +93,14 @@ export default function ProductCard({
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-ink/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         </motion.div>
 
-        <div className="mt-3 sm:mt-4 flex flex-col gap-1">
+        <div className="mt-3 sm:mt-4 flex flex-col gap-1 flex-1">
           <h3 className="font-display text-sm sm:text-lg text-bone gold-underline inline-block leading-tight">
             {product.name}
           </h3>
           <p className="text-[11px] sm:text-xs text-bone-dim line-clamp-2 leading-snug">
             {product.shortDescription}
           </p>
-          <span className="font-body text-sm sm:text-base text-bone mt-1">
+          <span className="font-body text-sm sm:text-base text-bone mt-auto pt-1">
             {formatPrice(product.price)}
           </span>
         </div>
