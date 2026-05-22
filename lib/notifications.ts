@@ -2,19 +2,24 @@
  * Order-confirmation notifications.
  *
  * Two outbound channels, both fired after Razorpay payment verification:
- *   - Email via Resend         (RESEND_API_KEY, RESEND_FROM_EMAIL)
- *   - WhatsApp via AiSensy     (AISENSY_API_KEY, AISENSY_CAMPAIGN_NAME)
+ *   - Email via Resend                (RESEND_API_KEY, RESEND_FROM_EMAIL)
+ *   - WhatsApp via Meta Cloud API     (WHATSAPP_PHONE_NUMBER_ID,
+ *                                      WHATSAPP_ACCESS_TOKEN,
+ *                                      WHATSAPP_TEMPLATE_NAME,
+ *                                      WHATSAPP_TEMPLATE_LANG default 'en')
  *
- * If a provider's env vars are missing, the function silently skips
- * (returns { ok: false, skipped: true }). That way dev / preview
- * environments don't crash; production just needs the vars set.
+ * Both providers have free tiers — Resend gives 3k emails/mo, Meta
+ * gives 1k WhatsApp service conversations/mo. If a provider's env
+ * vars are missing, the function silently skips (returns
+ * { ok: false, skipped: true }). That way dev / preview environments
+ * don't crash; production just needs the vars set.
  *
- * The AiSensy template referenced by AISENSY_CAMPAIGN_NAME must be
+ * The WhatsApp template referenced by WHATSAPP_TEMPLATE_NAME must be
  * pre-approved by Meta with exactly THREE body variables in this order:
  *   {{1}} = customer name
  *   {{2}} = order id (Razorpay payment id)
  *   {{3}} = total amount (formatted, e.g. "₹2,499")
- * Adjust `templateParams` below if your template uses different vars.
+ * Adjust the `parameters` array below if your template uses different vars.
  */
 
 import { Resend } from "resend";
@@ -67,40 +72,57 @@ export async function sendOrderConfirmationEmail(
   }
 }
 
-/* —— WhatsApp (AiSensy) ————————————————————————————————— */
+/* —— WhatsApp (Meta Cloud API) ——————————————————————————— */
 
 export async function sendOrderConfirmationWhatsApp(
   order: OrderSnapshot
 ): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
-  const apiKey = process.env.AISENSY_API_KEY;
-  const campaignName = process.env.AISENSY_CAMPAIGN_NAME;
-  if (!apiKey || !campaignName) return { ok: false, skipped: true };
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const templateName = process.env.WHATSAPP_TEMPLATE_NAME;
+  const templateLang = process.env.WHATSAPP_TEMPLATE_LANG ?? "en";
+  if (!phoneNumberId || !accessToken || !templateName) {
+    return { ok: false, skipped: true };
+  }
 
-  const destination = normalizeIndianPhone(order.customer.phone);
-  if (!destination) return { ok: false, skipped: true };
+  const to = normalizeIndianPhone(order.customer.phone);
+  if (!to) return { ok: false, skipped: true };
 
   const totalFormatted = `${SITE.currency.symbol}${order.total.toLocaleString("en-IN")}`;
 
   try {
-    const res = await fetch("https://backend.aisensy.com/campaign/t1/api/v2", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        apiKey,
-        campaignName,
-        destination,
-        userName: order.customer.name || "Customer",
-        templateParams: [
-          order.customer.name || "Customer",
-          order.paymentId,
-          totalFormatted,
-        ],
-        source: "midnight-chhaya-website",
-      }),
-    });
+    const res = await fetch(
+      `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to,
+          type: "template",
+          template: {
+            name: templateName,
+            language: { code: templateLang },
+            components: [
+              {
+                type: "body",
+                parameters: [
+                  { type: "text", text: order.customer.name || "Customer" },
+                  { type: "text", text: order.paymentId },
+                  { type: "text", text: totalFormatted },
+                ],
+              },
+            ],
+          },
+        }),
+      }
+    );
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      return { ok: false, error: `AiSensy ${res.status}: ${body.slice(0, 200)}` };
+      return { ok: false, error: `WhatsApp ${res.status}: ${body.slice(0, 200)}` };
     }
     return { ok: true };
   } catch (e) {
