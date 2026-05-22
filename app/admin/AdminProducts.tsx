@@ -11,7 +11,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, Plus, Trash2 } from "lucide-react";
 import ImageUpload from "./ImageUpload";
 import { useCatalogRefresh, useProducts } from "@/lib/catalog-context";
 import type { Category, Product } from "@/lib/types";
@@ -166,6 +166,10 @@ function ProductForm({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  /* Create flow shows just the essentials (photo, name, price). Edit
+   * always shows everything since the merchant likely came to change
+   * a specific advanced field. */
+  const [showMore, setShowMore] = useState(mode === "edit");
 
   // Auto-derive slug from name in create mode unless user typed it themselves
   useEffect(() => {
@@ -267,37 +271,6 @@ function ProductForm({
       />
 
       <Field
-        label="URL slug *"
-        value={slug}
-        onChange={(v) => {
-          setSlugTouched(true);
-          setSlug(slugify(v));
-        }}
-        placeholder="auto-derived from name"
-        help={`Becomes /collections/${slug || "your-slug"}`}
-        disabled={mode === "edit"}
-      />
-
-      <label className="block">
-        <span className="block mb-2 font-body text-bone text-sm font-semibold">
-          Category *
-        </span>
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as Category)}
-          className="w-full bg-transparent border-b-2 border-bone/30 px-1 py-3
-                     font-body text-bone text-lg
-                     focus:outline-none focus:border-gold transition-colors"
-        >
-          {CATEGORY_OPTIONS.map((c) => (
-            <option key={c} value={c} className="bg-ink text-bone">
-              {c}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <Field
         label="Price (₹)"
         value={price}
         onChange={setPrice}
@@ -306,63 +279,113 @@ function ProductForm({
         inputMode="numeric"
       />
 
-      <Field
-        label="Short description"
-        value={shortDesc}
-        onChange={setShortDesc}
-        placeholder="A one-liner for product cards"
-      />
+      {mode === "create" ? (
+        <button
+          type="button"
+          onClick={() => setShowMore((v) => !v)}
+          className="self-start inline-flex items-center gap-2 eyebrow text-bone-dim hover:text-gold transition-colors"
+        >
+          <ChevronDown
+            size={12}
+            strokeWidth={1.75}
+            className={`transition-transform duration-300 ${showMore ? "rotate-180" : ""}`}
+          />
+          {showMore ? "Hide options" : "More options"}
+        </button>
+      ) : null}
 
-      <label className="block">
-        <span className="block mb-2 font-body text-bone text-sm font-semibold">
-          Long description
-        </span>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={4}
-          placeholder="Detailed copy shown on the product page"
-          className="w-full bg-transparent border-b-2 border-bone/30 px-1 py-3
-                     font-body text-bone text-base resize-none
-                     focus:outline-none focus:border-gold transition-colors"
-        />
-      </label>
+      {showMore ? (
+        <>
+          <Field
+            label="URL slug *"
+            value={slug}
+            onChange={(v) => {
+              setSlugTouched(true);
+              setSlug(slugify(v));
+            }}
+            placeholder="auto-derived from name"
+            help={`Becomes /collections/${slug || "your-slug"}`}
+            disabled={mode === "edit"}
+          />
 
-      <label className="flex items-center gap-3">
-        <input
-          type="checkbox"
-          checked={featured}
-          onChange={(e) => setFeatured(e.target.checked)}
-          className="w-5 h-5 accent-gold"
-        />
-        <span className="font-body text-bone text-sm">
-          Show on home page (Featured)
-        </span>
-      </label>
+          <label className="block">
+            <span className="block mb-2 font-body text-bone text-sm font-semibold">
+              Category *
+            </span>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as Category)}
+              className="w-full bg-transparent border-b-2 border-bone/30 px-1 py-3
+                         font-body text-bone text-lg
+                         focus:outline-none focus:border-gold transition-colors"
+            >
+              {CATEGORY_OPTIONS.map((c) => (
+                <option key={c} value={c} className="bg-ink text-bone">
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
 
-      <label className="flex items-center gap-3">
-        <input
-          type="checkbox"
-          checked={exclusive}
-          onChange={(e) => setExclusive(e.target.checked)}
-          className="w-5 h-5 accent-gold"
-        />
-        <span className="font-body text-bone text-sm">
-          Show on Exclusives page
-        </span>
-      </label>
+          <Field
+            label="Short description"
+            value={shortDesc}
+            onChange={setShortDesc}
+            placeholder="A one-liner for product cards"
+          />
 
-      <label className="flex items-center gap-3">
-        <input
-          type="checkbox"
-          checked={forWomen}
-          onChange={(e) => setForWomen(e.target.checked)}
-          className="w-5 h-5 accent-gold"
-        />
-        <span className="font-body text-bone text-sm">
-          Show in &ldquo;Chains for Women&rdquo; filter
-        </span>
-      </label>
+          <label className="block">
+            <span className="block mb-2 font-body text-bone text-sm font-semibold">
+              Long description
+            </span>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              placeholder="Detailed copy shown on the product page"
+              className="w-full bg-transparent border-b-2 border-bone/30 px-1 py-3
+                         font-body text-bone text-base resize-none
+                         focus:outline-none focus:border-gold transition-colors"
+            />
+          </label>
+
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={featured}
+              onChange={(e) => setFeatured(e.target.checked)}
+              className="w-5 h-5 accent-gold"
+            />
+            <span className="font-body text-bone text-sm">
+              Show on home page (Featured)
+            </span>
+          </label>
+
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={exclusive}
+              onChange={(e) => setExclusive(e.target.checked)}
+              className="w-5 h-5 accent-gold"
+            />
+            <span className="font-body text-bone text-sm">
+              Show on Exclusives page
+            </span>
+          </label>
+
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={forWomen}
+              onChange={(e) => setForWomen(e.target.checked)}
+              className="w-5 h-5 accent-gold"
+            />
+            <span className="font-body text-bone text-sm">
+              Show in &ldquo;Chains for Women&rdquo; filter
+            </span>
+          </label>
+        </>
+      ) : null}
 
       {error ? (
         <div className="border border-oxblood/60 bg-oxblood/10 text-bone px-4 py-3 text-sm">
