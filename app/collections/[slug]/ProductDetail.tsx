@@ -101,7 +101,7 @@ export default function ProductDetail({
             <Reveal scale={0.96} y={20} className="block">
               <div
                 ref={imageRef}
-                className="relative aspect-[4/5] overflow-hidden bg-charcoal"
+                className="relative w-full lg:max-w-[945px] aspect-[945/1110] lg:aspect-auto lg:h-[1110px] overflow-hidden bg-charcoal"
               >
                 <motion.div className="absolute inset-0 -top-[4%] -bottom-[4%]" style={{ y: imageY }}>
                   <Image
@@ -110,7 +110,7 @@ export default function ProductDetail({
                     alt={product.name}
                     fill
                     priority
-                    sizes="(min-width:1024px) 55vw, 90vw"
+                    sizes="(min-width:1024px) 945px, 90vw"
                     className="object-cover"
                   />
                 </motion.div>
