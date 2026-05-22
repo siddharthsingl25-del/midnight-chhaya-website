@@ -33,14 +33,9 @@ type Body = {
 };
 
 export async function POST(req: Request) {
-  /* NEXT_PUBLIC_BYPASS_PAYMENT=1 → skip Razorpay entirely.
-   * For testing the notification pipeline without real payments.
-   * Unset (or delete) this var to re-enable real payments. */
-  const bypass = process.env.NEXT_PUBLIC_BYPASS_PAYMENT === "1";
-
   const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
-  if (!bypass && (!keyId || !keySecret)) {
+  if (!keyId || !keySecret) {
     return NextResponse.json(
       { error: "Razorpay not configured" },
       { status: 500 }
@@ -122,19 +117,7 @@ export async function POST(req: Request) {
   const amountPaise = subtotalPaise + shippingPaise;
 
   // 4. Create the Razorpay order.
-  // Bypass mode short-circuits with a synthetic id so the client never opens
-  // the Razorpay modal — purely for testing the post-payment pipeline.
-  if (bypass) {
-    return NextResponse.json({
-      razorpayOrderId: `test_order_${Date.now().toString(36)}`,
-      amountPaise,
-      currency: "INR",
-      keyId: keyId ?? "bypass",
-      bypass: true,
-    });
-  }
-
-  const rzp = new Razorpay({ key_id: keyId!, key_secret: keySecret! });
+  const rzp = new Razorpay({ key_id: keyId, key_secret: keySecret });
   // receipt must be <= 40 chars
   const receipt = `mc_${Date.now().toString(36)}`;
 
