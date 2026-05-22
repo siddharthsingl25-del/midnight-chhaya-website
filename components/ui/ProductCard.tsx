@@ -97,9 +97,6 @@ export default function ProductCard({
           <h3 className="font-display text-sm sm:text-lg text-bone gold-underline inline-block leading-tight">
             {product.name}
           </h3>
-          <p className="text-[11px] sm:text-xs text-bone-dim line-clamp-2 leading-snug">
-            {product.shortDescription}
-          </p>
           <span className="font-body text-sm sm:text-base text-bone mt-auto pt-1">
             {formatPrice(product.price)}
           </span>
