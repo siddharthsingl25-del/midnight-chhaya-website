@@ -9,6 +9,7 @@ import { CartProvider } from "@/lib/cart";
 import { CatalogProvider } from "@/lib/catalog-context";
 import { StockProvider } from "@/lib/stock";
 import { getAllProducts, getAllChains } from "@/lib/catalog";
+import { syncSeedProducts } from "@/lib/seed-runner";
 import { SITE } from "@/lib/site";
 
 const cinzel = Cinzel({
@@ -63,6 +64,11 @@ export const viewport: Viewport = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Sync any chat-added product seeds before fetching the catalog so the
+  // first paint already includes them. Idempotent — runs once per cold
+  // start, skips silently if Supabase env vars aren't set.
+  await syncSeedProducts();
+
   // Pre-fetch the catalog on the server so the first paint already has
   // products + chains. The CatalogProvider keeps it fresh client-side.
   const [products, chains] = await Promise.all([
