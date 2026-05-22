@@ -16,7 +16,7 @@ import ImageUpload from "./ImageUpload";
 import { useCatalogRefresh, useProducts } from "@/lib/catalog-context";
 import type { Category, Product } from "@/lib/types";
 
-const CATEGORY_OPTIONS: Category[] = ["chains", "keychains", "bracelets", "rings", "women"];
+const CATEGORY_OPTIONS: Category[] = ["chains", "keychains", "bracelets", "rings"];
 
 type Mode =
   | { kind: "list" }
@@ -162,6 +162,7 @@ function ProductForm({
   const [image, setImage] = useState(product?.images[0] ?? "");
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [exclusive, setExclusive] = useState(product?.exclusive ?? false);
+  const [forWomen, setForWomen] = useState(product?.forWomen ?? false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -190,6 +191,7 @@ function ProductForm({
       images: [image],
       featured,
       exclusive,
+      for_women: forWomen,
     };
 
     setSaving(true);
@@ -347,6 +349,18 @@ function ProductForm({
         />
         <span className="font-body text-bone text-sm">
           Show on Exclusives page
+        </span>
+      </label>
+
+      <label className="flex items-center gap-3">
+        <input
+          type="checkbox"
+          checked={forWomen}
+          onChange={(e) => setForWomen(e.target.checked)}
+          className="w-5 h-5 accent-gold"
+        />
+        <span className="font-body text-bone text-sm">
+          Show in &ldquo;Chains for Women&rdquo; filter
         </span>
       </label>
 

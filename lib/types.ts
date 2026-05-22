@@ -3,7 +3,7 @@
  * UI. Mirrors the `products` and `chain_options` tables in Supabase.
  */
 
-export type Category = "rings" | "chains" | "keychains" | "bracelets" | "women";
+export type Category = "rings" | "chains" | "keychains" | "bracelets";
 
 export const CATEGORIES: { id: Category | "all"; label: string }[] = [
   { id: "all",        label: "All" },
@@ -11,7 +11,6 @@ export const CATEGORIES: { id: Category | "all"; label: string }[] = [
   { id: "keychains",  label: "Keychains" },
   { id: "bracelets",  label: "Bracelets" },
   { id: "rings",      label: "Rings" },
-  { id: "women",      label: "Women" },
 ];
 
 export type Product = {
@@ -27,6 +26,8 @@ export type Product = {
   images: string[];
   exclusive: boolean;
   featured: boolean;
+  /** Surfaced in the chains-for-women filter on the storefront. */
+  forWomen: boolean;
   displayOrder: number;
 };
 
@@ -60,6 +61,7 @@ type ProductRow = {
   images: string[];
   exclusive: boolean;
   featured: boolean;
+  for_women: boolean;
   display_order: number;
 };
 
@@ -76,6 +78,7 @@ export function productFromRow(row: ProductRow): Product {
     images: row.images ?? [],
     exclusive: !!row.exclusive,
     featured: !!row.featured,
+    forWomen: !!row.for_women,
     displayOrder: row.display_order ?? 0,
   };
 }

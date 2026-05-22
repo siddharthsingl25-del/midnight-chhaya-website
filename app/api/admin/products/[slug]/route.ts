@@ -33,7 +33,7 @@ export async function PUT(req: Request, { params }: Params) {
   if (typeof body.name === "string") patch.name = body.name.trim();
   if (
     typeof body.category === "string" &&
-    ["rings", "chains", "keychains", "bracelets", "women"].includes(body.category)
+    ["rings", "chains", "keychains", "bracelets"].includes(body.category)
   ) {
     patch.category = body.category;
   }
@@ -54,6 +54,7 @@ export async function PUT(req: Request, { params }: Params) {
   if (Array.isArray(body.images)) patch.images = body.images.map(String);
   if (typeof body.exclusive === "boolean") patch.exclusive = body.exclusive;
   if (typeof body.featured === "boolean") patch.featured = body.featured;
+  if (typeof body.for_women === "boolean") patch.for_women = body.for_women;
 
   const { data, error } = await supabaseAdmin()
     .from("products")

@@ -50,6 +50,7 @@ export async function POST(req: Request) {
     images = [],
     exclusive = false,
     featured = false,
+    for_women = false,
   } = body as Record<string, unknown>;
 
   if (typeof slug !== "string" || !slug.trim()) {
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
   }
   if (
     typeof category !== "string" ||
-    !["rings", "chains", "keychains", "bracelets", "women"].includes(category)
+    !["rings", "chains", "keychains", "bracelets"].includes(category)
   ) {
     return NextResponse.json({ error: "Bad category" }, { status: 400 });
   }
@@ -91,6 +92,7 @@ export async function POST(req: Request) {
     images: Array.isArray(images) ? images.map(String) : [],
     exclusive: Boolean(exclusive),
     featured: Boolean(featured),
+    for_women: Boolean(for_women),
     display_order,
     updated_at: new Date().toISOString(),
   };

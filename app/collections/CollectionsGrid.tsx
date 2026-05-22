@@ -10,6 +10,7 @@ import { CATEGORIES, type Category, type Product } from "@/lib/types";
 import { easeCinematic } from "@/lib/animations";
 
 type Filter = Category | "all";
+type Audience = "all" | "women";
 type SortKey = "featured" | "price-asc" | "price-desc";
 
 const SORT_LABELS: Record<SortKey, string> = {
@@ -24,27 +25,47 @@ export default function CollectionsGrid() {
 
   const fromUrl = (params.get("cat") ?? "all") as Filter;
   const valid = CATEGORIES.some((c) => c.id === fromUrl);
+  const audienceFromUrl: Audience =
+    params.get("audience") === "women" ? "women" : "all";
   const [active, setActive] = useState<Filter>(valid ? fromUrl : "all");
+  const [audience, setAudience] = useState<Audience>(audienceFromUrl);
   const [sort, setSort] = useState<SortKey>("featured");
 
   useEffect(() => {
     const fromUrl = (params.get("cat") ?? "all") as Filter;
     if (CATEGORIES.some((c) => c.id === fromUrl)) setActive(fromUrl);
+    setAudience(params.get("audience") === "women" ? "women" : "all");
   }, [params]);
+
+  const buildHref = (cat: Filter, aud: Audience) => {
+    const query: string[] = [];
+    if (cat !== "all") query.push(`cat=${cat}`);
+    if (aud === "women") query.push("audience=women");
+    return query.length ? `/collections?${query.join("&")}` : "/collections";
+  };
 
   const onSelect = (id: Filter) => {
     setActive(id);
-    const next = id === "all" ? "/collections" : `/collections?cat=${id}`;
-    router.replace(next, { scroll: false });
+    // Switching category clears the audience filter — it only makes
+    // sense alongside chains for now.
+    const nextAudience = id === "chains" ? audience : "all";
+    setAudience(nextAudience);
+    router.replace(buildHref(id, nextAudience), { scroll: false });
+  };
+
+  const onAudience = (aud: Audience) => {
+    setAudience(aud);
+    router.replace(buildHref(active, aud), { scroll: false });
   };
 
   const products = useProducts();
 
   const items = useMemo<Product[]>(() => {
-    const base =
+    let base =
       active === "all"
         ? products
         : products.filter((p) => p.category === active);
+    if (audience === "women") base = base.filter((p) => p.forWomen);
     if (sort === "featured") return base;
     // Null prices ("Inquire") always sink to the end regardless of direction.
     return [...base].sort((a, b) => {
@@ -52,7 +73,11 @@ export default function CollectionsGrid() {
       const pb = b.price ?? Number.POSITIVE_INFINITY;
       return sort === "price-asc" ? pa - pb : pb - pa;
     });
-  }, [active, sort, products]);
+  }, [active, audience, sort, products]);
+
+  /* The audience sub-filter ("All / Women") only makes sense when the
+   * customer is already inside Chains. Hidden everywhere else. */
+  const showAudienceTabs = active === "chains";
 
   return (
     <section className="px-6 md:px-10 pb-32">
@@ -89,6 +114,30 @@ export default function CollectionsGrid() {
           <SortMenu value={sort} onChange={setSort} />
         </div>
 
+        {/* Audience sub-filter — only on Chains */}
+        {showAudienceTabs ? (
+          <div className="mb-12 flex flex-wrap items-center gap-x-6 gap-y-2">
+            <span className="eyebrow text-bone-dim/70">For</span>
+            {(["all", "women"] as Audience[]).map((a) => {
+              const selected = a === audience;
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => onAudience(a)}
+                  data-cursor={a === "all" ? "Everyone" : "Women"}
+                  className={[
+                    "eyebrow transition-colors duration-500",
+                    selected ? "text-gold" : "text-bone-dim hover:text-bone",
+                  ].join(" ")}
+                >
+                  {a === "all" ? "Everyone" : "Women"}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
         <AnimatePresence mode="wait">
           <motion.div
             key={`${active}-${sort}`}
@@ -116,10 +165,10 @@ export default function CollectionsGrid() {
         </AnimatePresence>
 
         {items.length === 0 ? (
-          active === "bracelets" || active === "rings" || active === "women" ? (
+          active === "bracelets" || active === "rings" ? (
             <div className="text-center py-32">
               <span className="eyebrow block mb-6 text-gold">
-                {active === "bracelets" ? "Bracelets" : active === "rings" ? "Rings" : "Women"}
+                {active === "bracelets" ? "Bracelets" : "Rings"}
               </span>
               <p className="font-display uppercase text-bone text-[clamp(2rem,6vw,4rem)] leading-[1.05]">
                 Coming soon.
