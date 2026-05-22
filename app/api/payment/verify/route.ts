@@ -29,6 +29,11 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { SITE } from "@/lib/site";
+import {
+  sendOrderConfirmationEmail,
+  sendOrderConfirmationWhatsApp,
+  type OrderSnapshot,
+} from "@/lib/notifications";
 
 type Item = { slug: string; qty: number; chainId?: string };
 type Body = {
@@ -38,6 +43,8 @@ type Body = {
   items: Item[];
   orderText: string;
   titleSummary: string;
+  /** Structured order data for the customer-facing email + WhatsApp. */
+  snapshot?: Omit<OrderSnapshot, "paymentId">;
 };
 
 export async function POST(req: Request) {
@@ -153,6 +160,36 @@ export async function POST(req: Request) {
     });
   } catch {
     /* swallowed — order is already booked + paid */
+  }
+
+  // 4. Customer-facing confirmation: email + WhatsApp -------------------------
+  // Fire and forget — order is already paid; failures here must not break the
+  // success response. Results are logged so the merchant can see misconfigs.
+  if (body.snapshot) {
+    const snapshot: OrderSnapshot = {
+      ...body.snapshot,
+      paymentId: razorpay_payment_id,
+    };
+    const [emailRes, waRes] = await Promise.allSettled([
+      sendOrderConfirmationEmail(snapshot),
+      sendOrderConfirmationWhatsApp(snapshot),
+    ]);
+    const summarize = (
+      label: string,
+      r: PromiseSettledResult<{ ok: boolean; skipped?: boolean; error?: string }>
+    ) => {
+      if (r.status === "rejected") return `${label}: threw (${String(r.reason)})`;
+      if (r.value.skipped) return `${label}: skipped (env not set)`;
+      if (!r.value.ok) return `${label}: ${r.value.error ?? "failed"}`;
+      return `${label}: sent`;
+    };
+    console.log(
+      "[order-confirm]",
+      razorpay_payment_id,
+      summarize("email", emailRes),
+      "|",
+      summarize("whatsapp", waRes)
+    );
   }
 
   return NextResponse.json({ ok: true, paymentId: razorpay_payment_id });

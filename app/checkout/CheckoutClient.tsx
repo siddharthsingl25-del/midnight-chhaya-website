@@ -211,6 +211,33 @@ export default function CheckoutClient() {
       chainId: line.chainId,
     }));
 
+    /* Structured snapshot for the customer-facing email + WhatsApp.
+     * paymentId is filled in server-side after signature verification. */
+    const addressText = [
+      form.address1,
+      form.address2,
+      `${form.city}${form.state ? ", " + form.state : ""}${form.pin ? " - " + form.pin : ""}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    const snapshot = {
+      customer: {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+      },
+      items: lines.map(({ product, chain, line, unitPrice }) => ({
+        name: product.name,
+        chainName: chain?.name ?? null,
+        qty: line.qty,
+        unitPrice,
+      })),
+      subtotal,
+      shipping,
+      total: grandTotal,
+      address: addressText,
+    };
+
     const rzp = new RazorpayCtor({
       key: createData.keyId,
       amount: createData.amountPaise,
@@ -243,6 +270,7 @@ export default function CheckoutClient() {
               items: itemsForVerify,
               orderText: text,
               titleSummary: asciiTitle,
+              snapshot,
             }),
           });
           if (!verifyRes.ok) {
