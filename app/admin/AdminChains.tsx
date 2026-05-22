@@ -2,12 +2,14 @@
 
 /**
  * Chains tab — add / edit / remove chain options that appear on every
- * chain-category product's detail page.
+ * chain-category product's detail page. Each row also exposes an
+ * inline stock counter so day-to-day quantity changes don't require
+ * opening the edit form.
  */
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Trash2 } from "lucide-react";
 import ImageUpload from "./ImageUpload";
 import { useCatalogRefresh, useChains } from "@/lib/catalog-context";
 import type { ChainOption } from "@/lib/types";
@@ -52,7 +54,7 @@ export default function AdminChains() {
       <div className="flex items-center justify-between gap-4 mb-6">
         <p className="font-serif italic text-bone-dim text-sm">
           Chain styles offered at checkout. Customers pick one when adding any
-          chain-category product to cart.
+          chain-category product to cart. Use the +/- to adjust quantity.
         </p>
         <button
           type="button"
@@ -66,31 +68,179 @@ export default function AdminChains() {
 
       <ul className="flex flex-col">
         {chains.map((c) => (
-          <li key={c.id} className="flex items-center gap-4 py-4 border-b border-bone/10">
-            <button
-              type="button"
-              onClick={() => setMode({ kind: "edit", id: c.id })}
-              className="flex items-center gap-4 flex-1 min-w-0 text-left"
-            >
-              <div className="relative w-14 h-14 flex-shrink-0 overflow-hidden bg-charcoal">
-                {c.image ? (
-                  <Image src={c.image} alt={c.name} fill sizes="56px" className="object-cover" />
-                ) : null}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-display text-bone text-sm sm:text-base truncate">
-                  {c.name}
-                </p>
-                <p className="text-[10px] text-bone-dim uppercase tracking-[0.15em] truncate">
-                  {c.id}
-                  {c.priceModifier ? ` · +₹${c.priceModifier}` : ""}
-                </p>
-              </div>
-            </button>
-          </li>
+          <ChainRow
+            key={c.id}
+            chain={c}
+            onEdit={() => setMode({ kind: "edit", id: c.id })}
+            onStockChanged={refresh}
+          />
         ))}
       </ul>
     </>
+  );
+}
+
+function ChainRow({
+  chain,
+  onEdit,
+  onStockChanged,
+}: {
+  chain: ChainOption;
+  onEdit: () => void;
+  onStockChanged: () => void | Promise<void>;
+}) {
+  const [local, setLocal] = useState(chain.stock);
+  const [busy, setBusy] = useState(false);
+
+  // Sync local with server-side value if the chains list refreshes.
+  useEffect(() => {
+    setLocal(chain.stock);
+  }, [chain.stock]);
+
+  const bump = async (delta: number) => {
+    setBusy(true);
+    const optimistic = Math.max(0, local + delta);
+    setLocal(optimistic);
+    try {
+      const res = await fetch("/api/admin/chain-stock", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: chain.id, delta }),
+      });
+      if (!res.ok) {
+        // revert on failure
+        setLocal(chain.stock);
+        return;
+      }
+      const { row } = (await res.json()) as { row: { stock: number } };
+      setLocal(row.stock);
+      await onStockChanged();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const setAbsolute = async (next: number) => {
+    setBusy(true);
+    setLocal(next);
+    try {
+      const res = await fetch("/api/admin/chain-stock", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: chain.id, stock: next }),
+      });
+      if (!res.ok) {
+        setLocal(chain.stock);
+        return;
+      }
+      const { row } = (await res.json()) as { row: { stock: number } };
+      setLocal(row.stock);
+      await onStockChanged();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const borderClass =
+    local === 0
+      ? "border-oxblood/60"
+      : local <= 3
+        ? "border-gold/60"
+        : "border-bone/10";
+
+  return (
+    <li className={`flex items-center gap-4 py-4 border-b ${borderClass}`}>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="flex items-center gap-4 flex-1 min-w-0 text-left"
+      >
+        <div className="relative w-14 h-14 flex-shrink-0 overflow-hidden bg-charcoal">
+          {chain.image ? (
+            <Image src={chain.image} alt={chain.name} fill sizes="56px" className="object-cover" />
+          ) : null}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-display text-bone text-sm sm:text-base truncate">
+            {chain.name}
+          </p>
+          <p className="text-[10px] text-bone-dim uppercase tracking-[0.15em] truncate">
+            {chain.id}
+            {chain.priceModifier ? ` · +₹${chain.priceModifier}` : ""}
+          </p>
+        </div>
+      </button>
+
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        <button
+          type="button"
+          onClick={() => bump(-1)}
+          aria-label="Decrease chain stock"
+          disabled={busy || local <= 0}
+          className="grid place-items-center w-9 h-9 border border-bone/20
+                     text-bone hover:border-oxblood hover:text-oxblood
+                     transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Minus size={14} strokeWidth={1.75} />
+        </button>
+        <ChainStockInput value={local} disabled={busy} onCommit={setAbsolute} />
+        <button
+          type="button"
+          onClick={() => bump(+1)}
+          aria-label="Increase chain stock"
+          disabled={busy}
+          className="grid place-items-center w-9 h-9 border border-bone/20
+                     text-bone hover:border-gold hover:text-gold
+                     transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Plus size={14} strokeWidth={1.75} />
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function ChainStockInput({
+  value,
+  disabled,
+  onCommit,
+}: {
+  value: number;
+  disabled: boolean;
+  onCommit: (n: number) => void | Promise<void>;
+}) {
+  const [text, setText] = useState(String(value));
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => {
+    if (!dirty) setText(String(value));
+  }, [value, dirty]);
+  const commit = () => {
+    const n = Math.max(0, parseInt(text, 10) || 0);
+    setDirty(false);
+    if (n !== value) void onCommit(n);
+    setText(String(n));
+  };
+  return (
+    <input
+      type="number"
+      min={0}
+      inputMode="numeric"
+      value={text}
+      disabled={disabled}
+      onChange={(e) => {
+        setDirty(true);
+        setText(e.target.value);
+      }}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+      }}
+      aria-label="Chain stock"
+      className="w-14 h-9 text-center bg-transparent border border-bone/20
+                 font-body text-bone text-base
+                 focus:outline-none focus:border-gold transition-colors
+                 disabled:opacity-60"
+    />
   );
 }
 
@@ -111,6 +261,9 @@ function ChainForm({
   const [image, setImage] = useState(chain?.image ?? "");
   const [priceModifier, setPriceModifier] = useState<string>(
     chain?.priceModifier ? String(chain.priceModifier) : ""
+  );
+  const [stock, setStock] = useState<string>(
+    chain ? String(chain.stock ?? 0) : ""
   );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -142,6 +295,7 @@ function ChainForm({
       name: name.trim(),
       image,
       price_modifier: priceModifier === "" ? 0 : Number(priceModifier),
+      stock: stock === "" ? 0 : Math.max(0, Math.floor(Number(stock))),
     };
 
     setSaving(true);
@@ -261,6 +415,26 @@ function ChainForm({
         />
         <p className="mt-1 text-[10px] text-bone-dim font-body">
           Added on top of the base product price when this chain is chosen.
+        </p>
+      </label>
+
+      <label className="block">
+        <span className="block mb-2 font-body text-bone text-sm font-semibold">
+          Quantity in stock
+        </span>
+        <input
+          value={stock}
+          onChange={(e) => setStock(e.target.value)}
+          placeholder="0"
+          type="tel"
+          inputMode="numeric"
+          className="w-full bg-transparent border-b-2 border-bone/30 px-1 py-3
+                     font-body text-bone text-lg
+                     placeholder:text-bone-dim/50
+                     focus:outline-none focus:border-gold transition-colors"
+        />
+        <p className="mt-1 text-[10px] text-bone-dim font-body">
+          How many of this chain you currently have. 0 = sold out (checkout will reject orders).
         </p>
       </label>
 

@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   if (block) return block;
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-  const { id, name, image, price_modifier = 0 } = body;
+  const { id, name, image, price_modifier = 0, stock = 0 } = body;
 
   if (typeof id !== "string" || !id.trim()) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
@@ -51,6 +51,7 @@ export async function POST(req: Request) {
     name: name.trim(),
     image,
     price_modifier: Number(price_modifier) || 0,
+    stock: Math.max(0, Math.floor(Number(stock) || 0)),
     display_order,
     updated_at: new Date().toISOString(),
   };

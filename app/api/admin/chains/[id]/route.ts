@@ -30,6 +30,13 @@ export async function PUT(req: Request, { params }: Params) {
     }
     patch.price_modifier = n;
   }
+  if (body.stock !== undefined) {
+    const n = Number(body.stock);
+    if (!Number.isFinite(n) || n < 0) {
+      return NextResponse.json({ error: "Bad stock" }, { status: 400 });
+    }
+    patch.stock = Math.floor(n);
+  }
 
   const { data, error } = await supabaseAdmin()
     .from("chain_options")
