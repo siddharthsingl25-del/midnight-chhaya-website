@@ -57,7 +57,14 @@ export async function POST(req: Request) {
   // 1. Resolve every line server-side. Reject if a slug doesn't exist or
   //    has a null price (inquire-only).
   const products = await getAllProducts();
-  const lines: { slug: string; qty: number; unitPaise: number; name: string }[] = [];
+  const lines: {
+    slug: string;
+    qty: number;
+    chainId: string | null;
+    chainName: string | null;
+    unitPaise: number;
+    name: string;
+  }[] = [];
   for (const { slug, qty, chainId } of items) {
     if (typeof slug !== "string" || typeof qty !== "number" || qty <= 0) {
       return NextResponse.json({ error: "Bad item" }, { status: 400 });
@@ -71,6 +78,8 @@ export async function POST(req: Request) {
     lines.push({
       slug,
       qty,
+      chainId: chain?.id ?? null,
+      chainName: chain?.name ?? null,
       unitPaise: Math.round(unitInr * 100),
       name: product.name,
     });
@@ -104,6 +113,42 @@ export async function POST(req: Request) {
         },
         { status: 409 }
       );
+    }
+  }
+
+  // 2b. Chain stock check — same idea, keyed by chain id ----------------------
+  const chainQty = new Map<string, { qty: number; name: string }>();
+  for (const l of lines) {
+    if (!l.chainId) continue;
+    const prev = chainQty.get(l.chainId);
+    chainQty.set(l.chainId, {
+      qty: (prev?.qty ?? 0) + l.qty,
+      name: l.chainName ?? l.chainId,
+    });
+  }
+  if (chainQty.size > 0) {
+    const chainIds = Array.from(chainQty.keys());
+    const { data: chainStockRows, error: chainStockErr } = await supabaseAdmin()
+      .from("chain_options")
+      .select("id, stock")
+      .in("id", chainIds);
+    if (chainStockErr) {
+      return NextResponse.json({ error: chainStockErr.message }, { status: 500 });
+    }
+    const stockByChain = new Map(
+      (chainStockRows ?? []).map((r) => [r.id as string, r.stock as number])
+    );
+    for (const [id, { qty, name }] of chainQty) {
+      if ((stockByChain.get(id) ?? 0) < qty) {
+        return NextResponse.json(
+          {
+            error: "Chain out of stock",
+            slug: id,
+            name: `${name} (chain)`,
+          },
+          { status: 409 }
+        );
+      }
     }
   }
 

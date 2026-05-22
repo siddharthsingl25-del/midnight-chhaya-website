@@ -85,10 +85,14 @@ export async function POST(req: Request) {
   }
 
   // 2. Decrement stock for every line, rolling back on partial failure --------
+  // Both product inventory (slug-keyed) and chain inventory (id-keyed). If
+  // either fails partway through, roll back whatever we already touched.
   const items = Array.isArray(body.items) ? body.items : [];
   const sb = supabaseAdmin();
-  const applied: { slug: string; qty: number }[] = [];
+  const appliedProducts: { slug: string; qty: number }[] = [];
+  const appliedChains: { id: string; qty: number }[] = [];
   let stockFailureSlug: string | null = null;
+  let stockFailureChainId: string | null = null;
 
   for (const { slug, qty } of items) {
     if (typeof slug !== "string" || typeof qty !== "number" || qty <= 0) continue;
@@ -100,12 +104,33 @@ export async function POST(req: Request) {
       stockFailureSlug = slug;
       break;
     }
-    applied.push({ slug, qty });
+    appliedProducts.push({ slug, qty });
   }
 
-  if (stockFailureSlug) {
-    // Roll back what we already decremented.
-    for (const { slug, qty } of applied) {
+  if (!stockFailureSlug) {
+    // Aggregate chain qty across lines (a chain id may repeat).
+    const chainQty = new Map<string, number>();
+    for (const { chainId, qty } of items) {
+      if (typeof chainId !== "string" || !chainId) continue;
+      if (typeof qty !== "number" || qty <= 0) continue;
+      chainQty.set(chainId, (chainQty.get(chainId) ?? 0) + qty);
+    }
+    for (const [id, qty] of chainQty) {
+      const { error } = await sb.rpc("decrement_chain_stock", {
+        p_chain_id: id,
+        p_qty: qty,
+      });
+      if (error) {
+        stockFailureChainId = id;
+        break;
+      }
+      appliedChains.push({ id, qty });
+    }
+  }
+
+  if (stockFailureSlug || stockFailureChainId) {
+    // Roll back every product decrement.
+    for (const { slug, qty } of appliedProducts) {
       const { data } = await sb
         .from("inventory")
         .select("stock")
@@ -116,8 +141,23 @@ export async function POST(req: Request) {
         .from("inventory")
         .upsert({ slug, stock: next, updated_at: new Date().toISOString() });
     }
+    // Roll back every chain decrement.
+    for (const { id, qty } of appliedChains) {
+      const { data } = await sb
+        .from("chain_options")
+        .select("stock")
+        .eq("id", id)
+        .maybeSingle();
+      const next = (data?.stock ?? 0) + qty;
+      await sb
+        .from("chain_options")
+        .update({ stock: next, updated_at: new Date().toISOString() })
+        .eq("id", id);
+    }
+    const failingThing = stockFailureSlug
+      ? `product ${stockFailureSlug}`
+      : `chain ${stockFailureChainId}`;
     // Notify the merchant — customer has paid but stock check failed.
-    // They'll need to refund or restock; we surface it loudly.
     try {
       await fetch(`https://ntfy.sh/${SITE.notifyTopic}`, {
         method: "POST",
@@ -130,7 +170,7 @@ export async function POST(req: Request) {
           `Payment succeeded but post-payment stock decrement failed.\n\n` +
           `Payment ID: ${razorpay_payment_id}\n` +
           `Razorpay order: ${razorpay_order_id}\n` +
-          `Failing item: ${stockFailureSlug}\n\n` +
+          `Failing item: ${failingThing}\n\n` +
           (body.orderText ?? ""),
       });
     } catch {
@@ -139,7 +179,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error: "Stock unavailable after payment",
-        slug: stockFailureSlug,
+        slug: stockFailureSlug ?? stockFailureChainId,
         paymentId: razorpay_payment_id,
       },
       { status: 409 }

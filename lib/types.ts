@@ -35,6 +35,8 @@ export type ChainOption = {
   image: string;
   /** INR rupees added to the base product price. */
   priceModifier: number;
+  /** Physical stock count — mirrors product inventory. 0 = sold out. */
+  stock: number;
   displayOrder: number;
 };
 
@@ -82,6 +84,7 @@ type ChainRow = {
   name: string;
   image: string;
   price_modifier: number;
+  stock: number;
   display_order: number;
 };
 
@@ -91,6 +94,7 @@ export function chainFromRow(row: ChainRow): ChainOption {
     name: row.name,
     image: row.image,
     priceModifier: row.price_modifier ?? 0,
+    stock: row.stock ?? 0,
     displayOrder: row.display_order ?? 0,
   };
 }
