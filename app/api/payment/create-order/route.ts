@@ -30,6 +30,8 @@ type Body = {
     phone: string;
     email: string;
   };
+  /** Optional abandoned-cart recovery code (BACK10-XXXXXX). */
+  discountCode?: string;
 };
 
 export async function POST(req: Request) {
@@ -153,10 +155,41 @@ export async function POST(req: Request) {
   }
 
   // 3. Total + shipping computed server-side from authoritative prices.
-  const subtotalPaise = lines.reduce(
+  const grossSubtotalPaise = lines.reduce(
     (sum, l) => sum + l.unitPaise * l.qty,
     0
   );
+
+  // 3b. Apply abandoned-cart recovery code if provided. Re-validate
+  // server-side — the client UI is just a hint. Discount is taken
+  // off the SUBTOTAL only; shipping is computed on the discounted
+  // subtotal so we don't accidentally cross the free-shipping line
+  // because of the discount.
+  let discountPercent = 0;
+  let appliedCode: string | null = null;
+  if (body.discountCode) {
+    const code = body.discountCode.trim().toUpperCase();
+    const { data: codeRow } = await supabaseAdmin()
+      .from("pending_orders")
+      .select("recovery_code, recovery_percent_off, recovered_at, completed_at")
+      .eq("recovery_code", code)
+      .is("completed_at", null)
+      .maybeSingle();
+    if (codeRow) {
+      const recovered = codeRow.recovered_at
+        ? new Date(codeRow.recovered_at).getTime()
+        : null;
+      const expired =
+        recovered !== null && Date.now() > recovered + 7 * 24 * 3600 * 1000;
+      if (!expired) {
+        discountPercent = Math.max(0, Math.min(50, codeRow.recovery_percent_off ?? 10));
+        appliedCode = code;
+      }
+    }
+  }
+
+  const discountPaise = Math.round((grossSubtotalPaise * discountPercent) / 100);
+  const subtotalPaise = grossSubtotalPaise - discountPaise;
   const subtotalInr = subtotalPaise / 100;
   const shippingPaise = computeShipping(subtotalInr) * 100;
   const amountPaise = subtotalPaise + shippingPaise;
@@ -183,11 +216,49 @@ export async function POST(req: Request) {
       },
     });
 
+    // Persist a pending-orders row so the cron can find this if the
+    // customer abandons the Razorpay modal. The verify endpoint marks
+    // it completed_at when payment succeeds. If a recovery code was
+    // applied, denormalize it onto this row so verify can also mark
+    // the ORIGINAL recovery row as completed (prevents code reuse).
+    // Errors here don't block checkout — recovery is nice-to-have.
+    try {
+      await supabaseAdmin()
+        .from("pending_orders")
+        .upsert(
+          {
+            razorpay_order_id: order.id,
+            customer_name: body.customer?.name ?? "",
+            customer_email: body.customer?.email ?? "",
+            customer_phone: body.customer?.phone ?? "",
+            customer_instagram: body.customer?.instagram ?? "",
+            items: lines.map((l) => ({
+              slug: l.slug,
+              name: l.name,
+              qty: l.qty,
+              chainName: l.chainName,
+              unitPrice: Math.round(l.unitPaise / 100),
+            })),
+            subtotal: Math.round(subtotalPaise / 100),
+            shipping: Math.round(shippingPaise / 100),
+            total: Math.round(amountPaise / 100),
+            recovery_code: appliedCode,
+            recovery_percent_off: appliedCode ? discountPercent : 10,
+          },
+          { onConflict: "razorpay_order_id" }
+        );
+    } catch (e) {
+      console.error("[pending-orders] upsert failed", e);
+    }
+
     return NextResponse.json({
       razorpayOrderId: order.id,
       amountPaise,
       currency: "INR",
       keyId,
+      appliedCode,
+      discountPercent,
+      discountPaise,
     });
   } catch (e: unknown) {
     const message =

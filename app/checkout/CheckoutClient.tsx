@@ -64,13 +64,63 @@ export default function CheckoutClient() {
   const refreshStock = useStockRefresh();
   const lines = detailed();
   const subtotal = total();
-  const shipping = computeShipping(subtotal);
-  const grandTotal = subtotal + shipping;
+  const [discountCode, setDiscountCode] = useState<string>("");
+  const [appliedCode, setAppliedCode] = useState<{
+    code: string;
+    percentOff: number;
+    amountOff: number;
+  } | null>(null);
+  const [codeError, setCodeError] = useState<string>("");
+  const [codeChecking, setCodeChecking] = useState(false);
+  const discountedSubtotal = appliedCode
+    ? Math.max(0, subtotal - appliedCode.amountOff)
+    : subtotal;
+  const shipping = computeShipping(discountedSubtotal);
+  const grandTotal = discountedSubtotal + shipping;
   const [form, setForm] = useState<Form>(EMPTY);
   const [status, setStatus] = useState<Status>("idle");
   const [orderText, setOrderText] = useState<string>("");
   const [orderNumber, setOrderNumber] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string>("");
+
+  const applyDiscount = async () => {
+    const code = discountCode.trim().toUpperCase();
+    if (!code) return;
+    setCodeChecking(true);
+    setCodeError("");
+    try {
+      const res = await fetch("/api/checkout/validate-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotal }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        valid?: boolean;
+        percentOff?: number;
+        amountOff?: number;
+        error?: string;
+      };
+      if (!res.ok || !data.valid) {
+        setCodeError(data.error || "Code not valid");
+        setAppliedCode(null);
+        return;
+      }
+      setAppliedCode({
+        code,
+        percentOff: data.percentOff ?? 10,
+        amountOff: data.amountOff ?? 0,
+      });
+      setCodeError("");
+    } finally {
+      setCodeChecking(false);
+    }
+  };
+
+  const removeDiscount = () => {
+    setAppliedCode(null);
+    setDiscountCode("");
+    setCodeError("");
+  };
 
   const set = (k: keyof Form, v: string) =>
     setForm((prev) => ({ ...prev, [k]: v }));
@@ -248,6 +298,7 @@ export default function CheckoutClient() {
             phone: form.phone,
             email: form.email,
           },
+          discountCode: appliedCode?.code,
         }),
       });
       if (!res.ok) {
@@ -605,6 +656,24 @@ export default function CheckoutClient() {
                 <span className="eyebrow text-bone-dim">Subtotal</span>
                 <span className="text-sm text-bone">{formatPrice(subtotal)}</span>
               </div>
+              {appliedCode ? (
+                <div className="flex items-baseline justify-between">
+                  <span className="eyebrow text-gold inline-flex items-center gap-2">
+                    {appliedCode.percentOff}% off · {appliedCode.code}
+                    <button
+                      type="button"
+                      onClick={removeDiscount}
+                      className="text-bone-dim hover:text-oxblood transition-colors text-[10px] underline"
+                      aria-label="Remove discount code"
+                    >
+                      remove
+                    </button>
+                  </span>
+                  <span className="text-sm text-gold">
+                    −{formatPrice(appliedCode.amountOff)}
+                  </span>
+                </div>
+              ) : null}
               <div className="flex items-baseline justify-between">
                 <span className="eyebrow text-bone-dim">Shipping</span>
                 <span className={`text-sm ${shipping === 0 ? "text-gold" : "text-bone"}`}>
@@ -613,9 +682,41 @@ export default function CheckoutClient() {
               </div>
               {shipping > 0 ? (
                 <p className="text-[10px] text-bone-dim italic">
-                  Add {formatPrice(SHIPPING_THRESHOLD - subtotal)} more to your cart for free shipping.
+                  Add {formatPrice(SHIPPING_THRESHOLD - discountedSubtotal)} more to your cart for free shipping.
                 </p>
               ) : null}
+
+              {/* Discount code input — collapsed when one is applied. */}
+              {!appliedCode ? (
+                <div className="mt-3 flex flex-col gap-1">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={discountCode}
+                      onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                      placeholder="Discount code"
+                      className="flex-1 bg-transparent border border-bone/20 px-3 py-2
+                                 font-body text-bone text-sm uppercase tracking-wide
+                                 placeholder:text-bone-dim/50 placeholder:normal-case placeholder:tracking-normal
+                                 focus:outline-none focus:border-gold transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyDiscount}
+                      disabled={!discountCode.trim() || codeChecking}
+                      className="px-4 py-2 border border-gold/60 text-gold eyebrow text-[10px]
+                                 transition-colors duration-300 hover:bg-gold hover:text-ink
+                                 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {codeChecking ? "Checking…" : "Apply"}
+                    </button>
+                  </div>
+                  {codeError ? (
+                    <p className="text-[10px] text-oxblood mt-1">{codeError}</p>
+                  ) : null}
+                </div>
+              ) : null}
+
               <div className="flex items-baseline justify-between pt-3 mt-1 border-t border-bone/10">
                 <span className="eyebrow text-bone-dim">Total</span>
                 <span className="font-display text-2xl text-bone">

@@ -282,3 +282,272 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Shared send helpers — used by the order-confirmation functions above
+ * and the lead-recovery / feedback functions below.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+async function sendGmailEmail(
+  to: string,
+  subject: string,
+  html: string,
+  text: string
+): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!user || !pass) return { ok: false, skipped: true };
+  if (!to) return { ok: false, skipped: true };
+  const host = process.env.SMTP_HOST ?? "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT ?? 465);
+  const fromName = process.env.EMAIL_FROM_NAME ?? SITE.name;
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+    });
+    await transporter.sendMail({
+      from: `"${fromName}" <${user}>`,
+      to,
+      subject,
+      html,
+      text,
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "unknown" };
+  }
+}
+
+async function sendWhatsAppTemplate(
+  phone: string,
+  templateName: string | undefined,
+  bodyParams: string[]
+): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const lang = process.env.WHATSAPP_TEMPLATE_LANG ?? "en";
+  if (!phoneNumberId || !accessToken || !templateName) {
+    return { ok: false, skipped: true };
+  }
+  const to = normalizeIndianPhone(phone);
+  if (!to) return { ok: false, skipped: true };
+
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to,
+          type: "template",
+          template: {
+            name: templateName,
+            language: { code: lang },
+            components: [
+              {
+                type: "body",
+                parameters: bodyParams.map((text) => ({ type: "text", text })),
+              },
+            ],
+          },
+        }),
+      }
+    );
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      return { ok: false, error: `WhatsApp ${res.status}: ${body.slice(0, 200)}` };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "unknown" };
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Feedback request — sent 3 days after a paid order.
+ *
+ * WHATSAPP_FEEDBACK_TEMPLATE_NAME must be a Meta-approved utility
+ * template with TWO body variables in this order:
+ *   {{1}} = customer name
+ *   {{2}} = feedback URL (e.g. https://midnightchhaya.com/feedback/MC-00042)
+ * ───────────────────────────────────────────────────────────────────────── */
+
+export type FeedbackRequest = {
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  feedbackUrl: string;
+};
+
+export async function sendFeedbackRequestEmail(req: FeedbackRequest) {
+  const subject = `How was your ${SITE.name} piece? · ${req.orderNumber}`;
+  const text = [
+    `Hi ${req.customerName || "there"},`,
+    ``,
+    `Your ${SITE.name} order ${req.orderNumber} should have reached you by now.`,
+    `If it has — how is it? Drop a quick rating + a line:`,
+    ``,
+    req.feedbackUrl,
+    ``,
+    `Even one line helps us a lot — we read every reply.`,
+    ``,
+    `— ${SITE.name}`,
+    SITE.url,
+  ].join("\n");
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:#0d0c0a;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#0d0c0a;">
+    <tr><td align="center" style="padding:40px 20px;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="560" style="max-width:560px;background:#15130f;border:1px solid #2a2825;">
+        <tr><td style="padding:32px 32px 8px;text-align:center;">
+          <div style="font-family:Georgia,serif;color:#b8935a;font-size:11px;letter-spacing:0.32em;text-transform:uppercase;">${escapeHtml(SITE.name)}</div>
+          <h1 style="font-family:Georgia,serif;color:#e8e2d4;font-size:24px;font-weight:normal;letter-spacing:0.04em;text-transform:uppercase;margin:18px 0 6px;">How is it wearing?</h1>
+          <p style="font-family:Georgia,serif;font-style:italic;color:#8a8474;font-size:15px;margin:0;">Hi ${escapeHtml(req.customerName || "there")} — your order ${escapeHtml(req.orderNumber)} should have reached you by now.</p>
+        </td></tr>
+
+        <tr><td style="padding:24px 32px 0;text-align:center;">
+          <p style="font-family:Georgia,serif;color:#e8e2d4;font-size:15px;line-height:1.7;margin:0 0 28px;">
+            One line + a star rating helps us a lot. We read every reply.
+          </p>
+          <a href="${escapeHtml(req.feedbackUrl)}"
+             style="display:inline-block;padding:14px 36px;background:#b8935a;color:#0d0c0a;
+                    font-family:Georgia,serif;font-size:13px;letter-spacing:0.18em;
+                    text-transform:uppercase;text-decoration:none;">
+            Leave feedback
+          </a>
+        </td></tr>
+
+        <tr><td style="padding:36px 32px 32px;text-align:center;border-top:1px solid #2a2825;">
+          <p style="font-family:Georgia,serif;color:#8a8474;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin:24px 0 0;">${escapeHtml(SITE.name)}</p>
+          <p style="font-family:Georgia,serif;font-style:italic;color:#8a8474;font-size:12px;margin:6px 0 0;">${escapeHtml(SITE.tagline)}</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+  return sendGmailEmail(req.customerEmail, subject, html, text);
+}
+
+export async function sendFeedbackRequestWhatsApp(req: FeedbackRequest) {
+  return sendWhatsAppTemplate(
+    req.customerPhone,
+    process.env.WHATSAPP_FEEDBACK_TEMPLATE_NAME,
+    [req.customerName || "Customer", req.feedbackUrl]
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Abandoned-cart recovery — sent 1-24h after a Razorpay order was
+ * created but never paid.
+ *
+ * WHATSAPP_ABANDONED_TEMPLATE_NAME must be a Meta-approved MARKETING
+ * template with THREE body variables in this order:
+ *   {{1}} = customer name
+ *   {{2}} = discount code (e.g. BACK10-A1B2C3)
+ *   {{3}} = checkout URL
+ * Marketing templates are stricter to approve — Meta wants an opt-in
+ * trail. Until approved this function will silently skip.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+export type AbandonedCart = {
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  itemSummary: string;
+  total: number;
+  recoveryCode: string;
+  percentOff: number;
+  checkoutUrl: string;
+};
+
+export async function sendAbandonedCartEmail(cart: AbandonedCart) {
+  const subject = `You left something behind · ${cart.percentOff}% off if you finish now`;
+  const totalFormatted = `${SITE.currency.symbol}${cart.total.toLocaleString("en-IN")}`;
+
+  const text = [
+    `Hi ${cart.customerName || "there"},`,
+    ``,
+    `You almost made it. Your ${SITE.name} bag still has:`,
+    ``,
+    cart.itemSummary,
+    ``,
+    `Total: ${totalFormatted}`,
+    ``,
+    `If you come back within 24 hours, this code takes ${cart.percentOff}% off:`,
+    `   ${cart.recoveryCode}`,
+    ``,
+    `Finish the order: ${cart.checkoutUrl}`,
+    ``,
+    `— ${SITE.name}`,
+    SITE.url,
+  ].join("\n");
+
+  const html = `<!doctype html>
+<html><body style="margin:0;padding:0;background:#0d0c0a;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:#0d0c0a;">
+    <tr><td align="center" style="padding:40px 20px;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="560" style="max-width:560px;background:#15130f;border:1px solid #2a2825;">
+        <tr><td style="padding:32px 32px 8px;text-align:center;">
+          <div style="font-family:Georgia,serif;color:#b8935a;font-size:11px;letter-spacing:0.32em;text-transform:uppercase;">${escapeHtml(SITE.name)}</div>
+          <h1 style="font-family:Georgia,serif;color:#e8e2d4;font-size:24px;font-weight:normal;letter-spacing:0.04em;text-transform:uppercase;margin:18px 0 6px;">You left something behind.</h1>
+          <p style="font-family:Georgia,serif;font-style:italic;color:#8a8474;font-size:15px;margin:0;">Hi ${escapeHtml(cart.customerName || "there")} — your bag is still waiting.</p>
+        </td></tr>
+
+        <tr><td style="padding:24px 32px 0;">
+          <pre style="font-family:Georgia,serif;color:#e8e2d4;font-size:14px;line-height:1.7;margin:0;white-space:pre-wrap;">${escapeHtml(cart.itemSummary)}</pre>
+          <div style="margin-top:18px;font-family:Georgia,serif;color:#e8e2d4;font-size:14px;">
+            <strong style="color:#8a8474;font-weight:normal;">Total:</strong> ${escapeHtml(totalFormatted)}
+          </div>
+        </td></tr>
+
+        <tr><td style="padding:24px 32px 0;text-align:center;">
+          <div style="font-family:Georgia,serif;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#8a8474;">${cart.percentOff}% off if you finish now</div>
+          <div style="font-family:Menlo,Consolas,monospace;color:#b8935a;font-size:24px;letter-spacing:0.18em;margin-top:8px;padding:12px 24px;border:1px dashed #b8935a;display:inline-block;">
+            ${escapeHtml(cart.recoveryCode)}
+          </div>
+          <div style="font-family:Georgia,serif;font-size:11px;color:#5a5650;margin-top:8px;">Use it at checkout. Valid for 24 hours.</div>
+        </td></tr>
+
+        <tr><td style="padding:24px 32px 0;text-align:center;">
+          <a href="${escapeHtml(cart.checkoutUrl)}"
+             style="display:inline-block;padding:14px 36px;background:#b8935a;color:#0d0c0a;
+                    font-family:Georgia,serif;font-size:13px;letter-spacing:0.18em;
+                    text-transform:uppercase;text-decoration:none;">
+            Finish my order
+          </a>
+        </td></tr>
+
+        <tr><td style="padding:36px 32px 32px;text-align:center;border-top:1px solid #2a2825;">
+          <p style="font-family:Georgia,serif;color:#8a8474;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin:24px 0 0;">${escapeHtml(SITE.name)}</p>
+          <p style="font-family:Georgia,serif;font-style:italic;color:#8a8474;font-size:12px;margin:6px 0 0;">${escapeHtml(SITE.tagline)}</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+  return sendGmailEmail(cart.customerEmail, subject, html, text);
+}
+
+export async function sendAbandonedCartWhatsApp(cart: AbandonedCart) {
+  return sendWhatsAppTemplate(
+    cart.customerPhone,
+    process.env.WHATSAPP_ABANDONED_TEMPLATE_NAME,
+    [
+      cart.customerName || "Customer",
+      cart.recoveryCode,
+      cart.checkoutUrl,
+    ]
+  );
+}

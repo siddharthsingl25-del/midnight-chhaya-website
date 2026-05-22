@@ -16,9 +16,17 @@ import { Check } from "lucide-react";
 import AdminStock from "./AdminStock";
 import AdminProducts from "./AdminProducts";
 import AdminChains from "./AdminChains";
+import AdminFeedback from "./AdminFeedback";
 import { easeCinematic } from "@/lib/animations";
 
-type Tab = "stock" | "products" | "chains";
+type Tab = "stock" | "products" | "chains" | "feedback";
+
+const TAB_LABEL: Record<Tab, string> = {
+  stock: "Stock",
+  products: "Products",
+  chains: "Chains",
+  feedback: "Feedback",
+};
 
 export default function AdminClient() {
   const [authed, setAuthed] = useState(false);
@@ -59,7 +67,7 @@ export default function AdminClient() {
           <div>
             <span className="eyebrow text-bone-dim">Admin</span>
             <h1 className="font-display uppercase text-bone text-3xl md:text-5xl mt-2">
-              {tab === "stock" ? "Stock" : tab === "products" ? "Products" : "Chains"}
+              {TAB_LABEL[tab]}
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -81,7 +89,7 @@ export default function AdminClient() {
 
         {/* Tab bar */}
         <div className="flex gap-6 mb-10 border-b border-bone/10 pb-2 overflow-x-auto">
-          {(["stock", "products", "chains"] as const).map((t) => {
+          {(["stock", "products", "chains", "feedback"] as const).map((t) => {
             const selected = tab === t;
             return (
               <button
@@ -89,11 +97,11 @@ export default function AdminClient() {
                 type="button"
                 onClick={() => setTab(t)}
                 className={[
-                  "relative eyebrow pb-2 transition-colors duration-300",
+                  "relative eyebrow pb-2 transition-colors duration-300 whitespace-nowrap",
                   selected ? "text-gold" : "text-bone-dim hover:text-bone",
                 ].join(" ")}
               >
-                {t === "stock" ? "Stock" : t === "products" ? "Products" : "Chains"}
+                {TAB_LABEL[t]}
                 {selected ? (
                   <motion.span
                     layoutId="admin-tab-underline"
@@ -117,6 +125,7 @@ export default function AdminClient() {
             {tab === "stock" ? <AdminStock /> : null}
             {tab === "products" ? <AdminProducts /> : null}
             {tab === "chains" ? <AdminChains /> : null}
+            {tab === "feedback" ? <AdminFeedback /> : null}
           </motion.div>
         </AnimatePresence>
       </div>

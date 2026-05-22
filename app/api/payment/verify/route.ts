@@ -186,6 +186,32 @@ export async function POST(req: Request) {
     );
   }
 
+  // 2b. Mark the pending-orders row as completed so the abandoned-cart
+  // cron doesn't try to recover an order that was just paid. If a
+  // recovery code was applied on this cart, also mark the ORIGINAL
+  // recovery row as completed so the same code can't be used again.
+  try {
+    const completedAt = new Date().toISOString();
+    const { data: currentPending } = await sb
+      .from("pending_orders")
+      .select("recovery_code")
+      .eq("razorpay_order_id", razorpay_order_id)
+      .maybeSingle();
+    await sb
+      .from("pending_orders")
+      .update({ completed_at: completedAt })
+      .eq("razorpay_order_id", razorpay_order_id);
+    if (currentPending?.recovery_code) {
+      await sb
+        .from("pending_orders")
+        .update({ completed_at: completedAt })
+        .eq("recovery_code", currentPending.recovery_code)
+        .is("completed_at", null);
+    }
+  } catch {
+    /* swallowed — non-critical */
+  }
+
   // 3. Persist the order row → gives us the human-readable order number ------
   // Falls back to the raw payment id if the insert fails (rare); the order is
   // already paid, so we never want to error out here.
