@@ -95,13 +95,13 @@ export default function ProductDetail({
           </Link>
         </Reveal>
 
-        <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20">
+        <div className="mt-10 flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
           {/* left: image + thumbs */}
-          <div className="lg:col-span-7">
+          <div className="w-full lg:w-[945px] lg:flex-shrink-0">
             <Reveal scale={0.96} y={20} className="block">
               <div
                 ref={imageRef}
-                className="relative w-full lg:max-w-[945px] aspect-[945/1110] lg:aspect-auto lg:h-[1110px] overflow-hidden bg-charcoal"
+                className="relative w-full aspect-[945/1110] lg:aspect-auto lg:w-[945px] lg:h-[1110px] overflow-hidden bg-charcoal"
               >
                 <motion.div className="absolute inset-0 -top-[4%] -bottom-[4%]" style={{ y: imageY }}>
                   <Image
@@ -149,7 +149,7 @@ export default function ProductDetail({
           </div>
 
           {/* right: meta */}
-          <div className="lg:col-span-5 lg:pt-6 flex flex-col gap-8">
+          <div className="w-full lg:flex-1 lg:min-w-0 lg:pt-6 flex flex-col gap-8">
             <Reveal>
               <span className="eyebrow">{product.category}</span>
             </Reveal>
