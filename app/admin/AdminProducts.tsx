@@ -16,7 +16,7 @@ import ImageUpload from "./ImageUpload";
 import { useCatalogRefresh, useProducts } from "@/lib/catalog-context";
 import type { Category, Product } from "@/lib/types";
 
-const CATEGORY_OPTIONS: Category[] = ["chains", "keychains", "bracelets", "rings"];
+const CATEGORY_OPTIONS: Category[] = ["chains", "keychains", "bracelets", "rings", "women"];
 
 type Mode =
   | { kind: "list" }

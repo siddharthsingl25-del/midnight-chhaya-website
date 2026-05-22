@@ -3,7 +3,7 @@
  * UI. Mirrors the `products` and `chain_options` tables in Supabase.
  */
 
-export type Category = "rings" | "chains" | "keychains" | "bracelets";
+export type Category = "rings" | "chains" | "keychains" | "bracelets" | "women";
 
 export const CATEGORIES: { id: Category | "all"; label: string }[] = [
   { id: "all",        label: "All" },
@@ -11,6 +11,7 @@ export const CATEGORIES: { id: Category | "all"; label: string }[] = [
   { id: "keychains",  label: "Keychains" },
   { id: "bracelets",  label: "Bracelets" },
   { id: "rings",      label: "Rings" },
+  { id: "women",      label: "Women" },
 ];
 
 export type Product = {
