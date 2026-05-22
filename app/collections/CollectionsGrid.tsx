@@ -82,32 +82,33 @@ export default function CollectionsGrid() {
   return (
     <section className="px-6 md:px-10 pb-32">
       <div className="mx-auto max-w-[1400px]">
-        <div className="mb-16 border-b border-bone/10 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          {/* category filter */}
-          <div className="flex flex-wrap gap-x-8 gap-y-3">
-            {CATEGORIES.map((c) => {
-              const selected = c.id === active;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => onSelect(c.id)}
-                  data-cursor={c.label}
-                  className={[
-                    "relative eyebrow transition-colors duration-500",
-                    selected ? "text-gold" : "text-bone-dim hover:text-bone",
-                  ].join(" ")}
-                >
-                  {c.label}
-                  {selected ? (
-                    <motion.span
-                      layoutId="cat-underline"
-                      className="absolute -bottom-[26px] left-0 right-0 h-px bg-gold"
-                      transition={{ duration: 0.5, ease: easeCinematic }}
-                    />
-                  ) : null}
-                </button>
-              );
-            })}
+        <div className="mb-10 sm:mb-16 border-b border-bone/10 pb-4 sm:pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+          {/* category filter — horizontal scrolling pill row.
+           * Pills keep the bar one-line on phones (no wrapping),
+           * and the active pill is filled gold instead of a separate
+           * animated underline (which misbehaved when items wrapped). */}
+          <div className="-mx-6 md:-mx-10 sm:mx-0 overflow-x-auto px-6 md:px-10 sm:px-0 scrollbar-none">
+            <div className="flex items-center gap-2 sm:gap-3 w-max">
+              {CATEGORIES.map((c) => {
+                const selected = c.id === active;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => onSelect(c.id)}
+                    data-cursor={c.label}
+                    className={[
+                      "eyebrow px-3 sm:px-4 py-2 border whitespace-nowrap",
+                      "transition-colors duration-300",
+                      selected
+                        ? "border-gold bg-gold/10 text-gold"
+                        : "border-bone/20 text-bone-dim hover:border-bone/50 hover:text-bone",
+                    ].join(" ")}
+                  >
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* sort */}
