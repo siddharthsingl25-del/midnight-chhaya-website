@@ -43,4 +43,11 @@ export const STORY: Beat[] = [
       "Made for those who keep their own counsel. For evening more than morning. For ceremonies — formal, private, imagined. Pieces meant to be lived in, scratched a little, passed on.",
     image: ph("04"),
   },
+  {
+    eyebrow: "V · The hand behind",
+    heading: "Sixteen, and stubborn.",
+    body:
+      "My name is Siddharth Singla. I am sixteen, and Midnight Chhaya is the first thing I have built end-to-end. It started in the back of school notebooks — sketches I could not stand to leave flat on paper. So I taught myself how to make them. Ideas arrive faster than I can finish the last batch, which is why drops are small and a piece is rarely repeated. I started this because I wanted to actually serve someone — not as a brand exercise, but to put something real on a real shoulder. If you are wearing something of mine, thank you. You are wearing the notebook.",
+    image: "/brand/atelier-pieces.webp",
+  },
 ];
