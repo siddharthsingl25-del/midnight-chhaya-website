@@ -2,27 +2,30 @@
  * Order-confirmation notifications.
  *
  * Two outbound channels, both fired after Razorpay payment verification:
- *   - Email via Resend                (RESEND_API_KEY, RESEND_FROM_EMAIL)
+ *   - Email via Gmail SMTP            (SMTP_USER = your gmail address,
+ *                                      SMTP_PASS = a Google App Password,
+ *                                      EMAIL_FROM_NAME optional display name,
+ *                                      SMTP_HOST / SMTP_PORT optional overrides)
  *   - WhatsApp via Meta Cloud API     (WHATSAPP_PHONE_NUMBER_ID,
  *                                      WHATSAPP_ACCESS_TOKEN,
  *                                      WHATSAPP_TEMPLATE_NAME,
  *                                      WHATSAPP_TEMPLATE_LANG default 'en')
  *
- * Both providers have free tiers — Resend gives 3k emails/mo, Meta
- * gives 1k WhatsApp service conversations/mo. If a provider's env
- * vars are missing, the function silently skips (returns
- * { ok: false, skipped: true }). That way dev / preview environments
- * don't crash; production just needs the vars set.
+ * Both providers are free for starting — Gmail sends ~500/day from your
+ * own address, Meta gives 1k WhatsApp service conversations/mo. If a
+ * provider's env vars are missing, the function silently skips (returns
+ * { ok: false, skipped: true }). Dev / preview environments don't crash;
+ * production just needs the vars set.
  *
  * The WhatsApp template referenced by WHATSAPP_TEMPLATE_NAME must be
  * pre-approved by Meta with exactly THREE body variables in this order:
  *   {{1}} = customer name
- *   {{2}} = order id (Razorpay payment id)
+ *   {{2}} = order number (e.g. "MC-00042")
  *   {{3}} = total amount (formatted, e.g. "₹2,499")
  * Adjust the `parameters` array below if your template uses different vars.
  */
 
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { SITE } from "@/lib/site";
 
 export type OrderItem = {
@@ -49,26 +52,34 @@ export type OrderSnapshot = {
   address: string;
 };
 
-/* —— Email (Resend) ——————————————————————————————————————— */
+/* —— Email (Gmail SMTP via nodemailer) ——————————————————— */
 
 export async function sendOrderConfirmationEmail(
   order: OrderSnapshot
 ): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL;
-  if (!apiKey || !from) return { ok: false, skipped: true };
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!user || !pass) return { ok: false, skipped: true };
   if (!order.customer.email) return { ok: false, skipped: true };
 
+  const host = process.env.SMTP_HOST ?? "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT ?? 465);
+  const fromName = process.env.EMAIL_FROM_NAME ?? SITE.name;
+
   try {
-    const resend = new Resend(apiKey);
-    const { error } = await resend.emails.send({
-      from,
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+    });
+    await transporter.sendMail({
+      from: `"${fromName}" <${user}>`,
       to: order.customer.email,
       subject: `Order confirmed — ${SITE.name} (${order.orderNumber})`,
       html: renderOrderEmailHtml(order),
       text: renderOrderEmailText(order),
     });
-    if (error) return { ok: false, error: error.message };
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "unknown" };
