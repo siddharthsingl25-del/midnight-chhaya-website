@@ -143,6 +143,87 @@ export default function CheckoutClient() {
     const asciiName = (form.name || "anon").replace(/[^\x20-\x7E]/g, "");
     const asciiTitle = `Paid - Rs.${grandTotal} - ${asciiName}`;
 
+    const itemsForVerify = lines.map(({ line }) => ({
+      slug: line.slug,
+      qty: line.qty,
+      chainId: line.chainId,
+    }));
+
+    /* Structured snapshot for the customer-facing email + WhatsApp.
+     * paymentId is filled in server-side after signature verification. */
+    const addressText = [
+      form.address1,
+      form.address2,
+      `${form.city}${form.state ? ", " + form.state : ""}${form.pin ? " - " + form.pin : ""}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    const snapshot = {
+      customer: {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+      },
+      items: lines.map(({ product, chain, line, unitPrice }) => ({
+        name: product.name,
+        chainName: chain?.name ?? null,
+        qty: line.qty,
+        unitPrice,
+      })),
+      subtotal,
+      shipping,
+      total: grandTotal,
+      address: addressText,
+    };
+
+    /* Shared post-payment confirmation: POST to verify with the
+     * Razorpay response (real signature or a synthetic one in bypass
+     * mode), then update UI based on result. */
+    const confirmPayment = async (resp: {
+      razorpay_payment_id: string;
+      razorpay_order_id: string;
+      razorpay_signature: string;
+    }) => {
+      try {
+        const verifyRes = await fetch("/api/payment/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...resp,
+            items: itemsForVerify,
+            orderText: text,
+            titleSummary: asciiTitle,
+            snapshot,
+            instagram: form.instagram,
+            notes: form.notes,
+          }),
+        });
+        if (!verifyRes.ok) {
+          const data = (await verifyRes.json().catch(() => ({}))) as {
+            error?: string;
+            paymentId?: string;
+          };
+          setErrorMsg(
+            `Payment succeeded but post-payment processing failed. Save this Payment ID and message us on Instagram: ${data.paymentId ?? resp.razorpay_payment_id}`
+          );
+          setStatus("error");
+          return;
+        }
+        const verifyData = (await verifyRes.json().catch(() => ({}))) as {
+          orderNumber?: string;
+          paymentId?: string;
+        };
+        setOrderNumber(verifyData.orderNumber ?? verifyData.paymentId ?? resp.razorpay_payment_id);
+        await refreshStock();
+        setStatus("ready");
+      } catch {
+        setErrorMsg(
+          `Network error during verification. Your payment may have gone through — save Payment ID ${resp.razorpay_payment_id} and message us on Instagram.`
+        );
+        setStatus("error");
+      }
+    };
+
     /* 1. Server creates a Razorpay order using authoritative prices.
      *    Also stock-checks here so we don't open a payment modal for
      *    items that just sold out. */
@@ -151,6 +232,7 @@ export default function CheckoutClient() {
       amountPaise: number;
       currency: string;
       keyId: string;
+      bypass?: boolean;
     };
     try {
       const res = await fetch("/api/payment/create-order", {
@@ -194,6 +276,19 @@ export default function CheckoutClient() {
       return;
     }
 
+    /* 1b. Bypass path — NEXT_PUBLIC_BYPASS_PAYMENT=1 on the server makes
+     * create-order return { bypass: true }. We skip Razorpay entirely
+     * and call verify with a synthetic signature. The verify endpoint
+     * sees the same flag and skips its HMAC check. */
+    if (createData.bypass) {
+      await confirmPayment({
+        razorpay_payment_id: `test_pay_${Date.now().toString(36)}`,
+        razorpay_order_id: createData.razorpayOrderId,
+        razorpay_signature: "test_signature",
+      });
+      return;
+    }
+
     /* 2. Load Razorpay's checkout script and open the modal. */
     const ok = await loadRazorpay();
     if (!ok) {
@@ -205,39 +300,6 @@ export default function CheckoutClient() {
     const RazorpayCtor = (window as unknown as {
       Razorpay: new (opts: Record<string, unknown>) => { open: () => void };
     }).Razorpay;
-
-    const itemsForVerify = lines.map(({ line }) => ({
-      slug: line.slug,
-      qty: line.qty,
-      chainId: line.chainId,
-    }));
-
-    /* Structured snapshot for the customer-facing email + WhatsApp.
-     * paymentId is filled in server-side after signature verification. */
-    const addressText = [
-      form.address1,
-      form.address2,
-      `${form.city}${form.state ? ", " + form.state : ""}${form.pin ? " - " + form.pin : ""}`,
-    ]
-      .filter(Boolean)
-      .join("\n");
-    const snapshot = {
-      customer: {
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-      },
-      items: lines.map(({ product, chain, line, unitPrice }) => ({
-        name: product.name,
-        chainName: chain?.name ?? null,
-        qty: line.qty,
-        unitPrice,
-      })),
-      subtotal,
-      shipping,
-      total: grandTotal,
-      address: addressText,
-    };
 
     const rzp = new RazorpayCtor({
       key: createData.keyId,
@@ -257,50 +319,7 @@ export default function CheckoutClient() {
 
       /* Razorpay calls this after a successful payment. We verify the
        * signature server-side, decrement stock, and ping ntfy. */
-      handler: async (resp: {
-        razorpay_payment_id: string;
-        razorpay_order_id: string;
-        razorpay_signature: string;
-      }) => {
-        try {
-          const verifyRes = await fetch("/api/payment/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ...resp,
-              items: itemsForVerify,
-              orderText: text,
-              titleSummary: asciiTitle,
-              snapshot,
-              instagram: form.instagram,
-              notes: form.notes,
-            }),
-          });
-          if (!verifyRes.ok) {
-            const data = (await verifyRes.json().catch(() => ({}))) as {
-              error?: string;
-              paymentId?: string;
-            };
-            setErrorMsg(
-              `Payment succeeded but post-payment processing failed. Save this Payment ID and message us on Instagram: ${data.paymentId ?? resp.razorpay_payment_id}`
-            );
-            setStatus("error");
-            return;
-          }
-          const verifyData = (await verifyRes.json().catch(() => ({}))) as {
-            orderNumber?: string;
-            paymentId?: string;
-          };
-          setOrderNumber(verifyData.orderNumber ?? verifyData.paymentId ?? resp.razorpay_payment_id);
-          await refreshStock();
-          setStatus("ready");
-        } catch {
-          setErrorMsg(
-            `Network error during verification. Your payment may have gone through — save Payment ID ${resp.razorpay_payment_id} and message us on Instagram.`
-          );
-          setStatus("error");
-        }
-      },
+      handler: confirmPayment,
 
       /* If the customer closes the modal without paying, return to idle
        * so they can retry without a stuck spinner. */
@@ -405,8 +424,15 @@ export default function CheckoutClient() {
   }
 
   // —— ACTIVE CHECKOUT STATE ————————————————————————————
+  const bypassPayment = process.env.NEXT_PUBLIC_BYPASS_PAYMENT === "1";
+
   return (
     <section className="px-6 md:px-10 pb-32">
+      {bypassPayment ? (
+        <div className="mx-auto max-w-[1200px] mb-8 border border-oxblood bg-oxblood/15 text-bone px-5 py-3 text-sm">
+          <strong className="text-oxblood">⚠ TEST MODE</strong> — payment is bypassed. Orders go through with no charge. Unset <code className="text-gold">NEXT_PUBLIC_BYPASS_PAYMENT</code> in Vercel and redeploy to re-enable real payments.
+        </div>
+      ) : null}
       <div className="mx-auto max-w-[1200px] grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
         {/* form */}
         <form onSubmit={placeOrder} className="lg:col-span-7 flex flex-col gap-10">
@@ -542,7 +568,13 @@ export default function CheckoutClient() {
                 transition={{ duration: 0.35, ease: easeCinematic }}
                 className="eyebrow text-ink"
               >
-                {status === "submitting" ? "Opening payment…" : `Pay · ${formatPrice(grandTotal)}`}
+                {status === "submitting"
+                  ? bypassPayment
+                    ? "Placing test order…"
+                    : "Opening payment…"
+                  : bypassPayment
+                    ? `Place test order · ${formatPrice(grandTotal)}`
+                    : `Pay · ${formatPrice(grandTotal)}`}
               </motion.span>
             </AnimatePresence>
           </button>
