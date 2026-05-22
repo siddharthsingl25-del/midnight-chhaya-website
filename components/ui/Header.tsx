@@ -24,10 +24,7 @@ export default function Header() {
   }, []);
 
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 1.1, ease: easeCinematic, delay: 0.2 }}
+    <header
       className={[
         "fixed top-0 left-0 right-0 z-50 transition-colors duration-700",
         scrolled
@@ -152,7 +149,7 @@ export default function Header() {
           })}
         </nav>
       </motion.div>
-    </motion.header>
+    </header>
   );
 }
 
