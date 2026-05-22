@@ -36,7 +36,7 @@ export default function FeaturedPieces() {
           </Reveal>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 md:gap-x-10 gap-y-16 md:gap-y-0">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-3 sm:gap-x-6 md:gap-x-10 gap-y-10 sm:gap-y-16 md:gap-y-0">
           {items.map((p, i) => (
             <Reveal
               key={p.slug}
