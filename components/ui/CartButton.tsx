@@ -147,6 +147,21 @@ export default function CartButton() {
                 <ul className="flex-1 overflow-y-auto divide-y divide-bone/5">
                   {lines.map(({ line, product, chain, unitPrice }) => {
                     const lineKey = `${line.slug}|${line.chainId ?? ""}`;
+                    /* Cap qty bumps at chain stock. A chain can sit
+                     * on multiple lines (different products), so we
+                     * subtract what's used on OTHER lines first. */
+                    const sameChainElsewhere = chain
+                      ? lines
+                          .filter(
+                            (l) =>
+                              l.line.chainId === chain.id &&
+                              `${l.line.slug}|${l.line.chainId ?? ""}` !== lineKey
+                          )
+                          .reduce((s, l) => s + l.line.qty, 0)
+                      : 0;
+                    const atChainCap = chain
+                      ? line.qty + sameChainElsewhere >= chain.stock
+                      : false;
                     return (
                       <li key={lineKey} className="flex gap-4 px-6 py-4">
                         <Link
@@ -191,9 +206,15 @@ export default function CartButton() {
                                 {line.qty}
                               </span>
                               <button
-                                onClick={() => setQty(line.slug, line.qty + 1, line.chainId)}
+                                onClick={() => {
+                                  if (atChainCap) return;
+                                  setQty(line.slug, line.qty + 1, line.chainId);
+                                }}
+                                disabled={atChainCap}
                                 aria-label="Increase"
-                                className="p-1.5 text-bone-dim hover:text-gold transition-colors"
+                                title={atChainCap ? "No more of this chain in stock" : undefined}
+                                className="p-1.5 text-bone-dim hover:text-gold transition-colors
+                                           disabled:opacity-30 disabled:cursor-not-allowed"
                               >
                                 <Plus size={12} strokeWidth={1.5} />
                               </button>

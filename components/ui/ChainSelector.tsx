@@ -33,11 +33,17 @@ export default function ChainSelector({
   const CHAIN_OPTIONS = useChains();
   const [preview, setPreview] = useState<ChainOption | null>(null);
 
-  // auto-pick the first chain on mount so the cart always has a variant
+  // auto-pick the first IN-STOCK chain on mount, so the cart always
+  // has a variant the customer can actually buy. If everything is
+  // sold out, leave value null and the add-to-cart will be disabled.
   useEffect(() => {
-    if (!value && CHAIN_OPTIONS.length > 0) {
-      onChange(CHAIN_OPTIONS[0].id);
+    if (value) {
+      // if the current value is now sold out, bump to the next in-stock one
+      const selected = CHAIN_OPTIONS.find((c) => c.id === value);
+      if (selected && selected.stock > 0) return;
     }
+    const firstAvailable = CHAIN_OPTIONS.find((c) => c.stock > 0);
+    if (firstAvailable) onChange(firstAvailable.id);
   }, [value, onChange, CHAIN_OPTIONS]);
 
   // close preview on Escape, lock body scroll while open
@@ -64,24 +70,32 @@ export default function ChainSelector({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {CHAIN_OPTIONS.map((opt) => {
             const selected = opt.id === value;
+            const soldOut = opt.stock <= 0;
+            const lowStock = !soldOut && opt.stock <= 3;
             return (
               <div
                 key={opt.id}
                 className={[
                   "group relative flex flex-col gap-2 p-2",
                   "border transition-colors duration-500",
-                  selected
-                    ? "border-gold bg-gold/5"
-                    : "border-bone/15 hover:border-bone/40",
+                  soldOut
+                    ? "border-bone/10 opacity-50"
+                    : selected
+                      ? "border-gold bg-gold/5"
+                      : "border-bone/15 hover:border-bone/40",
                 ].join(" ")}
               >
                 <button
                   type="button"
-                  onClick={() => onChange(opt.id)}
-                  data-cursor={opt.name}
+                  onClick={() => {
+                    if (soldOut) return;
+                    onChange(opt.id);
+                  }}
+                  data-cursor={soldOut ? "Sold out" : opt.name}
+                  disabled={soldOut}
                   aria-pressed={selected}
-                  aria-label={`Select ${opt.name}`}
-                  className="block w-full text-left"
+                  aria-label={soldOut ? `${opt.name} — sold out` : `Select ${opt.name}`}
+                  className="block w-full text-left disabled:cursor-not-allowed"
                 >
                   <div className="relative w-full aspect-square overflow-hidden bg-charcoal">
                     <Image
@@ -89,11 +103,27 @@ export default function ChainSelector({
                       alt={opt.name}
                       fill
                       sizes="120px"
-                      className="object-cover"
+                      className={[
+                        "object-cover transition-all duration-500",
+                        soldOut ? "grayscale brightness-75" : "",
+                      ].join(" ")}
                     />
-                    {selected ? (
+                    {selected && !soldOut ? (
                       <span className="absolute top-1.5 right-1.5 grid place-items-center w-5 h-5 rounded-full bg-gold text-ink">
                         <Check size={12} strokeWidth={2} />
+                      </span>
+                    ) : null}
+                    {soldOut ? (
+                      <span className="absolute inset-x-0 bottom-0 text-center
+                                       py-1 bg-ink/80 text-bone
+                                       text-[10px] uppercase tracking-[0.25em]">
+                        Sold out
+                      </span>
+                    ) : lowStock ? (
+                      <span className="absolute top-1.5 left-1.5
+                                       px-1.5 py-0.5 bg-ink/80 text-gold
+                                       text-[9px] uppercase tracking-[0.2em]">
+                        {opt.stock} left
                       </span>
                     ) : null}
                   </div>
@@ -101,7 +131,9 @@ export default function ChainSelector({
                     <span
                       className={[
                         "text-xs leading-tight tracking-wide",
-                        selected ? "text-bone" : "text-bone-dim",
+                        soldOut
+                          ? "text-bone-dim line-through"
+                          : selected ? "text-bone" : "text-bone-dim",
                       ].join(" ")}
                     >
                       {opt.name}
@@ -189,20 +221,28 @@ export default function ChainSelector({
               className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => {
-                  onChange(preview.id);
-                  setPreview(null);
-                }}
-                data-cursor="Select"
-                className="inline-flex items-center gap-2 px-6 py-3
-                           bg-gold text-ink eyebrow text-[10px]
-                           transition-colors duration-500
-                           hover:bg-gold-soft"
-              >
-                <Check size={12} strokeWidth={2} />
-                Select this chain
-              </button>
+              {preview.stock > 0 ? (
+                <button
+                  onClick={() => {
+                    onChange(preview.id);
+                    setPreview(null);
+                  }}
+                  data-cursor="Select"
+                  className="inline-flex items-center gap-2 px-6 py-3
+                             bg-gold text-ink eyebrow text-[10px]
+                             transition-colors duration-500
+                             hover:bg-gold-soft"
+                >
+                  <Check size={12} strokeWidth={2} />
+                  Select this chain
+                </button>
+              ) : (
+                <span className="inline-flex items-center px-6 py-3
+                                 border border-bone/20 text-bone-dim
+                                 eyebrow text-[10px]">
+                  Sold out
+                </span>
+              )}
             </div>
           </motion.div>
         ) : null}

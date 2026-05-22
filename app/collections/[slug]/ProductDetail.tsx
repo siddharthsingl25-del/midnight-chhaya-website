@@ -34,7 +34,7 @@ export default function ProductDetail({
 }) {
   const [active, setActive] = useState(0);
   const [justAdded, setJustAdded] = useState(false);
-  const { add: addToCart } = useCart();
+  const { add: addToCart, items: cartItems } = useCart();
   const stock = useStock(product.slug);
   const soldOut = stock === 0;
   const imageRef = useRef<HTMLDivElement>(null);
@@ -43,10 +43,29 @@ export default function ProductDetail({
   /* Chain selector applies only to chains-category products, and only
    * when at least one chain option has been published. */
   const chainPicker = product.category === "chains" && chains.length > 0;
+  /* Auto-pick the first IN-STOCK chain so the cart always has a buyable
+   * variant; ChainSelector's effect will also reconcile if this one
+   * happens to be sold out. */
   const [chainId, setChainId] = useState<string | null>(
-    chainPicker ? chains[0]?.id ?? null : null
+    chainPicker ? chains.find((c) => c.stock > 0)?.id ?? null : null
   );
   const selectedChain = useChainById(chainId);
+
+  /* How many of the currently-selected chain are already in the cart
+   * (across every product line). Used to block adding more when the
+   * chain would go negative. */
+  const chainInCart = chainId
+    ? cartItems
+        .filter((l) => l.chainId === chainId)
+        .reduce((s, l) => s + l.qty, 0)
+    : 0;
+  const chainSoldOut =
+    chainPicker && (!selectedChain || selectedChain.stock <= 0);
+  const chainExhausted =
+    chainPicker && selectedChain ? chainInCart >= selectedChain.stock : false;
+  const allChainsSoldOut =
+    chainPicker && chains.every((c) => c.stock <= 0);
+  const disableAdd = soldOut || chainSoldOut || chainExhausted;
   const displayedUnitPrice =
     product.price == null
       ? null
@@ -177,10 +196,22 @@ export default function ProductDetail({
               </dl>
             </Reveal>
 
-            {/* Stock status */}
+            {/* Stock status — surfaces piece AND chain inventory */}
             <Reveal delay={0.32}>
               {soldOut ? (
                 <p className="eyebrow text-oxblood">Sold out — message us to be notified.</p>
+              ) : allChainsSoldOut ? (
+                <p className="eyebrow text-oxblood">All chains sold out — message us to be notified.</p>
+              ) : chainSoldOut ? (
+                <p className="eyebrow text-oxblood">This chain is sold out — pick another above.</p>
+              ) : chainExhausted ? (
+                <p className="eyebrow text-oxblood">
+                  Only {selectedChain?.stock ?? 0} of this chain in stock — already in your cart.
+                </p>
+              ) : selectedChain && selectedChain.stock <= 3 ? (
+                <p className="eyebrow text-gold">
+                  Only {selectedChain.stock} {selectedChain.name} left in stock.
+                </p>
               ) : stock !== null && stock <= 3 ? (
                 <p className="eyebrow text-gold">Only {stock} left in stock.</p>
               ) : null}
@@ -191,9 +222,9 @@ export default function ProductDetail({
                 {/* Add to cart — primary, filled gold (disabled when sold out) */}
                 <button
                   type="button"
-                  disabled={soldOut}
+                  disabled={disableAdd}
                   onClick={() => {
-                    if (soldOut) return;
+                    if (disableAdd) return;
                     addToCart(product.slug, {
                       chainId: chainPicker ? chainId ?? undefined : undefined,
                       qty: 1,
@@ -202,7 +233,11 @@ export default function ProductDetail({
                     setTimeout(() => setJustAdded(false), 1800);
                   }}
                   data-cursor={
-                    soldOut ? "Sold out" : justAdded ? "Added" : "Add to cart"
+                    soldOut
+                      ? "Sold out"
+                      : chainSoldOut || chainExhausted
+                        ? "Chain sold out"
+                        : justAdded ? "Added" : "Add to cart"
                   }
                   className="group inline-flex items-center gap-3 px-8 py-4
                              bg-gold text-ink
@@ -212,6 +247,8 @@ export default function ProductDetail({
                 >
                   {soldOut ? (
                     <span className="eyebrow text-ink">Sold out</span>
+                  ) : chainSoldOut || chainExhausted ? (
+                    <span className="eyebrow text-ink">Chain sold out</span>
                   ) : justAdded ? (
                     <>
                       <Check size={18} strokeWidth={1.75} />
