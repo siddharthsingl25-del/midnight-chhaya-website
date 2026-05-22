@@ -78,4 +78,20 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     for_women: true,
     display_order: 101,
   },
+  {
+    slug: "melting-heart-charm",
+    name: "Melting Heart Charm",
+    category: "chains",
+    price: 230,
+    short_description: "Caged purple heart on a melting padlock.",
+    description:
+      "A faceted amethyst heart bound in a tangle of silver thorns, set into a padlock-shaped bail with molten silver dripping off the bottom edge. Small, strange, made to be looked at twice.",
+    materials: ["Silver-tone alloy", "Amethyst-tone resin"],
+    dimensions: null,
+    images: ["/products/melting-heart-charm-1.webp"],
+    exclusive: false,
+    featured: false,
+    for_women: false,
+    display_order: 102,
+  },
 ];
