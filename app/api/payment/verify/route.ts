@@ -51,8 +51,12 @@ type Body = {
 };
 
 export async function POST(req: Request) {
+  /* NEXT_PUBLIC_BYPASS_PAYMENT=1 → skip Razorpay signature check.
+   * Matches the same flag in create-order. */
+  const bypass = process.env.NEXT_PUBLIC_BYPASS_PAYMENT === "1";
+
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
-  if (!keySecret) {
+  if (!bypass && !keySecret) {
     return NextResponse.json(
       { error: "Razorpay not configured" },
       { status: 500 }
@@ -76,12 +80,14 @@ export async function POST(req: Request) {
   }
 
   // 1. Verify HMAC signature ---------------------------------------------------
-  const expected = crypto
-    .createHmac("sha256", keySecret)
-    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-    .digest("hex");
-  if (expected !== razorpay_signature) {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  if (!bypass) {
+    const expected = crypto
+      .createHmac("sha256", keySecret!)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+    if (expected !== razorpay_signature) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
   }
 
   // 2. Decrement stock for every line, rolling back on partial failure --------
