@@ -281,7 +281,6 @@ export default function CheckoutClient() {
       amountPaise: number;
       currency: string;
       keyId: string;
-      bypass?: boolean;
     };
     try {
       const res = await fetch("/api/payment/create-order", {
@@ -323,19 +322,6 @@ export default function CheckoutClient() {
     } catch {
       setErrorMsg("Network error. Please check your connection and try again.");
       setStatus("error");
-      return;
-    }
-
-    /* 1b. Bypass path — NEXT_PUBLIC_BYPASS_PAYMENT=1 on the server
-     * makes create-order return { bypass: true }. We skip Razorpay
-     * entirely and call verify with a synthetic signature. The verify
-     * endpoint sees the same flag and skips its HMAC check. */
-    if (createData.bypass) {
-      await confirmPayment({
-        razorpay_payment_id: `test_pay_${Date.now().toString(36)}`,
-        razorpay_order_id: createData.razorpayOrderId,
-        razorpay_signature: "test_signature",
-      });
       return;
     }
 
@@ -474,15 +460,8 @@ export default function CheckoutClient() {
   }
 
   // —— ACTIVE CHECKOUT STATE ————————————————————————————
-  const bypassPayment = process.env.NEXT_PUBLIC_BYPASS_PAYMENT === "1";
-
   return (
     <section className="px-6 md:px-10 pb-32">
-      {bypassPayment ? (
-        <div className="mx-auto max-w-[1200px] mb-8 border border-oxblood bg-oxblood/15 text-bone px-5 py-3 text-sm">
-          <strong className="text-oxblood">⚠ TEST MODE</strong> — payment is bypassed. Orders go through with no charge. Unset <code className="text-gold">NEXT_PUBLIC_BYPASS_PAYMENT</code> in Vercel and redeploy to re-enable real payments.
-        </div>
-      ) : null}
       <div className="mx-auto max-w-[1200px] grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
         {/* form */}
         <form onSubmit={placeOrder} className="lg:col-span-7 flex flex-col gap-10">
@@ -618,13 +597,7 @@ export default function CheckoutClient() {
                 transition={{ duration: 0.35, ease: easeCinematic }}
                 className="eyebrow text-ink"
               >
-                {status === "submitting"
-                  ? bypassPayment
-                    ? "Placing test order…"
-                    : "Opening payment…"
-                  : bypassPayment
-                    ? `Place test order · ${formatPrice(grandTotal)}`
-                    : `Pay · ${formatPrice(grandTotal)}`}
+                {status === "submitting" ? "Opening payment…" : `Pay · ${formatPrice(grandTotal)}`}
               </motion.span>
             </AnimatePresence>
           </button>
