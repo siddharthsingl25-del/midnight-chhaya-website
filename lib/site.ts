@@ -27,19 +27,9 @@ export type NavItem = {
 };
 
 export const NAV: readonly NavItem[] = [
-  {
-    label: "Collections",
-    href: "/collections",
-    children: [
-      { label: "Chains",    href: "/collections?cat=chains" },
-      { label: "Keychains", href: "/collections?cat=keychains" },
-      { label: "Bracelets", href: "/collections?cat=bracelets" },
-      { label: "Rings",     href: "/collections?cat=rings" },
-    ],
-  },
-  { label: "Privacy",    href: "/privacy" },
-  { label: "Shipping",   href: "/shipping" },
-  { label: "Returns",    href: "/returns" },
+  { label: "Shop All",  href: "/collections" },
+  { label: "Chains",    href: "/collections?cat=chains" },
+  { label: "Keychains", href: "/collections?cat=keychains" },
 ];
 
 /** Footer navigation (richer than the header — includes brand/story pages). */
