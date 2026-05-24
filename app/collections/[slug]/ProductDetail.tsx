@@ -183,24 +183,16 @@ export default function ProductDetail({
               </Reveal>
             ) : null}
 
-            <Reveal delay={0.3}>
-              <dl className="grid grid-cols-1 gap-y-4 mt-2 border-t border-bone/10 pt-6">
-                <div className="flex items-start gap-6">
-                  <dt className="eyebrow text-bone-dim min-w-[120px]">Materials</dt>
-                  <dd className="font-body text-bone">{product.materials.join(", ")}</dd>
-                </div>
-                {product.dimensions ? (
+            {product.dimensions ? (
+              <Reveal delay={0.3}>
+                <dl className="grid grid-cols-1 gap-y-4 mt-2 border-t border-bone/10 pt-6">
                   <div className="flex items-start gap-6">
                     <dt className="eyebrow text-bone-dim min-w-[120px]">Dimensions</dt>
                     <dd className="font-body text-bone">{product.dimensions}</dd>
                   </div>
-                ) : null}
-                <div className="flex items-start gap-6">
-                  <dt className="eyebrow text-bone-dim min-w-[120px]">Made</dt>
-                  <dd className="font-body text-bone">By hand, in small batches</dd>
-                </div>
-              </dl>
-            </Reveal>
+                </dl>
+              </Reveal>
+            ) : null}
 
             {/* Stock status — only shows sold-out / cart-exhausted states.
              * "Only N left" low-stock callouts are intentionally hidden. */}
