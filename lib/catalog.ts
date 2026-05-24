@@ -65,11 +65,6 @@ export async function getFeaturedProducts(): Promise<Product[]> {
   return all.filter((p) => p.featured);
 }
 
-export async function getExclusiveProducts(): Promise<Product[]> {
-  const all = await getAllProducts();
-  return all.filter((p) => p.exclusive);
-}
-
 export async function getRelatedProducts(
   slug: string,
   category: Product["category"],

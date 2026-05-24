@@ -37,7 +37,6 @@ export const NAV: readonly NavItem[] = [
       { label: "Rings",     href: "/collections?cat=rings" },
     ],
   },
-  { label: "Exclusives", href: "/exclusives" },
   { label: "Privacy",    href: "/privacy" },
   { label: "Shipping",   href: "/shipping" },
   { label: "Returns",    href: "/returns" },
@@ -53,7 +52,6 @@ export const FOOTER_NAV: readonly { heading: string; links: { label: string; hre
       { label: "Keychains",    href: "/collections?cat=keychains" },
       { label: "Bracelets",    href: "/collections?cat=bracelets" },
       { label: "Rings",        href: "/collections?cat=rings" },
-      { label: "Exclusives",   href: "/exclusives" },
     ],
   },
   {

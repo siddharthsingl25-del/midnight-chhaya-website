@@ -364,18 +364,6 @@ function ProductForm({
           <label className="flex items-center gap-3">
             <input
               type="checkbox"
-              checked={exclusive}
-              onChange={(e) => setExclusive(e.target.checked)}
-              className="w-5 h-5 accent-gold"
-            />
-            <span className="font-body text-bone text-sm">
-              Show on Exclusives page
-            </span>
-          </label>
-
-          <label className="flex items-center gap-3">
-            <input
-              type="checkbox"
               checked={forWomen}
               onChange={(e) => setForWomen(e.target.checked)}
               className="w-5 h-5 accent-gold"
