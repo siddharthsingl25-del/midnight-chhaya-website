@@ -59,13 +59,21 @@ export default function ProductDetail({
         .filter((l) => l.chainId === chainId)
         .reduce((s, l) => s + l.qty, 0)
     : 0;
+  /* Same idea for the product itself — sum every cart line for this
+   * slug regardless of chain. Lets us disable Add-to-Cart once the
+   * customer already has all available units in their cart. */
+  const productInCart = cartItems
+    .filter((l) => l.slug === product.slug)
+    .reduce((s, l) => s + l.qty, 0);
+  const productExhausted = stock !== null && productInCart >= stock;
   const chainSoldOut =
     chainPicker && (!selectedChain || selectedChain.stock <= 0);
   const chainExhausted =
     chainPicker && selectedChain ? chainInCart >= selectedChain.stock : false;
   const allChainsSoldOut =
     chainPicker && chains.every((c) => c.stock <= 0);
-  const disableAdd = soldOut || chainSoldOut || chainExhausted;
+  const disableAdd =
+    soldOut || productExhausted || chainSoldOut || chainExhausted;
   const displayedUnitPrice =
     product.price == null
       ? null
@@ -199,6 +207,10 @@ export default function ProductDetail({
             <Reveal delay={0.32}>
               {soldOut ? (
                 <p className="eyebrow text-oxblood">Sold out — message us to be notified.</p>
+              ) : productExhausted ? (
+                <p className="eyebrow text-oxblood">
+                  All available units of this piece are already in your cart.
+                </p>
               ) : allChainsSoldOut ? (
                 <p className="eyebrow text-oxblood">All chains sold out — message us to be notified.</p>
               ) : chainSoldOut ? (

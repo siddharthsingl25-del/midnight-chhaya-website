@@ -33,15 +33,23 @@ export default function ProductCard({
   product: Product;
   priority?: boolean;
 }) {
-  const { add } = useCart();
+  const { add, items: cartItems } = useCart();
   const [added, setAdded] = useState(false);
   const stock = useStock(product.slug);
   const soldOut = stock === 0;
   const chains = useChains();
   const hasChains = chains.length > 0;
 
+  /* Block adding more if the customer already has every available
+   * unit of this product in their cart. */
+  const productInCart = cartItems
+    .filter((l) => l.slug === product.slug)
+    .reduce((s, l) => s + l.qty, 0);
+  const productExhausted = stock !== null && productInCart >= stock;
+  const disableInlineAdd = soldOut || productExhausted;
+
   const onAdd = () => {
-    if (soldOut) return;
+    if (disableInlineAdd) return;
     add(product.slug, { qty: 1 });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
@@ -120,10 +128,19 @@ export default function ProductCard({
           <span className="eyebrow text-[10px] sm:text-xs text-ink">Choose chain</span>
           <ArrowRight size={14} strokeWidth={1.75} />
         </Link>
+      ) : productExhausted ? (
+        <div
+          aria-label={`${product.name} max in cart`}
+          className="mt-2 sm:mt-3 w-full inline-flex items-center justify-center gap-2 py-2.5 sm:py-3
+                     border border-bone/15 text-bone-dim"
+        >
+          <span className="eyebrow text-[10px] sm:text-xs">Max in cart</span>
+        </div>
       ) : (
         <button
           type="button"
           onClick={onAdd}
+          disabled={disableInlineAdd}
           data-cursor={added ? "Added" : "Add to cart"}
           aria-label={`Add ${product.name} to cart`}
           className={[
@@ -132,6 +149,7 @@ export default function ProductCard({
             added
               ? "bg-gold-soft text-ink"
               : "bg-gold text-ink hover:bg-gold-soft",
+            "disabled:opacity-40 disabled:cursor-not-allowed",
           ].join(" ")}
         >
           {added ? (

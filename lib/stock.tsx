@@ -82,6 +82,14 @@ export function useStock(slug: string): number | null {
   return ctx.stock[slug] ?? null;
 }
 
+/** Whole stock map — used by the cart drawer which iterates many slugs.
+ * Returns an empty object until the first fetch completes. */
+export function useStockMap(): Record<string, number> {
+  const ctx = useContext(StockCtx);
+  if (!ctx || !ctx.ready) return {};
+  return ctx.stock;
+}
+
 /** Used by checkout to refresh stock after a successful order. */
 export function useStockRefresh(): () => Promise<void> {
   const ctx = useContext(StockCtx);

@@ -22,6 +22,7 @@ import { Minus, Plus, ShoppingBag, Trash2, X, Check } from "lucide-react";
 import InstagramIcon from "./icons/InstagramIcon";
 import { easeCinematic } from "@/lib/animations";
 import { useCart } from "@/lib/cart";
+import { useStockMap } from "@/lib/stock";
 import { computeShipping, formatPrice, SHIPPING_THRESHOLD, SITE } from "@/lib/site";
 
 export default function CartButton() {
@@ -29,6 +30,7 @@ export default function CartButton() {
   const [copied, setCopied] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const { count, total, detailed, setQty, remove, ready } = useCart();
+  const stockMap = useStockMap();
   const lines = detailed();
   const subtotal = total();
   const shipping = computeShipping(subtotal);
@@ -162,6 +164,21 @@ export default function CartButton() {
                     const atChainCap = chain
                       ? line.qty + sameChainElsewhere >= chain.stock
                       : false;
+                    /* Same idea for the product itself — sum qty across
+                     * any line (any chain variant) for this slug. */
+                    const sameProductElsewhere = lines
+                      .filter(
+                        (l) =>
+                          l.line.slug === line.slug &&
+                          `${l.line.slug}|${l.line.chainId ?? ""}` !== lineKey
+                      )
+                      .reduce((s, l) => s + l.line.qty, 0);
+                    const productStock = stockMap[line.slug];
+                    const atProductCap =
+                      typeof productStock === "number"
+                        ? line.qty + sameProductElsewhere >= productStock
+                        : false;
+                    const atCap = atChainCap || atProductCap;
                     return (
                       <li key={lineKey} className="flex gap-4 px-6 py-4">
                         <Link
@@ -207,12 +224,18 @@ export default function CartButton() {
                               </span>
                               <button
                                 onClick={() => {
-                                  if (atChainCap) return;
+                                  if (atCap) return;
                                   setQty(line.slug, line.qty + 1, line.chainId);
                                 }}
-                                disabled={atChainCap}
+                                disabled={atCap}
                                 aria-label="Increase"
-                                title={atChainCap ? "No more of this chain in stock" : undefined}
+                                title={
+                                  atProductCap
+                                    ? "No more of this piece in stock"
+                                    : atChainCap
+                                      ? "No more of this chain in stock"
+                                      : undefined
+                                }
                                 className="p-1.5 text-bone-dim hover:text-gold transition-colors
                                            disabled:opacity-30 disabled:cursor-not-allowed"
                               >
