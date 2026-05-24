@@ -79,14 +79,10 @@ export default function ProductCard({
             />
           </motion.div>
 
-          {/* Stock badges */}
+          {/* Sold-out badge (low-stock "Only N left" is intentionally hidden) */}
           {soldOut ? (
             <span className="absolute top-3 left-3 px-3 py-1.5 bg-oxblood text-bone text-[10px] uppercase tracking-[0.25em] font-medium">
               Sold out
-            </span>
-          ) : stock !== null && stock <= 3 ? (
-            <span className="absolute top-3 left-3 px-3 py-1.5 bg-gold/90 text-ink text-[10px] uppercase tracking-[0.25em] font-medium">
-              Only {stock} left
             </span>
           ) : null}
 

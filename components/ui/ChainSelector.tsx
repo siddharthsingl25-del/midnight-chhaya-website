@@ -119,12 +119,6 @@ export default function ChainSelector({
                                        text-[10px] uppercase tracking-[0.25em]">
                         Sold out
                       </span>
-                    ) : lowStock ? (
-                      <span className="absolute top-1.5 left-1.5
-                                       px-1.5 py-0.5 bg-ink/80 text-gold
-                                       text-[9px] uppercase tracking-[0.2em]">
-                        {opt.stock} left
-                      </span>
                     ) : null}
                   </div>
                   <div className="mt-2 flex flex-col gap-0.5">

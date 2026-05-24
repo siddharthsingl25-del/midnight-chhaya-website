@@ -202,7 +202,8 @@ export default function ProductDetail({
               </dl>
             </Reveal>
 
-            {/* Stock status — surfaces piece AND chain inventory */}
+            {/* Stock status — only shows sold-out / cart-exhausted states.
+             * "Only N left" low-stock callouts are intentionally hidden. */}
             <Reveal delay={0.32}>
               {soldOut ? (
                 <p className="eyebrow text-oxblood">Sold out — message us to be notified.</p>
@@ -212,14 +213,8 @@ export default function ProductDetail({
                 <p className="eyebrow text-oxblood">This chain is sold out — pick another above.</p>
               ) : chainExhausted ? (
                 <p className="eyebrow text-oxblood">
-                  Only {selectedChain?.stock ?? 0} of this chain in stock — already in your cart.
+                  This chain is already maxed in your cart — pick another above.
                 </p>
-              ) : selectedChain && selectedChain.stock <= 3 ? (
-                <p className="eyebrow text-gold">
-                  Only {selectedChain.stock} {selectedChain.name} left in stock.
-                </p>
-              ) : stock !== null && stock <= 3 ? (
-                <p className="eyebrow text-gold">Only {stock} left in stock.</p>
               ) : null}
             </Reveal>
 
