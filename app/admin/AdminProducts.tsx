@@ -11,7 +11,25 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, GripVertical, Plus, Trash2 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import ImageUpload from "./ImageUpload";
 import { useCatalogRefresh, useProducts } from "@/lib/catalog-context";
 import type { Category, Product } from "@/lib/types";
@@ -71,6 +89,50 @@ export default function AdminProducts() {
     }
   };
 
+  /* Drag-and-drop reorder. After drop, renumbers every product in the
+   * filtered list with sequential display_orders (10, 20, 30 …) so the
+   * order on the storefront matches the new visual order. Only PATCHes
+   * the products whose order actually changed. */
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const onDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = filtered.findIndex((p) => p.slug === active.id);
+    const newIdx = filtered.findIndex((p) => p.slug === over.id);
+    if (oldIdx === -1 || newIdx === -1) return;
+    const reordered = arrayMove(filtered, oldIdx, newIdx);
+    setMoving(String(active.id));
+    try {
+      // Assign sequential orders to the new arrangement. Step by 10
+      // so future manual inserts can sit in the gaps without a full
+      // renumber. Only PATCH products whose order actually changed.
+      const updates: Array<{ slug: string; display_order: number }> = [];
+      reordered.forEach((p, i) => {
+        const next = (i + 1) * 10;
+        if (p.displayOrder !== next) {
+          updates.push({ slug: p.slug, display_order: next });
+        }
+      });
+      await Promise.all(
+        updates.map((u) =>
+          fetch(`/api/admin/products/${encodeURIComponent(u.slug)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ display_order: u.display_order }),
+          })
+        )
+      );
+      await refresh();
+    } finally {
+      setMoving(null);
+    }
+  };
+
   if (mode.kind === "new") {
     return (
       <ProductForm
@@ -123,74 +185,148 @@ export default function AdminProducts() {
         </button>
       </div>
 
-      <ul className="flex flex-col">
-        {filtered.map((p, i) => {
-          const isFirst = i === 0;
-          const isLast = i === filtered.length - 1;
-          const isMoving = moving === p.slug;
-          return (
-            <li
-              key={p.slug}
-              className="flex items-center gap-3 py-4 border-b border-bone/10"
-            >
-              <button
-                type="button"
-                onClick={() => setMode({ kind: "edit", slug: p.slug })}
-                className="flex items-center gap-4 flex-1 min-w-0 text-left"
-              >
-                <div className="relative w-14 h-16 flex-shrink-0 overflow-hidden bg-charcoal">
-                  {p.images[0] ? (
-                    <Image
-                      src={p.images[0]}
-                      alt={p.name}
-                      fill
-                      sizes="56px"
-                      className="object-cover"
-                    />
-                  ) : null}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-display text-bone text-sm sm:text-base truncate">
-                    {p.name}
-                  </p>
-                  <p className="text-[10px] text-bone-dim uppercase tracking-[0.15em] truncate">
-                    {p.category} · ₹{p.price ?? "—"} · {p.slug}
-                  </p>
-                </div>
-              </button>
+      <p className="font-serif italic text-bone-dim text-xs mb-3">
+        Long-press the ⠿ handle and drag to reorder. Lower position = shows first on the website. The ↑/↓ buttons still work if you prefer.
+      </p>
 
-              {/* Reorder controls — push up/down on the storefront grid */}
-              <div className="flex flex-col flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => void move(p.slug, "up")}
-                  disabled={isFirst || isMoving}
-                  aria-label={`Move ${p.name} up`}
-                  className="grid place-items-center w-8 h-7 border border-bone/20
-                             text-bone-dim hover:border-gold hover:text-gold
-                             transition-colors
-                             disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <ChevronUp size={14} strokeWidth={1.75} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void move(p.slug, "down")}
-                  disabled={isLast || isMoving}
-                  aria-label={`Move ${p.name} down`}
-                  className="grid place-items-center w-8 h-7 border border-bone/20 border-t-0
-                             text-bone-dim hover:border-gold hover:text-gold
-                             transition-colors
-                             disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <ChevronDown size={14} strokeWidth={1.75} />
-                </button>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext
+          items={filtered.map((p) => p.slug)}
+          strategy={verticalListSortingStrategy}
+        >
+          <ul className="flex flex-col">
+            {filtered.map((p, i) => {
+              const isFirst = i === 0;
+              const isLast = i === filtered.length - 1;
+              const isMoving = moving === p.slug;
+              return (
+                <SortableProductRow
+                  key={p.slug}
+                  product={p}
+                  isFirst={isFirst}
+                  isLast={isLast}
+                  isMoving={isMoving}
+                  onEdit={() => setMode({ kind: "edit", slug: p.slug })}
+                  onMoveUp={() => void move(p.slug, "up")}
+                  onMoveDown={() => void move(p.slug, "down")}
+                />
+              );
+            })}
+          </ul>
+        </SortableContext>
+      </DndContext>
     </>
+  );
+}
+
+/* Single sortable row — replaces the inline <li> with one that hooks
+ * into dnd-kit's useSortable for drag-and-drop. */
+function SortableProductRow({
+  product: p,
+  isFirst,
+  isLast,
+  isMoving,
+  onEdit,
+  onMoveUp,
+  onMoveDown,
+}: {
+  product: Product;
+  isFirst: boolean;
+  isLast: boolean;
+  isMoving: boolean;
+  onEdit: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: p.slug });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+    position: "relative",
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-2 sm:gap-3 py-4 border-b border-bone/10 ${isDragging ? "bg-gold/5" : ""}`}
+    >
+      {/* Drag handle — touch-and-hold to pick up */}
+      <button
+        type="button"
+        aria-label={`Drag ${p.name} to reorder`}
+        {...attributes}
+        {...listeners}
+        className="grid place-items-center w-8 h-12 text-bone-dim hover:text-gold
+                   transition-colors touch-none cursor-grab active:cursor-grabbing"
+      >
+        <GripVertical size={18} strokeWidth={1.5} />
+      </button>
+
+      <button
+        type="button"
+        onClick={onEdit}
+        className="flex items-center gap-4 flex-1 min-w-0 text-left"
+      >
+        <div className="relative w-14 h-16 flex-shrink-0 overflow-hidden bg-charcoal">
+          {p.images[0] ? (
+            <Image
+              src={p.images[0]}
+              alt={p.name}
+              fill
+              sizes="56px"
+              className="object-cover"
+            />
+          ) : null}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-display text-bone text-sm sm:text-base truncate">
+            {p.name}
+          </p>
+          <p className="text-[10px] text-bone-dim uppercase tracking-[0.15em] truncate">
+            {p.category} · ₹{p.price ?? "—"} · {p.slug}
+          </p>
+        </div>
+      </button>
+
+      {/* Reorder controls — push up/down on the storefront grid */}
+      <div className="flex flex-col flex-shrink-0">
+        <button
+          type="button"
+          onClick={onMoveUp}
+          disabled={isFirst || isMoving}
+          aria-label={`Move ${p.name} up`}
+          className="grid place-items-center w-8 h-7 border border-bone/20
+                     text-bone-dim hover:border-gold hover:text-gold
+                     transition-colors
+                     disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <ChevronUp size={14} strokeWidth={1.75} />
+        </button>
+        <button
+          type="button"
+          onClick={onMoveDown}
+          disabled={isLast || isMoving}
+          aria-label={`Move ${p.name} down`}
+          className="grid place-items-center w-8 h-7 border border-bone/20 border-t-0
+                     text-bone-dim hover:border-gold hover:text-gold
+                     transition-colors
+                     disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <ChevronDown size={14} strokeWidth={1.75} />
+        </button>
+      </div>
+    </li>
   );
 }
 
