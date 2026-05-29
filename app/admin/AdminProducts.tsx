@@ -11,7 +11,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, ChevronDown, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import ImageUpload from "./ImageUpload";
 import { useCatalogRefresh, useProducts } from "@/lib/catalog-context";
 import type { Category, Product } from "@/lib/types";
@@ -28,6 +28,7 @@ export default function AdminProducts() {
   const refresh = useCatalogRefresh();
   const [mode, setMode] = useState<Mode>({ kind: "list" });
   const [filter, setFilter] = useState("");
+  const [moving, setMoving] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     if (!filter.trim()) return products;
@@ -36,6 +37,39 @@ export default function AdminProducts() {
       (p) => p.name.toLowerCase().includes(q) || p.slug.includes(q)
     );
   }, [filter, products]);
+
+  /* Swap a product's display_order with its neighbor in the filtered list.
+   * Lower display_order = shows first on the storefront. Two PUTs in
+   * parallel — display_order isn't unique-constrained so a brief tie
+   * is fine. */
+  const move = async (slug: string, direction: "up" | "down") => {
+    if (moving) return;
+    const list = filtered;
+    const i = list.findIndex((p) => p.slug === slug);
+    if (i === -1) return;
+    const swapIdx = direction === "up" ? i - 1 : i + 1;
+    if (swapIdx < 0 || swapIdx >= list.length) return;
+    const a = list[i];
+    const b = list[swapIdx];
+    setMoving(slug);
+    try {
+      await Promise.all([
+        fetch(`/api/admin/products/${encodeURIComponent(a.slug)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ display_order: b.displayOrder }),
+        }),
+        fetch(`/api/admin/products/${encodeURIComponent(b.slug)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ display_order: a.displayOrder }),
+        }),
+      ]);
+      await refresh();
+    } finally {
+      setMoving(null);
+    }
+  };
 
   if (mode.kind === "new") {
     return (
@@ -90,38 +124,71 @@ export default function AdminProducts() {
       </div>
 
       <ul className="flex flex-col">
-        {filtered.map((p) => (
-          <li
-            key={p.slug}
-            className="flex items-center gap-4 py-4 border-b border-bone/10"
-          >
-            <button
-              type="button"
-              onClick={() => setMode({ kind: "edit", slug: p.slug })}
-              className="flex items-center gap-4 flex-1 min-w-0 text-left"
+        {filtered.map((p, i) => {
+          const isFirst = i === 0;
+          const isLast = i === filtered.length - 1;
+          const isMoving = moving === p.slug;
+          return (
+            <li
+              key={p.slug}
+              className="flex items-center gap-3 py-4 border-b border-bone/10"
             >
-              <div className="relative w-14 h-16 flex-shrink-0 overflow-hidden bg-charcoal">
-                {p.images[0] ? (
-                  <Image
-                    src={p.images[0]}
-                    alt={p.name}
-                    fill
-                    sizes="56px"
-                    className="object-cover"
-                  />
-                ) : null}
+              <button
+                type="button"
+                onClick={() => setMode({ kind: "edit", slug: p.slug })}
+                className="flex items-center gap-4 flex-1 min-w-0 text-left"
+              >
+                <div className="relative w-14 h-16 flex-shrink-0 overflow-hidden bg-charcoal">
+                  {p.images[0] ? (
+                    <Image
+                      src={p.images[0]}
+                      alt={p.name}
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                    />
+                  ) : null}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display text-bone text-sm sm:text-base truncate">
+                    {p.name}
+                  </p>
+                  <p className="text-[10px] text-bone-dim uppercase tracking-[0.15em] truncate">
+                    {p.category} · ₹{p.price ?? "—"} · {p.slug}
+                  </p>
+                </div>
+              </button>
+
+              {/* Reorder controls — push up/down on the storefront grid */}
+              <div className="flex flex-col flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => void move(p.slug, "up")}
+                  disabled={isFirst || isMoving}
+                  aria-label={`Move ${p.name} up`}
+                  className="grid place-items-center w-8 h-7 border border-bone/20
+                             text-bone-dim hover:border-gold hover:text-gold
+                             transition-colors
+                             disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronUp size={14} strokeWidth={1.75} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void move(p.slug, "down")}
+                  disabled={isLast || isMoving}
+                  aria-label={`Move ${p.name} down`}
+                  className="grid place-items-center w-8 h-7 border border-bone/20 border-t-0
+                             text-bone-dim hover:border-gold hover:text-gold
+                             transition-colors
+                             disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronDown size={14} strokeWidth={1.75} />
+                </button>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-display text-bone text-sm sm:text-base truncate">
-                  {p.name}
-                </p>
-                <p className="text-[10px] text-bone-dim uppercase tracking-[0.15em] truncate">
-                  {p.category} · ₹{p.price ?? "—"} · {p.slug}
-                </p>
-              </div>
-            </button>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
     </>
   );

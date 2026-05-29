@@ -55,6 +55,9 @@ export async function PUT(req: Request, { params }: Params) {
   if (typeof body.exclusive === "boolean") patch.exclusive = body.exclusive;
   if (typeof body.featured === "boolean") patch.featured = body.featured;
   if (typeof body.for_women === "boolean") patch.for_women = body.for_women;
+  if (typeof body.display_order === "number" && Number.isFinite(body.display_order)) {
+    patch.display_order = Math.floor(body.display_order);
+  }
 
   const { data, error } = await supabaseAdmin()
     .from("products")
