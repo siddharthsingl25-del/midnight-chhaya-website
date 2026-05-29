@@ -87,10 +87,25 @@ export default function ProductCard({
             />
           </motion.div>
 
-          {/* Sold-out badge (low-stock "Only N left" is intentionally hidden) */}
+          {/* Top-left badge stack: sold-out always wins; otherwise show
+           * the merchant's per-product graphic. Image overrides text. */}
           {soldOut ? (
             <span className="absolute top-3 left-3 px-3 py-1.5 bg-oxblood text-bone text-[10px] uppercase tracking-[0.25em] font-medium">
               Sold out
+            </span>
+          ) : product.badgeImage ? (
+            <span className="absolute top-2 left-2 sm:top-3 sm:left-3 block w-12 sm:w-16 h-12 sm:h-16 pointer-events-none">
+              <Image
+                src={product.badgeImage}
+                alt={product.badgeText ?? ""}
+                fill
+                sizes="64px"
+                className="object-contain"
+              />
+            </span>
+          ) : product.badgeText ? (
+            <span className="absolute top-3 left-3 px-3 py-1.5 bg-gold text-ink text-[10px] uppercase tracking-[0.25em] font-medium">
+              {product.badgeText}
             </span>
           ) : null}
 

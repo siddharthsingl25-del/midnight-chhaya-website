@@ -51,6 +51,8 @@ export async function POST(req: Request) {
     exclusive = false,
     featured = false,
     for_women = false,
+    badge_text = null,
+    badge_image = null,
   } = body as Record<string, unknown>;
 
   if (typeof slug !== "string" || !slug.trim()) {
@@ -93,6 +95,8 @@ export async function POST(req: Request) {
     exclusive: Boolean(exclusive),
     featured: Boolean(featured),
     for_women: Boolean(for_women),
+    badge_text: typeof badge_text === "string" && badge_text.trim() ? badge_text.trim().slice(0, 40) : null,
+    badge_image: typeof badge_image === "string" && badge_image.trim() ? badge_image.trim() : null,
     display_order,
     updated_at: new Date().toISOString(),
   };

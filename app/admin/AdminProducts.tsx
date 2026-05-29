@@ -366,6 +366,8 @@ function ProductForm({
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [exclusive, setExclusive] = useState(product?.exclusive ?? false);
   const [forWomen, setForWomen] = useState(product?.forWomen ?? false);
+  const [badgeText, setBadgeText] = useState(product?.badgeText ?? "");
+  const [badgeImage, setBadgeImage] = useState(product?.badgeImage ?? "");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -399,6 +401,8 @@ function ProductForm({
       featured,
       exclusive,
       for_women: forWomen,
+      badge_text: badgeText.trim() || null,
+      badge_image: badgeImage.trim() || null,
     };
 
     setSaving(true);
@@ -575,6 +579,33 @@ function ProductForm({
               Show in &ldquo;Chains for Women&rdquo; filter
             </span>
           </label>
+
+          {/* Badge / graphic overlay on the product card */}
+          <div className="border-t border-bone/10 pt-6 flex flex-col gap-4">
+            <p className="eyebrow text-gold">Card badge</p>
+            <Field
+              label="Badge text"
+              value={badgeText}
+              onChange={(v) => setBadgeText(v.slice(0, 20))}
+              placeholder='e.g. NEW · BEST SELLER · LIMITED'
+              help="Shown top-left of the product card. Leave blank for no text badge."
+            />
+            <ImageUpload
+              value={badgeImage}
+              onUploaded={setBadgeImage}
+              folder="badges"
+              label="Badge image (optional · overrides badge text)"
+            />
+            {badgeImage ? (
+              <button
+                type="button"
+                onClick={() => setBadgeImage("")}
+                className="self-start eyebrow text-bone-dim hover:text-oxblood transition-colors text-[10px]"
+              >
+                Remove badge image
+              </button>
+            ) : null}
+          </div>
         </>
       ) : null}
 

@@ -28,6 +28,10 @@ export type Product = {
   featured: boolean;
   /** Surfaced in the chains-for-women filter on the storefront. */
   forWomen: boolean;
+  /** Optional short text overlay on the product card (e.g. "NEW", "BEST SELLER"). */
+  badgeText: string | null;
+  /** Optional image overlay (URL) — takes precedence over badgeText. */
+  badgeImage: string | null;
   displayOrder: number;
 };
 
@@ -62,6 +66,8 @@ type ProductRow = {
   exclusive: boolean;
   featured: boolean;
   for_women: boolean;
+  badge_text: string | null;
+  badge_image: string | null;
   display_order: number;
 };
 
@@ -79,6 +85,8 @@ export function productFromRow(row: ProductRow): Product {
     exclusive: !!row.exclusive,
     featured: !!row.featured,
     forWomen: !!row.for_women,
+    badgeText: row.badge_text?.trim() || null,
+    badgeImage: row.badge_image?.trim() || null,
     displayOrder: row.display_order ?? 0,
   };
 }
