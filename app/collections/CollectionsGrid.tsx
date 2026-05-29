@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
 import ProductCard from "@/components/ui/ProductCard";
 import { useProducts } from "@/lib/catalog-context";
+import { useStockMap } from "@/lib/stock";
 import { CATEGORIES, type Category, type Product } from "@/lib/types";
 import { easeCinematic } from "@/lib/animations";
 
@@ -59,6 +60,7 @@ export default function CollectionsGrid() {
   };
 
   const products = useProducts();
+  const stockMap = useStockMap();
 
   const items = useMemo<Product[]>(() => {
     let base =
@@ -66,14 +68,38 @@ export default function CollectionsGrid() {
         ? products
         : products.filter((p) => p.category === active);
     if (audience === "women") base = base.filter((p) => p.forWomen);
-    if (sort === "featured") return base;
+
+    /* Always sink sold-out products to the bottom of the grid,
+     * regardless of the chosen sort mode. The customer scrolls
+     * past everything in stock before they hit the unbuyable
+     * pieces. A product is sold-out when its inventory row exists
+     * and is at zero; missing stock = treat as in-stock so the
+     * site doesn't hide everything before the first /admin pass. */
+    const isSoldOut = (p: Product) => {
+      const s = stockMap[p.slug];
+      return typeof s === "number" && s <= 0;
+    };
+
+    const byStock = (a: Product, b: Product) => {
+      const sa = isSoldOut(a) ? 1 : 0;
+      const sb = isSoldOut(b) ? 1 : 0;
+      return sa - sb;
+    };
+
+    if (sort === "featured") {
+      // base is already in display_order; just bubble sold-outs to
+      // the end while preserving the existing relative order.
+      return [...base].sort(byStock);
+    }
     // Null prices ("Inquire") always sink to the end regardless of direction.
     return [...base].sort((a, b) => {
+      const stockDelta = byStock(a, b);
+      if (stockDelta !== 0) return stockDelta;
       const pa = a.price ?? Number.POSITIVE_INFINITY;
       const pb = b.price ?? Number.POSITIVE_INFINITY;
       return sort === "price-asc" ? pa - pb : pb - pa;
     });
-  }, [active, audience, sort, products]);
+  }, [active, audience, sort, products, stockMap]);
 
   /* The audience sub-filter ("All / Women") only makes sense when the
    * customer is already inside Chains. Hidden everywhere else. */
