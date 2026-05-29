@@ -38,6 +38,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: { default: `${SITE.name} — ${SITE.tagline}`, template: `%s · ${SITE.name}` },
   description: SITE.description,
+  applicationName: SITE.name,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Chhaya Admin",
+  },
   openGraph: {
     title: SITE.name,
     description: SITE.description,
@@ -52,7 +58,10 @@ export const metadata: Metadata = {
     description: SITE.description,
     images: [SITE.logoPath],
   },
-  icons: { icon: SITE.logoPath },
+  icons: {
+    icon: SITE.logoPath,
+    apple: SITE.logoPath,
+  },
 };
 
 export const viewport: Viewport = {
