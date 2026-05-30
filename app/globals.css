@@ -118,25 +118,25 @@ html { scrollbar-width: thin; scrollbar-color: var(--gold) var(--ink); }
  *                 letterforms (no glare on the surrounding void)
  * ------------------------------------------------------------------------- */
 .logo-glow {
-  animation: logo-glow 3.2s ease-in-out 0s infinite;
-  will-change: filter;
+  animation: logo-glow 2.6s ease-in-out 0s infinite;
+  will-change: filter, transform;
 }
-/* Brightness + contrast lift the dark metallic letterforms so they read
- * crisply over the deep-ink void; the glow halo pulses warm gold on top.
- * The static brightness floor is high so the logo always reads clear. */
+/* Cranked: higher static floor, much hotter peak, three-layer drop-shadow
+ * stack that reaches far out for the "stage spotlight on polished metal"
+ * look. */
 @keyframes logo-glow {
   0%, 100% {
     filter:
-      brightness(1.6) contrast(1.3) saturate(1.15)
-      drop-shadow(0 0 28px rgba(244, 241, 234, 0.6))
-      drop-shadow(0 0 70px rgba(184, 147, 90, 0.45));
+      brightness(1.8) contrast(1.4) saturate(1.25)
+      drop-shadow(0 0 32px rgba(255, 250, 240, 0.7))
+      drop-shadow(0 0 90px rgba(184, 147, 90, 0.55));
   }
   50% {
     filter:
-      brightness(1.85) contrast(1.35) saturate(1.2)
-      drop-shadow(0 0 52px rgba(255, 250, 240, 0.95))
-      drop-shadow(0 0 130px rgba(184, 147, 90, 0.7))
-      drop-shadow(0 0 200px rgba(184, 147, 90, 0.3));
+      brightness(2.2) contrast(1.5) saturate(1.35)
+      drop-shadow(0 0 60px rgba(255, 255, 255, 1))
+      drop-shadow(0 0 160px rgba(184, 147, 90, 0.9))
+      drop-shadow(0 0 260px rgba(184, 147, 90, 0.5));
   }
 }
 
@@ -144,59 +144,56 @@ html { scrollbar-width: thin; scrollbar-color: var(--gold) var(--ink); }
   position: absolute;
   inset: 0;
   pointer-events: none;
-  /* A wider, brighter diagonal stripe over a doubled-width track —
-   * pure white centre with soft fade so the swipe reads as light,
-   * not just a brighter band. */
+  /* Hot white stripe — fully blown-out at the centre, wider sweep zone. */
   background-image: linear-gradient(
     105deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.5) 44%,
+    transparent 28%,
+    rgba(255, 255, 255, 0.7) 42%,
     rgba(255, 255, 255, 1) 50%,
-    rgba(255, 255, 255, 0.5) 56%,
-    transparent 70%
+    rgba(255, 255, 255, 0.7) 58%,
+    transparent 72%
   );
   background-size: 220% 100%;
   background-repeat: no-repeat;
   background-position: 200% 0;
-  /* clip to the logo's alpha channel — light only paints the letterforms */
   -webkit-mask-image: var(--logo-src);
   mask-image: var(--logo-src);
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
-  animation: logo-shimmer 2.6s ease-in-out 0.4s infinite;
+  animation: logo-shimmer 1.9s ease-in-out 0.2s infinite;
   mix-blend-mode: screen;
 }
 @keyframes logo-shimmer {
   0%   { background-position: 200% 0; opacity: 0; }
-  8%   { opacity: 1; }
-  78%  { opacity: 1; }
+  6%   { opacity: 1; }
+  80%  { opacity: 1; }
   100% { background-position: -130% 0; opacity: 0; }
 }
 
-/* Second, fainter shimmer pass running the other way for a "polished
- * metal under two lights" cross-glint. Inherits the same alpha mask. */
+/* Second shimmer running the opposite way in gold, near-fully-opaque
+ * so the cross-glint is unmissable. */
 .logo-shimmer::after {
   content: "";
   position: absolute;
   inset: 0;
   background-image: linear-gradient(
     -75deg,
-    transparent 40%,
-    rgba(184, 147, 90, 0.85) 50%,
-    transparent 60%
+    transparent 36%,
+    rgba(232, 190, 110, 1) 50%,
+    transparent 64%
   );
   background-size: 260% 100%;
   background-repeat: no-repeat;
   background-position: -130% 0;
-  animation: logo-shimmer-gold 4s ease-in-out 1.2s infinite;
+  animation: logo-shimmer-gold 2.8s ease-in-out 0.9s infinite;
   mix-blend-mode: overlay;
 }
 @keyframes logo-shimmer-gold {
   0%   { background-position: -130% 0; opacity: 0; }
-  10%  { opacity: 0.9; }
-  85%  { opacity: 0.9; }
+  8%   { opacity: 1; }
+  82%  { opacity: 1; }
   100% { background-position: 220% 0; opacity: 0; }
 }
 
