@@ -55,6 +55,10 @@ export async function PUT(req: Request, { params }: Params) {
   if (typeof body.exclusive === "boolean") patch.exclusive = body.exclusive;
   if (typeof body.featured === "boolean") patch.featured = body.featured;
   if (typeof body.for_women === "boolean") patch.for_women = body.for_women;
+  if (body.variant_kind === null || body.variant_kind === "") patch.variant_kind = null;
+  else if (body.variant_kind === "chain" || body.variant_kind === "car") {
+    patch.variant_kind = body.variant_kind;
+  }
   if (body.badge_text === null || body.badge_text === "") patch.badge_text = null;
   else if (typeof body.badge_text === "string") patch.badge_text = body.badge_text.trim().slice(0, 40) || null;
   if (body.badge_image === null || body.badge_image === "") patch.badge_image = null;

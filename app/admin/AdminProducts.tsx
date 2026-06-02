@@ -366,6 +366,9 @@ function ProductForm({
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [exclusive, setExclusive] = useState(product?.exclusive ?? false);
   const [forWomen, setForWomen] = useState(product?.forWomen ?? false);
+  const [variantKind, setVariantKind] = useState<"" | "chain" | "car">(
+    product?.variantKind ?? ""
+  );
   const [badgeText, setBadgeText] = useState(product?.badgeText ?? "");
   const [badgeImage, setBadgeImage] = useState(product?.badgeImage ?? "");
   const [saving, setSaving] = useState(false);
@@ -401,6 +404,7 @@ function ProductForm({
       featured,
       exclusive,
       for_women: forWomen,
+      variant_kind: variantKind || null,
       badge_text: badgeText.trim() || null,
       badge_image: badgeImage.trim() || null,
     };
@@ -578,6 +582,27 @@ function ProductForm({
             <span className="font-body text-bone text-sm">
               Show in &ldquo;Chains for Women&rdquo; filter
             </span>
+          </label>
+
+          {/* Variant picker — opt this product into the variant chooser */}
+          <label className="block">
+            <span className="block mb-2 font-body text-bone text-sm font-semibold">
+              Variant picker on product page
+            </span>
+            <select
+              value={variantKind}
+              onChange={(e) => setVariantKind(e.target.value as "" | "chain" | "car")}
+              className="w-full bg-transparent border-b-2 border-bone/30 px-1 py-3
+                         font-body text-bone text-lg
+                         focus:outline-none focus:border-gold transition-colors"
+            >
+              <option value="" className="bg-ink text-bone">No picker</option>
+              <option value="chain" className="bg-ink text-bone">Chains (customer picks a chain)</option>
+              <option value="car" className="bg-ink text-bone">Cars (customer picks a car design)</option>
+            </select>
+            <p className="mt-1 text-[10px] text-bone-dim font-body">
+              Choose what the customer picks on this product&apos;s detail page. Most products = No picker. Only set this for products where the customer should choose a specific variant.
+            </p>
           </label>
 
           {/* Badge / graphic overlay on the product card */}

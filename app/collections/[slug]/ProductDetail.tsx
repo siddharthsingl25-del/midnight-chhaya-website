@@ -40,15 +40,12 @@ export default function ProductDetail({
   const imageRef = useRef<HTMLDivElement>(null);
   const chains = useChains();
 
-  /* Variant selector: chains for chain-category products, cars for
-   * keychain-category products. Both pull from the same chain_options
-   * table, filtered by a `kind` column. */
+  /* Variant selector is opt-in per product via product.variantKind.
+   * Backward-compat fallback: chain-category products default to the
+   * chain picker when variantKind is null, so existing chain pendants
+   * keep their picker without a data migration. */
   const variantKind: "chain" | "car" | null =
-    product.category === "chains"
-      ? "chain"
-      : product.category === "keychains"
-        ? "car"
-        : null;
+    product.variantKind ?? (product.category === "chains" ? "chain" : null);
   const variantPool = variantKind
     ? chains.filter((c) => c.kind === variantKind)
     : [];
