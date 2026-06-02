@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   if (block) return block;
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-  const { id, name, image, price_modifier = 0, stock = 0 } = body;
+  const { id, name, image, price_modifier = 0, stock = 0, kind = "chain" } = body;
 
   if (typeof id !== "string" || !id.trim()) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
@@ -37,6 +37,7 @@ export async function POST(req: Request) {
   if (typeof image !== "string" || !image) {
     return NextResponse.json({ error: "Missing image" }, { status: 400 });
   }
+  const safeKind = kind === "car" ? "car" : "chain";
 
   const { data: lastRow } = await supabaseAdmin()
     .from("chain_options")
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
     image,
     price_modifier: Number(price_modifier) || 0,
     stock: Math.max(0, Math.floor(Number(stock) || 0)),
+    kind: safeKind,
     display_order,
     updated_at: new Date().toISOString(),
   };

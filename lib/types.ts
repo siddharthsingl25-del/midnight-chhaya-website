@@ -43,6 +43,8 @@ export type ChainOption = {
   priceModifier: number;
   /** Physical stock count — mirrors product inventory. 0 = sold out. */
   stock: number;
+  /** Variant kind. Chains attach to necklaces, cars to keychains. */
+  kind: "chain" | "car";
   displayOrder: number;
 };
 
@@ -97,6 +99,7 @@ type ChainRow = {
   image: string;
   price_modifier: number;
   stock: number;
+  kind: string;
   display_order: number;
 };
 
@@ -107,6 +110,7 @@ export function chainFromRow(row: ChainRow): ChainOption {
     image: row.image,
     priceModifier: row.price_modifier ?? 0,
     stock: row.stock ?? 0,
+    kind: row.kind === "car" ? "car" : "chain",
     displayOrder: row.display_order ?? 0,
   };
 }

@@ -26,19 +26,25 @@ import { formatPrice } from "@/lib/site";
 export default function ChainSelector({
   value,
   onChange,
+  kind = "chain",
 }: {
   value: string | null;
   onChange: (id: string) => void;
+  /** Which variant pool to show. 'chain' for necklaces, 'car' for keychains. */
+  kind?: "chain" | "car";
 }) {
-  const CHAIN_OPTIONS = useChains();
+  const ALL = useChains();
+  const CHAIN_OPTIONS = ALL.filter((c) => c.kind === kind);
   const [preview, setPreview] = useState<ChainOption | null>(null);
 
-  // auto-pick the first IN-STOCK chain on mount, so the cart always
-  // has a variant the customer can actually buy. If everything is
-  // sold out, leave value null and the add-to-cart will be disabled.
+  const headerLabel = kind === "car" ? "Choose a car" : "Choose a chain";
+  const previewSelectLabel = kind === "car" ? "Select this car" : "Select this chain";
+
+  // auto-pick the first IN-STOCK variant on mount, so the cart always
+  // has one the customer can actually buy. If everything is sold out,
+  // leave value null and the add-to-cart will be disabled.
   useEffect(() => {
     if (value) {
-      // if the current value is now sold out, bump to the next in-stock one
       const selected = CHAIN_OPTIONS.find((c) => c.id === value);
       if (selected && selected.stock > 0) return;
     }
@@ -66,7 +72,7 @@ export default function ChainSelector({
   return (
     <>
       <div className="flex flex-col gap-4">
-        <span className="eyebrow text-bone-dim">Choose a chain</span>
+        <span className="eyebrow text-bone-dim">{headerLabel}</span>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {CHAIN_OPTIONS.map((opt) => {
             const selected = opt.id === value;
@@ -228,7 +234,7 @@ export default function ChainSelector({
                              hover:bg-gold-soft"
                 >
                   <Check size={12} strokeWidth={2} />
-                  Select this chain
+                  {previewSelectLabel}
                 </button>
               ) : (
                 <span className="inline-flex items-center px-6 py-3

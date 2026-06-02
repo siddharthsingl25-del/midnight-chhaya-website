@@ -40,28 +40,37 @@ export default function ProductDetail({
   const imageRef = useRef<HTMLDivElement>(null);
   const chains = useChains();
 
-  /* Chain selector applies only to chains-category products, and only
-   * when at least one chain option has been published. */
-  const chainPicker = product.category === "chains" && chains.length > 0;
-  /* Auto-pick the first IN-STOCK chain so the cart always has a buyable
-   * variant; ChainSelector's effect will also reconcile if this one
+  /* Variant selector: chains for chain-category products, cars for
+   * keychain-category products. Both pull from the same chain_options
+   * table, filtered by a `kind` column. */
+  const variantKind: "chain" | "car" | null =
+    product.category === "chains"
+      ? "chain"
+      : product.category === "keychains"
+        ? "car"
+        : null;
+  const variantPool = variantKind
+    ? chains.filter((c) => c.kind === variantKind)
+    : [];
+  const chainPicker = variantKind !== null && variantPool.length > 0;
+  /* Auto-pick the first IN-STOCK variant so the cart always has a
+   * buyable variant; ChainSelector's effect reconciles if this one
    * happens to be sold out. */
   const [chainId, setChainId] = useState<string | null>(
-    chainPicker ? chains.find((c) => c.stock > 0)?.id ?? null : null
+    chainPicker ? variantPool.find((c) => c.stock > 0)?.id ?? null : null
   );
   const selectedChain = useChainById(chainId);
 
-  /* How many of the currently-selected chain are already in the cart
+  /* How many of the currently-selected variant are already in the cart
    * (across every product line). Used to block adding more when the
-   * chain would go negative. */
+   * variant would go negative. */
   const chainInCart = chainId
     ? cartItems
         .filter((l) => l.chainId === chainId)
         .reduce((s, l) => s + l.qty, 0)
     : 0;
   /* Same idea for the product itself — sum every cart line for this
-   * slug regardless of chain. Lets us disable Add-to-Cart once the
-   * customer already has all available units in their cart. */
+   * slug regardless of variant. */
   const productInCart = cartItems
     .filter((l) => l.slug === product.slug)
     .reduce((s, l) => s + l.qty, 0);
@@ -71,7 +80,7 @@ export default function ProductDetail({
   const chainExhausted =
     chainPicker && selectedChain ? chainInCart >= selectedChain.stock : false;
   const allChainsSoldOut =
-    chainPicker && chains.every((c) => c.stock <= 0);
+    chainPicker && variantPool.every((c) => c.stock <= 0);
   const disableAdd =
     soldOut || productExhausted || chainSoldOut || chainExhausted;
   const displayedUnitPrice =
@@ -185,9 +194,9 @@ export default function ProductDetail({
               </p>
             </Reveal>
 
-            {chainPicker ? (
+            {chainPicker && variantKind ? (
               <Reveal delay={0.25}>
-                <ChainSelector value={chainId} onChange={setChainId} />
+                <ChainSelector value={chainId} onChange={setChainId} kind={variantKind} />
               </Reveal>
             ) : null}
 
