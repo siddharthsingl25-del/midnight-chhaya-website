@@ -71,6 +71,17 @@ export async function getRelatedProducts(
   limit = 3
 ): Promise<Product[]> {
   const all = await getAllProducts();
+  const self = all.find((p) => p.slug === slug);
+  // Manual override first: if the merchant has set related_slugs on
+  // this product, render exactly those in their chosen order.
+  if (self && self.relatedSlugs.length > 0) {
+    const bySlug = new Map(all.map((p) => [p.slug, p]));
+    return self.relatedSlugs
+      .map((s) => bySlug.get(s))
+      .filter((p): p is Product => Boolean(p) && p!.slug !== slug)
+      .slice(0, limit);
+  }
+  // Fallback: category siblings.
   return all
     .filter((p) => p.slug !== slug && p.category === category)
     .slice(0, limit);

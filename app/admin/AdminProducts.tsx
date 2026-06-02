@@ -371,6 +371,9 @@ function ProductForm({
   );
   const [badgeText, setBadgeText] = useState(product?.badgeText ?? "");
   const [badgeImage, setBadgeImage] = useState(product?.badgeImage ?? "");
+  const [relatedSlugs, setRelatedSlugs] = useState<string[]>(
+    product?.relatedSlugs ?? []
+  );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -407,6 +410,7 @@ function ProductForm({
       variant_kind: variantKind || null,
       badge_text: badgeText.trim() || null,
       badge_image: badgeImage.trim() || null,
+      related_slugs: relatedSlugs,
     };
 
     setSaving(true);
@@ -605,6 +609,21 @@ function ProductForm({
             </p>
           </label>
 
+          {/* Related products — manual override of the Related Pieces row
+           * shown at the bottom of this product's detail page. Empty = the
+           * site falls back to auto-selected category siblings. */}
+          <div className="border-t border-bone/10 pt-6 flex flex-col gap-4">
+            <p className="eyebrow text-gold">Related products</p>
+            <p className="font-serif italic text-bone-dim text-[11px] -mt-2">
+              Pick which products show under &ldquo;Related pieces&rdquo; on this product&apos;s page. Drag to reorder. Leave empty to auto-fill from the same category.
+            </p>
+            <RelatedPicker
+              selfSlug={product?.slug}
+              value={relatedSlugs}
+              onChange={setRelatedSlugs}
+            />
+          </div>
+
           {/* Badge / graphic overlay on the product card */}
           <div className="border-t border-bone/10 pt-6 flex flex-col gap-4">
             <p className="eyebrow text-gold">Card badge</p>
@@ -711,5 +730,158 @@ function Field({
         <p className="mt-1 text-[10px] text-bone-dim font-body">{help}</p>
       ) : null}
     </label>
+  );
+}
+
+/* ───── Related products picker ───────────────────────────────────────
+ * Search the full product list, click to add to the selected stack,
+ * reorder with ↑/↓ on each chip, remove with ×. The selected slugs
+ * persist as an ordered text[] on the product row. */
+function RelatedPicker({
+  selfSlug,
+  value,
+  onChange,
+}: {
+  selfSlug?: string;
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const products = useProducts();
+  const [query, setQuery] = useState("");
+  const byslug = useMemo(() => {
+    const m: Record<string, Product> = {};
+    for (const p of products) m[p.slug] = p;
+    return m;
+  }, [products]);
+  const candidates = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const taken = new Set(value);
+    return products
+      .filter((p) => p.slug !== selfSlug && !taken.has(p.slug))
+      .filter((p) =>
+        !q || p.name.toLowerCase().includes(q) || p.slug.includes(q)
+      )
+      .slice(0, 8);
+  }, [products, query, value, selfSlug]);
+
+  const add = (slug: string) => {
+    if (value.includes(slug)) return;
+    onChange([...value, slug].slice(0, 12));
+    setQuery("");
+  };
+  const remove = (slug: string) => onChange(value.filter((s) => s !== slug));
+  const move = (slug: string, dir: -1 | 1) => {
+    const i = value.indexOf(slug);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= value.length) return;
+    const next = [...value];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      {value.length > 0 ? (
+        <ul className="flex flex-col gap-1.5">
+          {value.map((slug, i) => {
+            const p = byslug[slug];
+            return (
+              <li
+                key={slug}
+                className="flex items-center gap-3 border border-bone/15 px-2 py-1.5"
+              >
+                <div className="relative w-9 h-11 flex-shrink-0 bg-charcoal overflow-hidden">
+                  {p?.images[0] ? (
+                    <Image src={p.images[0]} alt="" fill sizes="36px" className="object-cover" />
+                  ) : null}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display text-bone text-sm truncate">
+                    {p?.name ?? slug}
+                  </p>
+                  <p className="text-[10px] text-bone-dim uppercase tracking-[0.15em] truncate">
+                    {p?.category ?? "missing"} · {slug}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => move(slug, -1)}
+                  disabled={i === 0}
+                  aria-label="Move up"
+                  className="grid place-items-center w-7 h-7 border border-bone/20
+                             text-bone-dim hover:text-gold hover:border-gold transition-colors
+                             disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronUp size={12} strokeWidth={1.75} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => move(slug, 1)}
+                  disabled={i === value.length - 1}
+                  aria-label="Move down"
+                  className="grid place-items-center w-7 h-7 border border-bone/20
+                             text-bone-dim hover:text-gold hover:border-gold transition-colors
+                             disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronDown size={12} strokeWidth={1.75} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(slug)}
+                  aria-label="Remove"
+                  className="grid place-items-center w-7 h-7 border border-bone/20
+                             text-bone-dim hover:text-oxblood hover:border-oxblood transition-colors"
+                >
+                  <Trash2 size={12} strokeWidth={1.5} />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search products to add…"
+        className="w-full bg-transparent border-b border-bone/20 px-1 py-2
+                   font-body text-bone text-sm
+                   placeholder:text-bone-dim/50
+                   focus:outline-none focus:border-gold transition-colors"
+      />
+
+      {query.trim() && candidates.length === 0 ? (
+        <p className="text-[10px] text-bone-dim italic">No matches.</p>
+      ) : null}
+
+      {candidates.length > 0 ? (
+        <ul className="flex flex-col border border-bone/10 max-h-72 overflow-y-auto">
+          {candidates.map((p) => (
+            <li key={p.slug}>
+              <button
+                type="button"
+                onClick={() => add(p.slug)}
+                className="flex items-center gap-3 w-full text-left px-2 py-1.5
+                           hover:bg-gold/5 transition-colors"
+              >
+                <div className="relative w-9 h-11 flex-shrink-0 bg-charcoal overflow-hidden">
+                  {p.images[0] ? (
+                    <Image src={p.images[0]} alt="" fill sizes="36px" className="object-cover" />
+                  ) : null}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-body text-bone text-sm truncate">{p.name}</p>
+                  <p className="text-[10px] text-bone-dim uppercase tracking-[0.15em] truncate">
+                    {p.category} · ₹{p.price ?? "—"}
+                  </p>
+                </div>
+                <Plus size={14} strokeWidth={1.75} className="text-gold flex-shrink-0" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
   );
 }

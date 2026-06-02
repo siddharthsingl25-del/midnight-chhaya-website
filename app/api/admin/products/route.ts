@@ -54,6 +54,7 @@ export async function POST(req: Request) {
     variant_kind = null,
     badge_text = null,
     badge_image = null,
+    related_slugs = [],
   } = body as Record<string, unknown>;
 
   if (typeof slug !== "string" || !slug.trim()) {
@@ -100,6 +101,9 @@ export async function POST(req: Request) {
       variant_kind === "chain" || variant_kind === "car" ? variant_kind : null,
     badge_text: typeof badge_text === "string" && badge_text.trim() ? badge_text.trim().slice(0, 40) : null,
     badge_image: typeof badge_image === "string" && badge_image.trim() ? badge_image.trim() : null,
+    related_slugs: Array.isArray(related_slugs)
+      ? (related_slugs as unknown[]).filter((s): s is string => typeof s === "string" && !!s.trim()).map((s) => s.trim()).slice(0, 12)
+      : [],
     display_order,
     updated_at: new Date().toISOString(),
   };

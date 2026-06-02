@@ -35,6 +35,10 @@ export type Product = {
   badgeText: string | null;
   /** Optional image overlay (URL) — takes precedence over badgeText. */
   badgeImage: string | null;
+  /** Manual "related products" override — slugs shown in the Related
+   * Pieces section at the bottom of the detail page. Empty = fall back
+   * to automatic category siblings. */
+  relatedSlugs: string[];
   displayOrder: number;
 };
 
@@ -74,6 +78,7 @@ type ProductRow = {
   variant_kind: string | null;
   badge_text: string | null;
   badge_image: string | null;
+  related_slugs: string[] | null;
   display_order: number;
 };
 
@@ -97,6 +102,7 @@ export function productFromRow(row: ProductRow): Product {
         : null,
     badgeText: row.badge_text?.trim() || null,
     badgeImage: row.badge_image?.trim() || null,
+    relatedSlugs: Array.isArray(row.related_slugs) ? row.related_slugs : [],
     displayOrder: row.display_order ?? 0,
   };
 }
