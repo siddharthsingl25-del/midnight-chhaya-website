@@ -26,6 +26,7 @@ export type SeedProduct = {
   exclusive: boolean;
   featured: boolean;
   for_women: boolean;
+  variant_kind?: "chain" | "car" | null;
   display_order: number;
 };
 
@@ -61,5 +62,22 @@ export const SEED_PRODUCTS: SeedProduct[] = [
     featured: false,
     for_women: true,
     display_order: 100,
+  },
+  {
+    slug: "race-car-pick-keychain",
+    name: "Race Car Keychain · Pick Your Livery",
+    category: "keychains",
+    price: 80,
+    short_description: "Pocket-size diecast race car — pick which design.",
+    description:
+      "A miniature diecast race car on a steel split-ring. Six full racing liveries available — Fonebiz red, Storm green, GB Top-Speed white/red, XKKR Sport yellow #13, Dynamic white/red, and Dynamic black/green #18. Pick your favourite at checkout; each is the same body, different paint and decals.",
+    materials: ["Diecast metal", "Steel ring and chain"],
+    dimensions: null,
+    images: ["/products/race-car-pick-keychain-1.jpg"],
+    exclusive: false,
+    featured: false,
+    for_women: false,
+    variant_kind: "car",
+    display_order: 110,
   },
 ];
