@@ -22,14 +22,22 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check, ShoppingBag } from "lucide-react";
 import Reveal from "@/components/animations/Reveal";
 import { easeCinematic } from "@/lib/animations";
 import { useCart } from "@/lib/cart";
 import { useStockRefresh } from "@/lib/stock";
-import { computeShipping, formatPrice, SHIPPING_THRESHOLD, SITE } from "@/lib/site";
+import {
+  ACTIVE_OFFER,
+  computeBogoDiscount,
+  computeShipping,
+  formatPrice,
+  offerActiveAt,
+  SHIPPING_THRESHOLD,
+  SITE,
+} from "@/lib/site";
 
 type Form = {
   name: string;
@@ -64,6 +72,27 @@ export default function CheckoutClient() {
   const refreshStock = useStockRefresh();
   const lines = detailed();
   const subtotal = total();
+
+  /* Live BOGO discount tied to ACTIVE_OFFER. Recomputes on each render
+   * so the cart auto-updates as items go in/out; auto-disables the
+   * moment the deadline passes. */
+  const [bogoActive, setBogoActive] = useState(() => offerActiveAt());
+  useEffect(() => {
+    const id = setInterval(() => setBogoActive(offerActiveAt()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  const bogoAmount = bogoActive
+    ? computeBogoDiscount(
+        lines.map(({ line, unitPrice }) => ({
+          eligible: ACTIVE_OFFER.slugMatches.some((m) =>
+            line.slug.toLowerCase().includes(m)
+          ),
+          unitPrice: unitPrice ?? 0,
+          qty: line.qty,
+        }))
+      )
+    : 0;
+
   const [discountCode, setDiscountCode] = useState<string>("");
   const [appliedCode, setAppliedCode] = useState<{
     code: string;
@@ -72,9 +101,8 @@ export default function CheckoutClient() {
   } | null>(null);
   const [codeError, setCodeError] = useState<string>("");
   const [codeChecking, setCodeChecking] = useState(false);
-  const discountedSubtotal = appliedCode
-    ? Math.max(0, subtotal - appliedCode.amountOff)
-    : subtotal;
+  const codeDiscount = appliedCode?.amountOff ?? 0;
+  const discountedSubtotal = Math.max(0, subtotal - bogoAmount - codeDiscount);
   const shipping = computeShipping(discountedSubtotal);
   const grandTotal = discountedSubtotal + shipping;
   const [form, setForm] = useState<Form>(EMPTY);
@@ -656,6 +684,16 @@ export default function CheckoutClient() {
                 <span className="eyebrow text-bone-dim">Subtotal</span>
                 <span className="text-sm text-bone">{formatPrice(subtotal)}</span>
               </div>
+              {bogoAmount > 0 ? (
+                <div className="flex items-baseline justify-between">
+                  <span className="eyebrow text-gold">
+                    {ACTIVE_OFFER.title} · {ACTIVE_OFFER.subtitle}
+                  </span>
+                  <span className="text-sm text-gold">
+                    −{formatPrice(bogoAmount)}
+                  </span>
+                </div>
+              ) : null}
               {appliedCode ? (
                 <div className="flex items-baseline justify-between">
                   <span className="eyebrow text-gold inline-flex items-center gap-2">

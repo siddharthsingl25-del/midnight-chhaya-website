@@ -19,6 +19,52 @@ export const SITE = {
   logoAspect: 776 / 321,
 } as const;
 
+/**
+ * Live promotional offer. When `deadline` is in the future:
+ *   • A countdown banner renders at the top of every page.
+ *   • The cart and server-side checkout auto-apply the BOGO discount
+ *     to any line whose slug includes one of `slugMatches`.
+ * Set deadline to a past date OR clear the file to disable.
+ *
+ * Discount rule: for every TWO qualifying units in the cart, the
+ * CHEAPER one is free. floor(N/2) freebies, picked as the cheapest.
+ */
+export const ACTIVE_OFFER = {
+  title: "BUY 1 GET 1 FREE",
+  subtitle: "Monster Keychains",
+  /** ISO timestamp — 11:59 PM IST = 18:29 UTC */
+  deadlineIso: "2026-06-03T18:29:00.000Z",
+  /** Slug substrings (lowercase) — a line is eligible if its slug
+   *  contains any of these. */
+  slugMatches: ["monster"],
+} as const;
+
+/** Has the offer expired? Compares against the supplied time (defaults
+ *  to now). Server- and client-safe. */
+export function offerActiveAt(now: number = Date.now()): boolean {
+  return now < new Date(ACTIVE_OFFER.deadlineIso).getTime();
+}
+
+/** Compute the BOGO discount amount in rupees for a set of cart lines.
+ * Each line carries an `eligible` flag (true if its slug matches the
+ * offer) and a `unitPrice` × `qty`. We flatten to per-unit prices,
+ * sort ascending, and zero out floor(N/2) of the cheapest. */
+export function computeBogoDiscount(
+  lines: { eligible: boolean; unitPrice: number; qty: number }[]
+): number {
+  const units: number[] = [];
+  for (const l of lines) {
+    if (!l.eligible) continue;
+    for (let i = 0; i < l.qty; i++) units.push(l.unitPrice);
+  }
+  if (units.length < 2) return 0;
+  units.sort((a, b) => a - b);
+  const freebies = Math.floor(units.length / 2);
+  let total = 0;
+  for (let i = 0; i < freebies; i++) total += units[i];
+  return total;
+}
+
 /** Top-of-page navigation. Items can have `children` for hover dropdowns. */
 export type NavItem = {
   label: string;

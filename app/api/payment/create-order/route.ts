@@ -18,7 +18,12 @@ import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getAllProducts, getChain } from "@/lib/catalog";
-import { computeShipping } from "@/lib/site";
+import {
+  ACTIVE_OFFER,
+  computeBogoDiscount,
+  computeShipping,
+  offerActiveAt,
+} from "@/lib/site";
 
 type IncomingItem = { slug: string; qty: number; chainId?: string };
 
@@ -189,7 +194,23 @@ export async function POST(req: Request) {
   }
 
   const discountPaise = Math.round((grossSubtotalPaise * discountPercent) / 100);
-  const subtotalPaise = grossSubtotalPaise - discountPaise;
+
+  // 3c. Apply the live BOGO offer when it's active. Server-side gate
+  // checks the deadline so a stale client can't claim an expired deal.
+  let bogoPaise = 0;
+  if (offerActiveAt()) {
+    bogoPaise = computeBogoDiscount(
+      lines.map((l) => ({
+        eligible: ACTIVE_OFFER.slugMatches.some((m) =>
+          l.slug.toLowerCase().includes(m)
+        ),
+        unitPrice: l.unitPaise,
+        qty: l.qty,
+      }))
+    );
+  }
+
+  const subtotalPaise = Math.max(0, grossSubtotalPaise - discountPaise - bogoPaise);
   const subtotalInr = subtotalPaise / 100;
   const shippingPaise = computeShipping(subtotalInr) * 100;
   const amountPaise = subtotalPaise + shippingPaise;
