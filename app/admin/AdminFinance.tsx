@@ -17,7 +17,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
-import { useProducts } from "@/lib/catalog-context";
+import Image from "next/image";
+import { useCatalogRefresh, useChains, useProducts } from "@/lib/catalog-context";
 import {
   EXPENSE_CATEGORIES,
   EXPENSE_CATEGORY_LABEL,
@@ -90,7 +91,7 @@ export default function AdminFinance() {
   const [data, setData] = useState<FinanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
-  const [view, setView] = useState<"dashboard" | "cash" | "expense">("dashboard");
+  const [view, setView] = useState<"dashboard" | "cash" | "expense" | "costs">("dashboard");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -142,6 +143,18 @@ export default function AdminFinance() {
     );
   }
 
+  if (view === "costs") {
+    return (
+      <BulkCostsEditor
+        onDone={async () => {
+          await load();
+          setView("dashboard");
+        }}
+        onCancel={() => setView("dashboard")}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-10">
       {/* Action buttons */}
@@ -153,6 +166,13 @@ export default function AdminFinance() {
         >
           <Plus size={14} strokeWidth={1.75} />
           <span className="eyebrow text-[10px] text-ink">Cash order</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("costs")}
+          className="inline-flex items-center gap-2 px-4 py-2.5 border border-gold/40 text-gold hover:bg-gold/5 transition-colors"
+        >
+          <span className="eyebrow text-[10px]">Set costs (all items)</span>
         </button>
         <button
           type="button"
@@ -838,5 +858,224 @@ function Field({
       />
       {help ? <p className="mt-1 text-[10px] text-bone-dim font-body">{help}</p> : null}
     </label>
+  );
+}
+
+/* ───── Bulk costs editor ────────────────────────────────────────────── */
+/* Single screen: every product + every chain in one scrollable list,
+ * each with an inline cost-price input. Type a number, tap off (or hit
+ * Enter / Tab) → saves silently in the background, ✓ flashes next to
+ * the row. No nav, no per-product edit page. */
+
+function BulkCostsEditor({
+  onDone,
+  onCancel,
+}: {
+  onDone: () => void | Promise<void>;
+  onCancel: () => void;
+}) {
+  const products = useProducts();
+  const chains = useChains();
+  const refresh = useCatalogRefresh();
+  const [filter, setFilter] = useState("");
+
+  const productMatches = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter(
+      (p) => p.name.toLowerCase().includes(q) || p.slug.includes(q)
+    );
+  }, [products, filter]);
+
+  const chainMatches = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    if (!q) return chains;
+    return chains.filter(
+      (c) => c.name.toLowerCase().includes(q) || c.id.includes(q)
+    );
+  }, [chains, filter]);
+
+  const filledProducts = products.filter((p) => p.costPrice != null).length;
+  const filledChains = chains.filter((c) => c.costPrice != null).length;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <button
+        type="button"
+        onClick={async () => {
+          await refresh();
+          await onDone();
+          onCancel();
+        }}
+        className="self-start eyebrow text-bone-dim hover:text-gold"
+      >
+        ← Back
+      </button>
+
+      <div>
+        <h2 className="font-display uppercase text-bone text-2xl">Set costs</h2>
+        <p className="font-serif italic text-bone-dim text-xs mt-2">
+          Type the cost (what you paid to source / make this unit) in each row. Saves automatically when you tap off or press Enter. Leave blank for items you haven&apos;t priced yet.
+        </p>
+        <p className="text-[10px] text-bone-dim mt-2">
+          Products filled: <span className="text-gold">{filledProducts}/{products.length}</span>
+          {" · "}
+          Chains/cars filled: <span className="text-gold">{filledChains}/{chains.length}</span>
+        </p>
+      </div>
+
+      <input
+        type="search"
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+        placeholder="Filter by name or slug…"
+        className="w-full sm:w-80 bg-transparent border-b border-bone/20 px-1 py-3
+                   font-body text-bone placeholder:text-bone-dim/50
+                   focus:outline-none focus:border-gold transition-colors"
+      />
+
+      <section>
+        <h3 className="eyebrow text-gold mb-3">Products ({productMatches.length})</h3>
+        {productMatches.length === 0 ? (
+          <p className="font-serif italic text-bone-dim text-sm">No matches.</p>
+        ) : (
+          <ul className="flex flex-col">
+            {productMatches.map((p) => (
+              <CostRow
+                key={p.slug}
+                photo={p.images[0]}
+                title={p.name}
+                subtitle={`${p.category} · sells for ₹${p.price ?? "—"}`}
+                slug={p.slug}
+                initialCost={p.costPrice}
+                endpoint={`/api/admin/products/${encodeURIComponent(p.slug)}`}
+                onSaved={refresh}
+              />
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h3 className="eyebrow text-gold mb-3">Chains &amp; cars ({chainMatches.length})</h3>
+        {chainMatches.length === 0 ? (
+          <p className="font-serif italic text-bone-dim text-sm">No matches.</p>
+        ) : (
+          <ul className="flex flex-col">
+            {chainMatches.map((c) => (
+              <CostRow
+                key={c.id}
+                photo={c.image}
+                title={c.name}
+                subtitle={`${c.kind} · adds +₹${c.priceModifier} to product price`}
+                slug={c.id}
+                initialCost={c.costPrice}
+                endpoint={`/api/admin/chains/${encodeURIComponent(c.id)}`}
+                onSaved={refresh}
+              />
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function CostRow({
+  photo,
+  title,
+  subtitle,
+  slug,
+  initialCost,
+  endpoint,
+  onSaved,
+}: {
+  photo: string;
+  title: string;
+  subtitle: string;
+  slug: string;
+  initialCost: number | null;
+  endpoint: string;
+  onSaved: () => void | Promise<void>;
+}) {
+  const [value, setValue] = useState<string>(initialCost != null ? String(initialCost) : "");
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [errMsg, setErrMsg] = useState("");
+  const baseline = initialCost != null ? String(initialCost) : "";
+
+  const save = async () => {
+    if (value === baseline) return;
+    setStatus("saving");
+    setErrMsg("");
+    try {
+      const res = await fetch(endpoint, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cost_price: value === "" ? null : Number(value),
+        }),
+      });
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        setErrMsg(d.error || "Save failed");
+        setStatus("error");
+        return;
+      }
+      setStatus("saved");
+      await onSaved();
+      // Fade the ✓ after a moment
+      setTimeout(() => setStatus("idle"), 1500);
+    } catch {
+      setErrMsg("Network error");
+      setStatus("error");
+    }
+  };
+
+  return (
+    <li className="flex items-center gap-3 py-3 border-b border-bone/10">
+      <div className="relative w-12 h-14 flex-shrink-0 overflow-hidden bg-charcoal">
+        {photo ? (
+          <Image src={photo} alt="" fill sizes="48px" className="object-cover" />
+        ) : null}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-display text-bone text-sm truncate">{title}</p>
+        <p className="text-[10px] text-bone-dim uppercase tracking-[0.15em] truncate">
+          {subtitle} · {slug}
+        </p>
+        {status === "error" && errMsg ? (
+          <p className="text-[10px] text-oxblood">{errMsg}</p>
+        ) : null}
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <span className="text-bone-dim text-sm">₹</span>
+        <input
+          type="tel"
+          inputMode="numeric"
+          value={value}
+          onChange={(e) => setValue(e.target.value.replace(/[^\d]/g, ""))}
+          onBlur={save}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              (e.currentTarget as HTMLInputElement).blur();
+            }
+          }}
+          placeholder="cost"
+          className={`w-20 bg-transparent border-b-2 px-1 py-1.5 text-right
+                     font-body text-bone text-base
+                     placeholder:text-bone-dim/40
+                     focus:outline-none transition-colors
+                     ${status === "error" ? "border-oxblood" : "border-bone/30 focus:border-gold"}`}
+        />
+        <span className="w-5 text-center">
+          {status === "saving" ? (
+            <span className="text-bone-dim text-xs">…</span>
+          ) : status === "saved" ? (
+            <span className="text-emerald-400 text-sm">✓</span>
+          ) : null}
+        </span>
+      </div>
+    </li>
   );
 }
