@@ -19,6 +19,9 @@ export type Product = {
   category: Category;
   /** Price in INR rupees. null = "Inquire". */
   price: number | null;
+  /** What this unit costs the merchant to source / make (COGS), in INR
+   * rupees. Null = not set yet (profit can't be computed). Admin-only. */
+  costPrice: number | null;
   shortDescription: string;
   description: string;
   materials: string[];
@@ -67,6 +70,7 @@ type ProductRow = {
   name: string;
   category: Category;
   price: number | null;
+  cost_price: number | null;
   short_description: string;
   description: string;
   materials: string[];
@@ -88,6 +92,7 @@ export function productFromRow(row: ProductRow): Product {
     name: row.name,
     category: row.category,
     price: row.price,
+    costPrice: row.cost_price ?? null,
     shortDescription: row.short_description ?? "",
     description: row.description ?? "",
     materials: row.materials ?? [],
@@ -128,3 +133,33 @@ export function chainFromRow(row: ChainRow): ChainOption {
     displayOrder: row.display_order ?? 0,
   };
 }
+
+/* ─── Finance types ──────────────────────────────────────────────────── */
+
+export const EXPENSE_CATEGORIES = [
+  "advertising",
+  "collab",
+  "restock",
+  "shipping",
+  "packaging",
+  "other",
+] as const;
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
+
+export const EXPENSE_CATEGORY_LABEL: Record<ExpenseCategory, string> = {
+  advertising: "Advertising",
+  collab: "Collab / Influencer",
+  restock: "Restock / Raw materials",
+  shipping: "Shipping",
+  packaging: "Packaging",
+  other: "Other",
+};
+
+export type Expense = {
+  id: number;
+  category: ExpenseCategory;
+  amount: number;
+  description: string;
+  occurredAt: string;
+  createdAt: string;
+};

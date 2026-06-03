@@ -43,6 +43,7 @@ export async function POST(req: Request) {
     name,
     category,
     price,
+    cost_price = null,
     short_description = "",
     description = "",
     materials = [],
@@ -74,6 +75,13 @@ export async function POST(req: Request) {
   if (priceVal !== null && (!Number.isFinite(priceVal) || priceVal < 0)) {
     return NextResponse.json({ error: "Bad price" }, { status: 400 });
   }
+  const costVal =
+    cost_price === null || cost_price === undefined || cost_price === ""
+      ? null
+      : Number(cost_price);
+  if (costVal !== null && (!Number.isFinite(costVal) || costVal < 0)) {
+    return NextResponse.json({ error: "Bad cost price" }, { status: 400 });
+  }
 
   // Next display_order = max + 1
   const { data: lastRow } = await supabaseAdmin()
@@ -89,6 +97,7 @@ export async function POST(req: Request) {
     name: name.trim(),
     category,
     price: priceVal,
+    cost_price: costVal,
     short_description: String(short_description),
     description: String(description),
     materials: Array.isArray(materials) ? materials.map(String) : [],

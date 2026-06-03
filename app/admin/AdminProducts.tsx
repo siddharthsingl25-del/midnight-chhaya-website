@@ -360,6 +360,9 @@ function ProductForm({
   const [price, setPrice] = useState<string>(
     product?.price != null ? String(product.price) : ""
   );
+  const [costPrice, setCostPrice] = useState<string>(
+    product?.costPrice != null ? String(product.costPrice) : ""
+  );
   const [shortDesc, setShortDesc] = useState(product?.shortDescription ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
   const [image, setImage] = useState(product?.images[0] ?? "");
@@ -401,6 +404,7 @@ function ProductForm({
       name: name.trim(),
       category,
       price: price === "" ? null : Number(price),
+      cost_price: costPrice === "" ? null : Number(costPrice),
       short_description: shortDesc.trim(),
       description: description.trim(),
       images: [image],
@@ -492,6 +496,16 @@ function ProductForm({
         placeholder="e.g. 300 · leave blank for 'Inquire'"
         type="tel"
         inputMode="numeric"
+      />
+
+      <Field
+        label="Cost price (₹) — what this unit costs you"
+        value={costPrice}
+        onChange={setCostPrice}
+        placeholder="e.g. 120 · used to compute profit per order"
+        type="tel"
+        inputMode="numeric"
+        help="Private. Never shown to customers. Powers the Finance dashboard."
       />
 
       {mode === "create" ? (

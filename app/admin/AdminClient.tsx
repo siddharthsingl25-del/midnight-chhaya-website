@@ -17,14 +17,16 @@ import AdminStock from "./AdminStock";
 import AdminProducts from "./AdminProducts";
 import AdminChains from "./AdminChains";
 import AdminFeedback from "./AdminFeedback";
+import AdminFinance from "./AdminFinance";
 import { easeCinematic } from "@/lib/animations";
 
-type Tab = "stock" | "products" | "chains" | "feedback";
+type Tab = "stock" | "products" | "chains" | "finance" | "feedback";
 
 const TAB_LABEL: Record<Tab, string> = {
   stock: "Stock",
   products: "Products",
   chains: "Chains",
+  finance: "Finance",
   feedback: "Feedback",
 };
 
@@ -89,7 +91,7 @@ export default function AdminClient() {
 
         {/* Tab bar */}
         <div className="flex gap-6 mb-10 border-b border-bone/10 pb-2 overflow-x-auto">
-          {(["stock", "products", "chains", "feedback"] as const).map((t) => {
+          {(["stock", "products", "chains", "finance", "feedback"] as const).map((t) => {
             const selected = tab === t;
             return (
               <button
@@ -125,6 +127,7 @@ export default function AdminClient() {
             {tab === "stock" ? <AdminStock /> : null}
             {tab === "products" ? <AdminProducts /> : null}
             {tab === "chains" ? <AdminChains /> : null}
+            {tab === "finance" ? <AdminFinance /> : null}
             {tab === "feedback" ? <AdminFeedback /> : null}
           </motion.div>
         </AnimatePresence>
