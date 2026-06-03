@@ -43,6 +43,7 @@ import {
   resolveExpenseCategory,
   setOrderMerchantCost,
   undoLastCashOrder,
+  deleteOrder,
 } from "@/lib/finance-actions";
 import { EXPENSE_CATEGORY_LABEL } from "@/lib/types";
 
@@ -123,6 +124,9 @@ async function handleMessage(msg: TgMessage): Promise<void> {
       return cmdStock(chatId, args);
     case "ship":
       return cmdShip(chatId, args);
+    case "delete":
+    case "del":
+      return cmdDelete(chatId, args);
     case "undo":
       return cmdUndo(chatId);
     default:
@@ -163,6 +167,7 @@ async function cmdHelp(chatId: number): Promise<void> {
     "",
     "<b>Other</b>",
     "<code>/undo</code>   — delete the most recent cash sale (restores stock)",
+    "<code>/delete &lt;order#&gt;</code> — delete any order by number (test orders, mistakes)",
     "<code>/help</code>",
     "",
     "<i>Short aliases: /s /e /t /m</i>",
@@ -382,6 +387,26 @@ async function cmdShip(chatId: number, args: string): Promise<void> {
   await sendTelegramMessage(
     chatId,
     `✅ <b>${orderNumber}</b> courier cost: ${fmtInr(amount)} ${esc(note)}`
+  );
+}
+
+async function cmdDelete(chatId: number, args: string): Promise<void> {
+  const ref = args.trim();
+  if (!ref) {
+    await sendTelegramMessage(
+      chatId,
+      "Usage: <code>/delete &lt;order#&gt;</code>\ne.g. <code>/delete MC-00001</code>\nRestores stock. Does NOT refund — use Razorpay dashboard for that."
+    );
+    return;
+  }
+  const result = await deleteOrder(ref);
+  if (!result) {
+    await sendTelegramMessage(chatId, `Order not found: ${esc(ref)}`);
+    return;
+  }
+  await sendTelegramMessage(
+    chatId,
+    `🗑 Deleted <b>${result.orderNumber}</b> · ${fmtInr(result.total)}\nstock restored: ${esc(result.itemSummary)}`
   );
 }
 

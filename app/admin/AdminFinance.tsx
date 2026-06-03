@@ -215,7 +215,7 @@ export default function AdminFinance() {
       {/* Orders log */}
       <section>
         <h2 className="eyebrow text-gold mb-4">Orders ({data.orders.length})</h2>
-        <OrdersTable orders={data.orders} />
+        <OrdersTable orders={data.orders} onChange={load} />
       </section>
 
       {/* Expenses log */}
@@ -255,11 +255,40 @@ function Stat({
   );
 }
 
-function OrdersTable({ orders }: { orders: FinanceOrder[] }) {
+function OrdersTable({
+  orders,
+  onChange,
+}: {
+  orders: FinanceOrder[];
+  onChange: () => void | Promise<void>;
+}) {
   const [open, setOpen] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   if (orders.length === 0) {
     return <p className="font-serif italic text-bone-dim text-sm">No orders yet.</p>;
   }
+  const remove = async (orderNumber: string) => {
+    if (
+      !confirm(
+        `Delete ${orderNumber}? Stock will be restored.\n\nThis does NOT refund the customer — use Razorpay dashboard for that.`
+      )
+    )
+      return;
+    setDeleting(orderNumber);
+    try {
+      const res = await fetch(`/api/admin/orders/${encodeURIComponent(orderNumber)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        alert(d.error || "Delete failed");
+        return;
+      }
+      await onChange();
+    } finally {
+      setDeleting(null);
+    }
+  };
   return (
     <ul className="flex flex-col">
       {orders.map((o) => {
@@ -334,6 +363,22 @@ function OrdersTable({ orders }: { orders: FinanceOrder[] }) {
                 {o.customerInstagram ? (
                   <p className="text-bone-dim mt-1">@{o.customerInstagram}</p>
                 ) : null}
+                <div className="border-t border-bone/10 mt-3 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => remove(o.orderNumber)}
+                    disabled={deleting === o.orderNumber}
+                    className="inline-flex items-center gap-2 px-3 py-1.5
+                               border border-oxblood/40 text-oxblood
+                               hover:bg-oxblood/10 transition-colors
+                               disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 size={12} strokeWidth={1.5} />
+                    <span className="eyebrow text-[10px]">
+                      {deleting === o.orderNumber ? "Deleting…" : "Delete order"}
+                    </span>
+                  </button>
+                </div>
               </div>
             ) : null}
           </li>

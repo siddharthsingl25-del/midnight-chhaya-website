@@ -415,6 +415,62 @@ export async function setOrderMerchantCost(
   return { orderNumber: data.order_number as string, previousCost: previous };
 }
 
+/* ─── Delete an order by number (for /delete) ────────────────────────── */
+
+export async function deleteOrder(orderRef: string): Promise<{
+  orderNumber: string;
+  total: number;
+  itemSummary: string;
+} | null> {
+  const sb = supabaseAdmin();
+  const normalised = orderRef.trim().toUpperCase();
+  const withPrefix = normalised.startsWith("MC-") ? normalised : `MC-${normalised}`;
+  const { data: order } = await sb
+    .from("orders")
+    .select("id, order_number, items, total")
+    .eq("order_number", withPrefix)
+    .maybeSingle();
+  if (!order) return null;
+
+  const items = (order.items as Array<{
+    slug: string;
+    qty: number;
+    chainId?: string | null;
+  }>) ?? [];
+  for (const it of items) {
+    const { data: inv } = await sb
+      .from("inventory")
+      .select("stock")
+      .eq("slug", it.slug)
+      .maybeSingle();
+    const next = (inv?.stock ?? 0) + (it.qty ?? 0);
+    await sb
+      .from("inventory")
+      .upsert({ slug: it.slug, stock: next, updated_at: new Date().toISOString() });
+    if (it.chainId) {
+      const { data: ch } = await sb
+        .from("chain_options")
+        .select("stock")
+        .eq("id", it.chainId)
+        .maybeSingle();
+      const nextCh = (ch?.stock ?? 0) + (it.qty ?? 0);
+      await sb
+        .from("chain_options")
+        .update({ stock: nextCh, updated_at: new Date().toISOString() })
+        .eq("id", it.chainId);
+    }
+  }
+
+  await sb.from("orders").delete().eq("id", order.id);
+  revalidateTag("products", "max");
+
+  return {
+    orderNumber: order.order_number as string,
+    total: order.total as number,
+    itemSummary: items.map((it) => `${it.slug} ×${it.qty}`).join(", "),
+  };
+}
+
 /* ─── Delete most recent cash order (for /undo) ──────────────────────── */
 
 export async function undoLastCashOrder(): Promise<{
