@@ -179,7 +179,7 @@ export default function AdminFinance() {
           />
         </div>
         <p className="font-serif italic text-bone-dim text-[11px] mt-3">
-          Net profit = revenue (excl shipping) − COGS − gateway fees − per-order shipping cost − all expenses.
+          Net profit = total revenue (incl shipping the customer paid) − COGS − gateway fees − per-order courier cost − all expenses (ads, collab, restock, packaging, bulk shipping, other).
         </p>
 
         {/* Expense breakdown */}
@@ -322,10 +322,10 @@ function OrdersTable({ orders }: { orders: FinanceOrder[] }) {
                 ))}
                 <div className="border-t border-bone/10 mt-2 pt-2 grid grid-cols-2 gap-x-4 gap-y-1">
                   <span className="text-bone-dim">Subtotal</span><span className="text-right">{fmt(o.subtotal)}</span>
-                  <span className="text-bone-dim">Shipping (pass-through)</span><span className="text-right">{fmt(o.shipping)}</span>
+                  <span className="text-bone-dim">Shipping charged</span><span className="text-right">{fmt(o.shipping)}</span>
                   <span className="text-bone-dim">Gateway fee</span><span className="text-right">−{fmt(o.gatewayFee)}</span>
                   <span className="text-bone-dim">COGS</span><span className="text-right">−{fmt(o.cogs)}</span>
-                  <span className="text-bone-dim">Per-order cost</span><span className="text-right">−{fmt(o.merchantCost)}</span>
+                  <span className="text-bone-dim">Courier paid</span><span className="text-right">−{fmt(o.merchantCost)}</span>
                   <span className="text-gold">Profit</span>
                   <span className={`text-right ${o.profit >= 0 ? "text-emerald-400" : "text-oxblood"}`}>
                     {fmt(o.profit)}

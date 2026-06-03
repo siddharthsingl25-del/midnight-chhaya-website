@@ -261,7 +261,11 @@ export async function getStatsForRange(
     merchant_cost: number | null;
   }>;
   for (const o of orderRows) {
-    revenue += o.total - o.shipping;
+    // Shipping that the customer paid is real revenue — it covers (or
+    // partially covers) the courier bill. Courier cost is logged
+    // separately as merchant_cost per order or as a 'shipping' expense
+    // line so it nets out correctly.
+    revenue += o.total;
     merchantCost += o.merchant_cost ?? 0;
     if (o.payment_method === "online") {
       gatewayFees += Math.round(o.total * RAZORPAY_FEE_RATE);
@@ -381,6 +385,34 @@ const EXPENSE_ALIASES: Record<string, ExpenseCategory> = {
 export function resolveExpenseCategory(token: string): ExpenseCategory | null {
   const k = token.trim().toLowerCase();
   return EXPENSE_ALIASES[k] ?? null;
+}
+
+/* ─── Per-order courier cost (for /ship) ─────────────────────────────── */
+
+export async function setOrderMerchantCost(
+  orderNumber: string,
+  amount: number
+): Promise<{ orderNumber: string; previousCost: number | null }> {
+  const sb = supabaseAdmin();
+  const normalised = orderNumber.trim().toUpperCase();
+  const withPrefix = normalised.startsWith("MC-") ? normalised : `MC-${normalised}`;
+  const { data, error } = await sb
+    .from("orders")
+    .select("id, order_number, merchant_cost")
+    .eq("order_number", withPrefix)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error(`Order ${withPrefix} not found`);
+  const previous = (data.merchant_cost as number | null) ?? null;
+  const { error: upErr } = await sb
+    .from("orders")
+    .update({
+      merchant_cost: Math.max(0, Math.round(amount)),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", data.id);
+  if (upErr) throw new Error(upErr.message);
+  return { orderNumber: data.order_number as string, previousCost: previous };
 }
 
 /* ─── Delete most recent cash order (for /undo) ──────────────────────── */

@@ -107,8 +107,11 @@ export async function GET(req: Request) {
     const merchantCost = o.merchant_cost ?? 0;
     const gatewayFee =
       o.payment_method === "online" ? Math.round(o.total * RAZORPAY_FEE_RATE) : 0;
-    // Revenue we get to keep = total − shipping (pass-through) − gateway fee
-    const netRevenue = o.total - o.shipping - gatewayFee - ONLINE_PASS_THROUGH_PACKAGING;
+    // Shipping the customer paid is real revenue (covers the courier
+    // bill, or part of it). Actual courier cost is logged separately
+    // as merchant_cost on the order (via /ship) or as a 'shipping'
+    // expense line — either subtracts here.
+    const netRevenue = o.total - gatewayFee - ONLINE_PASS_THROUGH_PACKAGING;
     const profit = netRevenue - cogs - merchantCost;
     return {
       id: o.id,
@@ -137,14 +140,14 @@ export async function GET(req: Request) {
   const monthOrders = orders.filter(
     (o) => new Date(o.createdAt).getTime() >= monthStart
   );
-  const monthRevenue = monthOrders.reduce((s, o) => s + (o.total - o.shipping), 0);
+  const monthRevenue = monthOrders.reduce((s, o) => s + o.total, 0);
   const monthCogs = monthOrders.reduce((s, o) => s + o.cogs, 0);
   const monthGatewayFees = monthOrders.reduce((s, o) => s + o.gatewayFee, 0);
   const monthMerchantCost = monthOrders.reduce((s, o) => s + o.merchantCost, 0);
   const monthGrossProfit = monthOrders.reduce((s, o) => s + o.profit, 0);
 
   // All-time aggregates
-  const allRevenue = orders.reduce((s, o) => s + (o.total - o.shipping), 0);
+  const allRevenue = orders.reduce((s, o) => s + o.total, 0);
   const allCogs = orders.reduce((s, o) => s + o.cogs, 0);
   const allGrossProfit = orders.reduce((s, o) => s + o.profit, 0);
 

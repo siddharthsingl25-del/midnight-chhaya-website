@@ -41,6 +41,7 @@ import {
   getLowStock,
   getStockBySlug,
   resolveExpenseCategory,
+  setOrderMerchantCost,
   undoLastCashOrder,
 } from "@/lib/finance-actions";
 import { EXPENSE_CATEGORY_LABEL } from "@/lib/types";
@@ -120,6 +121,8 @@ async function handleMessage(msg: TgMessage): Promise<void> {
       return cmdMonth(chatId);
     case "stock":
       return cmdStock(chatId, args);
+    case "ship":
+      return cmdShip(chatId, args);
     case "undo":
       return cmdUndo(chatId);
     default:
@@ -139,11 +142,17 @@ async function cmdHelp(chatId: number): Promise<void> {
     "<b>Sales</b>",
     "<code>/sale &lt;product&gt; &lt;qty&gt; [@handle] [name]</code>",
     "  e.g. <code>/sale monster 2 @aarav Aarav</code>",
-    "  Logs a cash sale, decrements stock, computes profit.",
     "",
-    "<b>Expenses</b>",
+    "<b>Per-order courier cost</b>",
+    "<code>/ship &lt;order#&gt; &lt;courier₹&gt;</code>",
+    "  e.g. <code>/ship MC-00042 80</code>",
+    "  Use this after you hand the parcel to the courier.",
+    "",
+    "<b>Expenses (bulk)</b>",
     "<code>/expense &lt;category&gt; &lt;amount&gt; [note]</code>",
     "  e.g. <code>/expense ads 500 Insta boost</code>",
+    "  e.g. <code>/expense packaging 200 amazon boxes</code>",
+    "  e.g. <code>/expense shipping 450 dec 2-8 batch</code>",
     "  Categories: ads · collab · restock · shipping · packaging · other",
     "",
     "<b>Reports</b>",
@@ -339,6 +348,41 @@ async function cmdStock(chatId: number, args: string): Promise<void> {
     )
     .join("\n");
   await sendTelegramMessage(chatId, `<b>Low stock (≤5)</b>\n${list}`);
+}
+
+async function cmdShip(chatId: number, args: string): Promise<void> {
+  if (!args) {
+    await sendTelegramMessage(
+      chatId,
+      "Usage: <code>/ship &lt;order#&gt; &lt;courier₹&gt;</code>\n" +
+        "e.g. <code>/ship MC-00042 80</code>\n" +
+        "Logs the actual courier cost on that order. Subtracted from its profit."
+    );
+    return;
+  }
+  const tokens = args.split(/\s+/);
+  if (tokens.length < 2) {
+    await sendTelegramMessage(
+      chatId,
+      "Need <code>&lt;order#&gt; &lt;amount&gt;</code>."
+    );
+    return;
+  }
+  const orderRef = tokens[0];
+  const amount = Number(tokens[1]);
+  if (!Number.isFinite(amount) || amount < 0) {
+    await sendTelegramMessage(chatId, `Bad amount: ${esc(tokens[1])}`);
+    return;
+  }
+  const { orderNumber, previousCost } = await setOrderMerchantCost(orderRef, amount);
+  const note =
+    previousCost != null
+      ? `(was ${fmtInr(previousCost)})`
+      : "";
+  await sendTelegramMessage(
+    chatId,
+    `✅ <b>${orderNumber}</b> courier cost: ${fmtInr(amount)} ${esc(note)}`
+  );
 }
 
 async function cmdUndo(chatId: number): Promise<void> {
