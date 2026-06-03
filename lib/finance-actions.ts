@@ -54,6 +54,8 @@ export async function logCashSale(input: CashSaleInput): Promise<CashSaleResult>
     chainId: string | null;
     chainName: string | null;
     unitInr: number;
+    /** Combined product + chain cost per unit. Null if either cost is
+     * unset — we can't compute partial COGS without misleading the user. */
     costInr: number | null;
   }[] = [];
 
@@ -66,6 +68,17 @@ export async function logCashSale(input: CashSaleInput): Promise<CashSaleResult>
       throw new Error(`Unavailable: ${it.slug}`);
     }
     const chain = it.chainId ? await getChain(it.chainId) : null;
+    // Combined unit cost = product cost + chain cost (if applicable).
+    // If either side is missing, the combined cost is null and per-sale
+    // profit shows as "n/a" in the Telegram reply.
+    let combinedCost: number | null = product.costPrice;
+    if (chain) {
+      if (combinedCost != null && chain.costPrice != null) {
+        combinedCost = combinedCost + chain.costPrice;
+      } else {
+        combinedCost = null;
+      }
+    }
     lines.push({
       slug: it.slug,
       name: product.name,
@@ -73,7 +86,7 @@ export async function logCashSale(input: CashSaleInput): Promise<CashSaleResult>
       chainId: chain?.id ?? null,
       chainName: chain?.name ?? null,
       unitInr: product.price + (chain?.priceModifier ?? 0),
-      costInr: product.costPrice,
+      costInr: combinedCost,
     });
   }
 
@@ -222,7 +235,7 @@ export async function getStatsForRange(
   toIso: string
 ): Promise<RangeStats> {
   const sb = supabaseAdmin();
-  const [ordersRes, productsRes, expensesRes] = await Promise.all([
+  const [ordersRes, productsRes, chainsRes, expensesRes] = await Promise.all([
     sb
       .from("orders")
       .select("payment_method, items, subtotal, shipping, total, merchant_cost")
@@ -230,6 +243,7 @@ export async function getStatsForRange(
       .gte("created_at", fromIso)
       .lt("created_at", toIso),
     sb.from("products").select("slug, cost_price"),
+    sb.from("chain_options").select("id, cost_price"),
     sb
       .from("expenses")
       .select("amount")
@@ -239,11 +253,16 @@ export async function getStatsForRange(
 
   if (ordersRes.error) throw new Error(ordersRes.error.message);
   if (productsRes.error) throw new Error(productsRes.error.message);
+  if (chainsRes.error) throw new Error(chainsRes.error.message);
   if (expensesRes.error) throw new Error(expensesRes.error.message);
 
   const costBySlug = new Map<string, number | null>();
   for (const p of productsRes.data ?? []) {
     costBySlug.set(p.slug as string, (p.cost_price as number | null) ?? null);
+  }
+  const costByChain = new Map<string, number | null>();
+  for (const c of chainsRes.data ?? []) {
+    costByChain.set(c.id as string, (c.cost_price as number | null) ?? null);
   }
 
   let revenue = 0;
@@ -254,7 +273,7 @@ export async function getStatsForRange(
   let onlineOrderCount = 0;
   const orderRows = (ordersRes.data ?? []) as Array<{
     payment_method: "online" | "cash";
-    items: Array<{ slug: string; qty: number }>;
+    items: Array<{ slug: string; qty: number; chainId?: string | null }>;
     subtotal: number;
     shipping: number;
     total: number;
@@ -276,6 +295,10 @@ export async function getStatsForRange(
     for (const it of o.items ?? []) {
       const c = costBySlug.get(it.slug);
       if (c != null) cogs += c * (it.qty ?? 0);
+      if (it.chainId) {
+        const cc = costByChain.get(it.chainId);
+        if (cc != null) cogs += cc * (it.qty ?? 0);
+      }
     }
   }
 

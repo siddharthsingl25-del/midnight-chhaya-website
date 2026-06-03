@@ -30,6 +30,14 @@ export async function PUT(req: Request, { params }: Params) {
     }
     patch.price_modifier = n;
   }
+  if (body.cost_price === null || body.cost_price === "") patch.cost_price = null;
+  else if (body.cost_price !== undefined) {
+    const n = Number(body.cost_price);
+    if (!Number.isFinite(n) || n < 0) {
+      return NextResponse.json({ error: "Bad cost price" }, { status: 400 });
+    }
+    patch.cost_price = n;
+  }
   if (body.stock !== undefined) {
     const n = Number(body.stock);
     if (!Number.isFinite(n) || n < 0) {

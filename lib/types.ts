@@ -51,6 +51,9 @@ export type ChainOption = {
   image: string;
   /** INR rupees added to the base product price. */
   priceModifier: number;
+  /** What this chain/car unit costs the merchant to source. Null = not
+   * set yet (chain cost will be skipped in profit calc). */
+  costPrice: number | null;
   /** Physical stock count — mirrors product inventory. 0 = sold out. */
   stock: number;
   /** Variant kind. Chains attach to necklaces, cars to keychains. */
@@ -117,6 +120,7 @@ type ChainRow = {
   name: string;
   image: string;
   price_modifier: number;
+  cost_price: number | null;
   stock: number;
   kind: string;
   display_order: number;
@@ -128,6 +132,7 @@ export function chainFromRow(row: ChainRow): ChainOption {
     name: row.name,
     image: row.image,
     priceModifier: row.price_modifier ?? 0,
+    costPrice: row.cost_price ?? null,
     stock: row.stock ?? 0,
     kind: row.kind === "car" ? "car" : "chain",
     displayOrder: row.display_order ?? 0,

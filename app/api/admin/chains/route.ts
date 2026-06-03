@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   if (block) return block;
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-  const { id, name, image, price_modifier = 0, stock = 0, kind = "chain" } = body;
+  const { id, name, image, price_modifier = 0, cost_price = null, stock = 0, kind = "chain" } = body;
 
   if (typeof id !== "string" || !id.trim()) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });
@@ -47,11 +47,20 @@ export async function POST(req: Request) {
     .maybeSingle();
   const display_order = (lastRow?.display_order ?? -1) + 1;
 
+  const costVal =
+    cost_price === null || cost_price === undefined || cost_price === ""
+      ? null
+      : Number(cost_price);
+  if (costVal !== null && (!Number.isFinite(costVal) || costVal < 0)) {
+    return NextResponse.json({ error: "Bad cost price" }, { status: 400 });
+  }
+
   const row = {
     id: id.trim(),
     name: name.trim(),
     image,
     price_modifier: Number(price_modifier) || 0,
+    cost_price: costVal,
     stock: Math.max(0, Math.floor(Number(stock) || 0)),
     kind: safeKind,
     display_order,

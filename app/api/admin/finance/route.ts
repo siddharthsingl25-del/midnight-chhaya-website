@@ -61,7 +61,7 @@ export async function GET(req: Request) {
 
   const sb = supabaseAdmin();
 
-  const [ordersRes, productsRes, expensesRes] = await Promise.all([
+  const [ordersRes, productsRes, chainsRes, expensesRes] = await Promise.all([
     sb
       .from("orders")
       .select(
@@ -71,6 +71,7 @@ export async function GET(req: Request) {
       .order("created_at", { ascending: false })
       .limit(limit),
     sb.from("products").select("slug, cost_price"),
+    sb.from("chain_options").select("id, cost_price"),
     sb
       .from("expenses")
       .select("*")
@@ -83,12 +84,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: ordersRes.error.message }, { status: 500 });
   if (productsRes.error)
     return NextResponse.json({ error: productsRes.error.message }, { status: 500 });
+  if (chainsRes.error)
+    return NextResponse.json({ error: chainsRes.error.message }, { status: 500 });
   if (expensesRes.error)
     return NextResponse.json({ error: expensesRes.error.message }, { status: 500 });
 
   const costBySlug = new Map<string, number | null>();
   for (const p of (productsRes.data ?? []) as ProductCostRow[]) {
     costBySlug.set(p.slug, p.cost_price);
+  }
+  const costByChain = new Map<string, number | null>();
+  for (const c of (chainsRes.data ?? []) as Array<{ id: string; cost_price: number | null }>) {
+    costByChain.set(c.id, c.cost_price);
   }
 
   // Per-order P&L
@@ -102,6 +109,14 @@ export async function GET(req: Request) {
         hasMissingCost = true;
       } else {
         cogs += c * (it.qty ?? 0);
+      }
+      // Chain on this line carries its own cost. If the chain has no
+      // cost_price set yet, silently skip — flagging it as 'missing' on
+      // every chain order would be too noisy until the merchant fills
+      // them all in.
+      if (it.chainId) {
+        const cc = costByChain.get(it.chainId);
+        if (cc != null) cogs += cc * (it.qty ?? 0);
       }
     }
     const merchantCost = o.merchant_cost ?? 0;

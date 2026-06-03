@@ -290,6 +290,9 @@ function ChainForm({
   const [priceModifier, setPriceModifier] = useState<string>(
     chain?.priceModifier ? String(chain.priceModifier) : ""
   );
+  const [costPrice, setCostPrice] = useState<string>(
+    chain?.costPrice != null ? String(chain.costPrice) : ""
+  );
   const [stock, setStock] = useState<string>(
     chain ? String(chain.stock ?? 0) : ""
   );
@@ -324,6 +327,7 @@ function ChainForm({
       name: name.trim(),
       image,
       price_modifier: priceModifier === "" ? 0 : Number(priceModifier),
+      cost_price: costPrice === "" ? null : Number(costPrice),
       stock: stock === "" ? 0 : Math.max(0, Math.floor(Number(stock))),
       kind: variantKind,
     };
@@ -445,6 +449,26 @@ function ChainForm({
         />
         <p className="mt-1 text-[10px] text-bone-dim font-body">
           Added on top of the base product price when this chain is chosen.
+        </p>
+      </label>
+
+      <label className="block">
+        <span className="block mb-2 font-body text-bone text-sm font-semibold">
+          Cost price (₹) — what this chain costs you
+        </span>
+        <input
+          value={costPrice}
+          onChange={(e) => setCostPrice(e.target.value)}
+          placeholder="e.g. 40 · used to compute profit per order"
+          type="tel"
+          inputMode="numeric"
+          className="w-full bg-transparent border-b-2 border-bone/30 px-1 py-3
+                     font-body text-bone text-lg
+                     placeholder:text-bone-dim/50
+                     focus:outline-none focus:border-gold transition-colors"
+        />
+        <p className="mt-1 text-[10px] text-bone-dim font-body">
+          Private. Added to product cost in the Finance dashboard so chain COGS is captured.
         </p>
       </label>
 
