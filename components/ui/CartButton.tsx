@@ -23,7 +23,15 @@ import InstagramIcon from "./icons/InstagramIcon";
 import { easeCinematic } from "@/lib/animations";
 import { useCart } from "@/lib/cart";
 import { useStockMap } from "@/lib/stock";
-import { computeShipping, formatPrice, SHIPPING_THRESHOLD, SITE } from "@/lib/site";
+import {
+  ACTIVE_OFFER,
+  computeBogoDiscount,
+  computeShipping,
+  formatPrice,
+  offerActiveAt,
+  SHIPPING_THRESHOLD,
+  SITE,
+} from "@/lib/site";
 
 export default function CartButton() {
   const [open, setOpen] = useState(false);
@@ -33,8 +41,29 @@ export default function CartButton() {
   const stockMap = useStockMap();
   const lines = detailed();
   const subtotal = total();
-  const shipping = computeShipping(subtotal);
-  const grandTotal = subtotal + shipping;
+
+  /* Live BOGO discount tied to ACTIVE_OFFER. Mirrors the checkout
+   * calculation so the cart drawer shows the same total the customer
+   * will pay. Polled every 30s so it auto-clears at the deadline. */
+  const [bogoActive, setBogoActive] = useState(() => offerActiveAt());
+  useEffect(() => {
+    const id = setInterval(() => setBogoActive(offerActiveAt()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  const bogoAmount = bogoActive
+    ? computeBogoDiscount(
+        lines.map(({ line, unitPrice }) => ({
+          eligible: ACTIVE_OFFER.slugMatches.some((m) =>
+            line.slug.toLowerCase().includes(m)
+          ),
+          unitPrice: unitPrice ?? 0,
+          qty: line.qty,
+        }))
+      )
+    : 0;
+  const discountedSubtotal = Math.max(0, subtotal - bogoAmount);
+  const shipping = computeShipping(discountedSubtotal);
+  const grandTotal = discountedSubtotal + shipping;
 
   // close when clicking outside / on Escape
   useEffect(() => {
@@ -268,6 +297,16 @@ export default function CartButton() {
                       {formatPrice(subtotal)}
                     </span>
                   </div>
+                  {bogoAmount > 0 ? (
+                    <div className="flex items-baseline justify-between mb-2">
+                      <span className="eyebrow text-gold text-[10px]">
+                        {ACTIVE_OFFER.title} · {ACTIVE_OFFER.subtitle}
+                      </span>
+                      <span className="text-sm text-gold">
+                        −{formatPrice(bogoAmount)}
+                      </span>
+                    </div>
+                  ) : null}
                   <div className="flex items-baseline justify-between mb-2">
                     <span className="eyebrow text-bone-dim text-[10px]">Shipping</span>
                     <span className={`text-sm ${shipping === 0 ? "text-gold" : "text-bone"}`}>
@@ -276,7 +315,7 @@ export default function CartButton() {
                   </div>
                   {shipping > 0 ? (
                     <p className="text-[10px] text-bone-dim italic mb-3">
-                      Add {formatPrice(SHIPPING_THRESHOLD - subtotal)} more for free shipping.
+                      Add {formatPrice(SHIPPING_THRESHOLD - discountedSubtotal)} more for free shipping.
                     </p>
                   ) : null}
                   <div className="flex items-baseline justify-between mb-4 pt-2 border-t border-bone/10">
