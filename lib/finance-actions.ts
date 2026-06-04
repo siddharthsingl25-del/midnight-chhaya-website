@@ -30,7 +30,13 @@ export type CashSaleInput = {
   customerName?: string;
   customerPhone?: string;
   customerInstagram?: string;
+  /** Courier cost you paid out-of-pocket on this order. Goes into
+   * orders.merchant_cost. */
   merchantCost?: number | null;
+  /** Packaging cost for this specific order. NULL = use the global
+   * PACKAGING_COST_PER_ORDER default. Set to 0 for hand-off sales with
+   * no packaging, or a higher number for special-box orders. */
+  packagingCost?: number | null;
   /** Optional override of what the customer actually paid. Defaults to
    * subtotal + shipping. Use this for friend discounts ("friend paid
    * ₹400 for a ₹600 order") — the difference is captured as discount,
@@ -137,6 +143,10 @@ export async function logCashSale(input: CashSaleInput): Promise<CashSaleResult>
     input.merchantCost === null || input.merchantCost === undefined
       ? null
       : Math.max(0, Math.round(Number(input.merchantCost)));
+  const packagingCostOverride =
+    input.packagingCost === null || input.packagingCost === undefined
+      ? null
+      : Math.max(0, Math.round(Number(input.packagingCost)));
 
   const createdAt =
     typeof input.occurredAt === "string" && input.occurredAt.trim()
@@ -166,6 +176,7 @@ export async function logCashSale(input: CashSaleInput): Promise<CashSaleResult>
       shipping: Math.round(shipping),
       total: Math.round(total),
       merchant_cost: merchantCost,
+      packaging_cost: packagingCostOverride,
       notes: [
         discount > 0 ? `Friend discount: ₹${discount} off (paid ₹${total} on ₹${fullTotal})` : "",
         (input.notes ?? "").trim(),
@@ -189,8 +200,8 @@ export async function logCashSale(input: CashSaleInput): Promise<CashSaleResult>
     if (l.costInr == null) hasMissingCost = true;
     else cogs += l.costInr * l.qty;
   }
-  const profit =
-    total - cogs - (merchantCost ?? 0) - PACKAGING_COST_PER_ORDER;
+  const effectivePackaging = packagingCostOverride ?? PACKAGING_COST_PER_ORDER;
+  const profit = total - cogs - (merchantCost ?? 0) - effectivePackaging;
 
   revalidateTag("products", "max");
 
@@ -270,7 +281,7 @@ export async function getStatsForRange(
   const [ordersRes, productsRes, chainsRes, expensesRes] = await Promise.all([
     sb
       .from("orders")
-      .select("payment_method, items, subtotal, shipping, total, merchant_cost")
+      .select("payment_method, items, subtotal, shipping, total, merchant_cost, packaging_cost")
       .neq("status", "cancelled")
       .gte("created_at", fromIso)
       .lt("created_at", toIso),
@@ -310,7 +321,9 @@ export async function getStatsForRange(
     shipping: number;
     total: number;
     merchant_cost: number | null;
+    packaging_cost: number | null;
   }>;
+  let packagingCost = 0;
   for (const o of orderRows) {
     // Shipping that the customer paid is real revenue — it covers (or
     // partially covers) the courier bill. Courier cost is logged
@@ -318,6 +331,7 @@ export async function getStatsForRange(
     // line so it nets out correctly.
     revenue += o.total;
     merchantCost += o.merchant_cost ?? 0;
+    packagingCost += o.packaging_cost ?? PACKAGING_COST_PER_ORDER;
     if (o.payment_method === "online") {
       gatewayFees += Math.round(o.total * RAZORPAY_FEE_RATE);
       onlineOrderCount++;
@@ -344,9 +358,9 @@ export async function getStatsForRange(
     else trackingSpend += amt;
   }
 
-  // Per-order packaging is absorbed by the merchant on every order.
-  const packagingCost = PACKAGING_COST_PER_ORDER * orderRows.length;
-
+  // Per-order packaging — sum of each order's packaging_cost override,
+  // or the global PACKAGING_COST_PER_ORDER default when null. (Accumulated
+  // above while iterating order rows.)
   const grossProfit = revenue - cogs - gatewayFees - merchantCost - packagingCost;
   const netProfit = grossProfit - expensesTotal;
 

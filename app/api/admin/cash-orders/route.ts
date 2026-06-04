@@ -29,6 +29,7 @@ type Body = {
   customer_instagram?: string;
   items: IncomingItem[];
   merchant_cost?: number | null;
+  packaging_cost?: number | null;
   amount_paid?: number | null;
   occurred_at?: string;
   notes?: string;
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
       customerPhone: body.customer_phone,
       customerInstagram: body.customer_instagram,
       merchantCost: body.merchant_cost,
+      packagingCost: body.packaging_cost,
       amountPaid: body.amount_paid,
       occurredAt: body.occurred_at,
       notes: body.notes,

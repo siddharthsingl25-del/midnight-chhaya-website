@@ -506,7 +506,8 @@ function CashOrderForm({
   const [phone, setPhone] = useState("");
   const [instagram, setInstagram] = useState("");
   const [picked, setPicked] = useState<Array<{ slug: string; qty: number }>>([]);
-  const [merchantCost, setMerchantCost] = useState("");
+  const [courierCost, setCourierCost] = useState("");
+  const [packagingCost, setPackagingCost] = useState("");
   const [amountPaid, setAmountPaid] = useState("");
   const [notes, setNotes] = useState("");
   const [chargeShipping, setChargeShipping] = useState(false);
@@ -571,7 +572,8 @@ function CashOrderForm({
           customer_phone: phone.trim(),
           customer_instagram: instagram.trim(),
           items: picked,
-          merchant_cost: merchantCost === "" ? null : Number(merchantCost),
+          merchant_cost: courierCost === "" ? null : Number(courierCost),
+          packaging_cost: packagingCost === "" ? null : Number(packagingCost),
           amount_paid: amountPaid === "" ? null : Number(amountPaid),
           occurred_at: occurredAt,
           notes: notes.trim(),
@@ -684,13 +686,23 @@ function CashOrderForm({
       </label>
 
       <Field
-        label="My cost on this order (₹, optional)"
-        value={merchantCost}
-        onChange={setMerchantCost}
-        placeholder="packaging, courier paid out-of-pocket"
+        label="Courier cost for this order (₹, optional)"
+        value={courierCost}
+        onChange={setCourierCost}
+        placeholder="what you paid the delivery person"
         type="tel"
         inputMode="numeric"
-        help="Subtracted from profit. Leave blank if none."
+        help="Subtracted from profit. Leave blank if you didn't ship (hand-off / friend pickup)."
+      />
+
+      <Field
+        label="Packaging cost for this order (₹, optional)"
+        value={packagingCost}
+        onChange={setPackagingCost}
+        placeholder={`default: ₹12.50 · type 0 for hand-off`}
+        type="tel"
+        inputMode="numeric"
+        help="Leave blank to use the default ₹12.50. Set a higher number for special boxes, or 0 if this was a no-packaging hand-off."
       />
 
       <Field

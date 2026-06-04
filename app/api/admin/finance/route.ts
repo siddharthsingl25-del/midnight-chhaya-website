@@ -49,6 +49,7 @@ type OrderRow = {
   shipping: number;
   total: number;
   merchant_cost: number | null;
+  packaging_cost: number | null;
   status: string;
 };
 
@@ -68,7 +69,7 @@ export async function GET(req: Request) {
     sb
       .from("orders")
       .select(
-        "id, order_number, created_at, customer_name, customer_instagram, payment_method, items, subtotal, shipping, total, merchant_cost, status"
+        "id, order_number, created_at, customer_name, customer_instagram, payment_method, items, subtotal, shipping, total, merchant_cost, packaging_cost, status"
       )
       .neq("status", "cancelled")
       .order("created_at", { ascending: false })
@@ -125,11 +126,11 @@ export async function GET(req: Request) {
     const merchantCost = o.merchant_cost ?? 0;
     const gatewayFee =
       o.payment_method === "online" ? Math.round(o.total * RAZORPAY_FEE_RATE) : 0;
-    // Shipping the customer paid is real revenue (covers the courier
-    // bill, or part of it). Actual courier cost is logged separately
-    // as merchant_cost on the order (via /ship). Packaging is auto-
-    // applied to every order from PACKAGING_COST_PER_ORDER.
-    const packagingCost = PACKAGING_COST_PER_ORDER;
+    // Shipping the customer paid is real revenue. Courier cost lives
+    // on merchant_cost (set via /ship or the cash form). Packaging is
+    // per-order: order.packaging_cost overrides the global default
+    // when set (e.g. 0 for hand-off cash sales).
+    const packagingCost = o.packaging_cost ?? PACKAGING_COST_PER_ORDER;
     const netRevenue = o.total - gatewayFee;
     const profit = netRevenue - cogs - merchantCost - packagingCost;
     return {
