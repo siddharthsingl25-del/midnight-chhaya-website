@@ -31,6 +31,11 @@ export type CashSaleInput = {
   customerPhone?: string;
   customerInstagram?: string;
   merchantCost?: number | null;
+  /** Optional override of what the customer actually paid. Defaults to
+   * subtotal + shipping. Use this for friend discounts ("friend paid
+   * ₹400 for a ₹600 order") — the difference is captured as discount,
+   * revenue drops to amountPaid, profit drops accordingly. */
+  amountPaid?: number | null;
   occurredAt?: string;
   notes?: string;
   chargeShipping?: boolean;
@@ -96,7 +101,15 @@ export async function logCashSale(input: CashSaleInput): Promise<CashSaleResult>
 
   const subtotal = lines.reduce((s, l) => s + l.unitInr * l.qty, 0);
   const shipping = input.chargeShipping ? computeShipping(subtotal) : 0;
-  const total = subtotal + shipping;
+  // Default total = full retail. If the caller passed amountPaid (friend
+  // discount), use that instead; the difference is captured as discount
+  // on the order's `notes` so it shows up in the dashboard breakdown.
+  const fullTotal = subtotal + shipping;
+  const total =
+    input.amountPaid != null && Number.isFinite(input.amountPaid) && input.amountPaid >= 0
+      ? Math.max(0, Math.round(input.amountPaid))
+      : fullTotal;
+  const discount = Math.max(0, fullTotal - total);
 
   const sb = supabaseAdmin();
 
@@ -153,7 +166,13 @@ export async function logCashSale(input: CashSaleInput): Promise<CashSaleResult>
       shipping: Math.round(shipping),
       total: Math.round(total),
       merchant_cost: merchantCost,
-      notes: (input.notes ?? "").slice(0, 500),
+      notes: [
+        discount > 0 ? `Friend discount: ₹${discount} off (paid ₹${total} on ₹${fullTotal})` : "",
+        (input.notes ?? "").trim(),
+      ]
+        .filter(Boolean)
+        .join(" · ")
+        .slice(0, 500),
       created_at: createdAt,
       updated_at: createdAt,
     })

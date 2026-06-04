@@ -390,6 +390,14 @@ function OrdersTable({
                 <div className="border-t border-bone/10 mt-2 pt-2 grid grid-cols-2 gap-x-4 gap-y-1">
                   <span className="text-bone-dim">Subtotal</span><span className="text-right">{fmt(o.subtotal)}</span>
                   <span className="text-bone-dim">Shipping charged</span><span className="text-right">{fmt(o.shipping)}</span>
+                  {o.subtotal + o.shipping > o.total ? (
+                    <>
+                      <span className="text-bone-dim">Friend discount</span>
+                      <span className="text-right text-oxblood">−{fmt(o.subtotal + o.shipping - o.total)}</span>
+                      <span className="text-bone">Amount paid</span>
+                      <span className="text-right text-bone">{fmt(o.total)}</span>
+                    </>
+                  ) : null}
                   <span className="text-bone-dim">Gateway fee</span><span className="text-right">−{fmt(o.gatewayFee)}</span>
                   <span className="text-bone-dim">COGS</span><span className="text-right">−{fmt(o.cogs)}</span>
                   <span className="text-bone-dim">Packaging</span><span className="text-right">−{fmt(o.packagingCost)}</span>
@@ -499,6 +507,7 @@ function CashOrderForm({
   const [instagram, setInstagram] = useState("");
   const [picked, setPicked] = useState<Array<{ slug: string; qty: number }>>([]);
   const [merchantCost, setMerchantCost] = useState("");
+  const [amountPaid, setAmountPaid] = useState("");
   const [notes, setNotes] = useState("");
   const [chargeShipping, setChargeShipping] = useState(false);
   const [occurredAt, setOccurredAt] = useState(() =>
@@ -563,6 +572,7 @@ function CashOrderForm({
           customer_instagram: instagram.trim(),
           items: picked,
           merchant_cost: merchantCost === "" ? null : Number(merchantCost),
+          amount_paid: amountPaid === "" ? null : Number(amountPaid),
           occurred_at: occurredAt,
           notes: notes.trim(),
           charge_shipping: chargeShipping,
@@ -702,9 +712,23 @@ function CashOrderForm({
       </label>
 
       <div className="border-t border-bone/10 pt-4 flex items-baseline justify-between">
-        <span className="eyebrow text-gold">Total</span>
+        <span className="eyebrow text-gold">Full price</span>
         <span className="font-display text-bone text-2xl">{fmt(total)}</span>
       </div>
+
+      <Field
+        label="Amount actually paid (₹) — friend discount?"
+        value={amountPaid}
+        onChange={setAmountPaid}
+        placeholder={`Leave blank for full ₹${total}`}
+        type="tel"
+        inputMode="numeric"
+        help={
+          amountPaid !== "" && Number(amountPaid) < total
+            ? `Friend discount: ₹${total - Number(amountPaid)} off. Revenue + profit will use ₹${Number(amountPaid)}.`
+            : "Use this only when a friend pays less than the listed price."
+        }
+      />
 
       {err ? (
         <div className="border border-oxblood/60 bg-oxblood/10 text-bone px-4 py-3 text-sm">
