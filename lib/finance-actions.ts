@@ -10,7 +10,11 @@
 import { revalidateTag } from "next/cache";
 import { supabaseAdmin } from "./supabase";
 import { getAllProducts, getChain } from "./catalog";
-import { computeShipping } from "./site";
+import {
+  OPERATING_EXPENSE_CATEGORIES,
+  PACKAGING_COST_PER_ORDER,
+  computeShipping,
+} from "./site";
 import {
   EXPENSE_CATEGORIES,
   type ExpenseCategory,
@@ -157,15 +161,17 @@ export async function logCashSale(input: CashSaleInput): Promise<CashSaleResult>
     .single();
   if (error) throw new Error(error.message);
 
-  // Profit on the cash sale: no gateway fee, no shipping pass-through cost,
-  // shipping NOT counted in revenue either (it pays the courier).
+  // Profit on the cash sale: no gateway fee. Revenue counts the
+  // subtotal + shipping the customer paid; courier cost lives on the
+  // order's merchant_cost; per-order packaging is auto-applied.
   let cogs = 0;
   let hasMissingCost = false;
   for (const l of lines) {
     if (l.costInr == null) hasMissingCost = true;
     else cogs += l.costInr * l.qty;
   }
-  const profit = subtotal - cogs - (merchantCost ?? 0);
+  const profit =
+    total - cogs - (merchantCost ?? 0) - PACKAGING_COST_PER_ORDER;
 
   revalidateTag("products", "max");
 
@@ -221,9 +227,16 @@ export type RangeStats = {
   revenue: number;
   cogs: number;
   gatewayFees: number;
+  /** Sum of merchant_cost across orders (per-order courier, /ship). */
   merchantCost: number;
+  /** Per-order packaging × order count (auto-applied). */
+  packagingCost: number;
   grossProfit: number;
+  /** Operating expenses only (ads, collab, other). Hit net profit. */
   expensesTotal: number;
+  /** Tracking-only spend (restock, shipping, bulk packaging). Shown
+   * separately, NOT subtracted from net profit. */
+  trackingSpend: number;
   netProfit: number;
   orderCount: number;
   cashOrderCount: number;
@@ -246,7 +259,7 @@ export async function getStatsForRange(
     sb.from("chain_options").select("id, cost_price"),
     sb
       .from("expenses")
-      .select("amount")
+      .select("amount, category")
       .gte("occurred_at", fromIso.slice(0, 10))
       .lt("occurred_at", toIso.slice(0, 10)),
   ]);
@@ -302,11 +315,20 @@ export async function getStatsForRange(
     }
   }
 
-  const expensesTotal = (expensesRes.data ?? []).reduce(
-    (s, e) => s + (e.amount as number),
-    0
-  );
-  const grossProfit = revenue - cogs - gatewayFees - merchantCost;
+  const operatingSet = new Set<string>(OPERATING_EXPENSE_CATEGORIES);
+  let expensesTotal = 0;
+  let trackingSpend = 0;
+  for (const e of expensesRes.data ?? []) {
+    const amt = e.amount as number;
+    const cat = e.category as string;
+    if (operatingSet.has(cat)) expensesTotal += amt;
+    else trackingSpend += amt;
+  }
+
+  // Per-order packaging is absorbed by the merchant on every order.
+  const packagingCost = PACKAGING_COST_PER_ORDER * orderRows.length;
+
+  const grossProfit = revenue - cogs - gatewayFees - merchantCost - packagingCost;
   const netProfit = grossProfit - expensesTotal;
 
   return {
@@ -314,8 +336,10 @@ export async function getStatsForRange(
     cogs: Math.round(cogs),
     gatewayFees: Math.round(gatewayFees),
     merchantCost: Math.round(merchantCost),
+    packagingCost: Math.round(packagingCost),
     grossProfit: Math.round(grossProfit),
     expensesTotal: Math.round(expensesTotal),
+    trackingSpend: Math.round(trackingSpend),
     netProfit: Math.round(netProfit),
     orderCount: orderRows.length,
     cashOrderCount,

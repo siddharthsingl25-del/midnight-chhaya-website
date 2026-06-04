@@ -122,3 +122,24 @@ export const SHIPPING_FEE = 100;
 export function computeShipping(subtotal: number): number {
   return subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
 }
+
+/** Default packaging cost the merchant absorbs on every order (box,
+ * bubble wrap, thank-you card, etc). Auto-subtracted from each order's
+ * profit in the finance dashboard. Change this number if your real
+ * average packaging cost differs. */
+export const PACKAGING_COST_PER_ORDER = 20;
+
+/** Expense categories that affect net profit. The other categories
+ * (restock, shipping, packaging) are tracking-only:
+ *   - restock = buying inventory; the cost flows in via COGS per unit
+ *     when those products sell. Counting it again here would double-count.
+ *   - shipping = courier cost; logged per-order via /ship, so already
+ *     subtracted from each order's profit.
+ *   - packaging = handled per-order via PACKAGING_COST_PER_ORDER.
+ * Bulk entries in those categories are still shown in the dashboard so
+ * you can see total spend, just not subtracted from net profit. */
+export const OPERATING_EXPENSE_CATEGORIES = [
+  "advertising",
+  "collab",
+  "other",
+] as const;

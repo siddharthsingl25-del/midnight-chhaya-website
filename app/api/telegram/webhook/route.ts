@@ -298,8 +298,12 @@ async function cmdToday(chatId: number): Promise<void> {
     `Revenue: <b>${fmtInr(stats.revenue)}</b>`,
     `COGS: −${fmtInr(stats.cogs)}`,
     `Gateway fees: −${fmtInr(stats.gatewayFees)}`,
-    `Expenses: −${fmtInr(stats.expensesTotal)}`,
+    `Courier (/ship): −${fmtInr(stats.merchantCost)}`,
+    `Packaging: −${fmtInr(stats.packagingCost)}`,
+    `Expenses (ads+collab+other): −${fmtInr(stats.expensesTotal)}`,
     `<b>Net profit: ${fmtInr(stats.netProfit)}</b>`,
+    "",
+    `<i>Tracked separately (not in profit): ${fmtInr(stats.trackingSpend)} restock + bulk shipping</i>`,
   ].join("\n");
   await sendTelegramMessage(chatId, reply);
 }
@@ -315,9 +319,12 @@ async function cmdMonth(chatId: number): Promise<void> {
     `Revenue: <b>${fmtInr(stats.revenue)}</b>`,
     `COGS: −${fmtInr(stats.cogs)}`,
     `Gateway fees: −${fmtInr(stats.gatewayFees)}`,
-    `Per-order costs: −${fmtInr(stats.merchantCost)}`,
-    `Expenses: −${fmtInr(stats.expensesTotal)}`,
+    `Courier (/ship): −${fmtInr(stats.merchantCost)}`,
+    `Packaging: −${fmtInr(stats.packagingCost)}`,
+    `Expenses (ads+collab+other): −${fmtInr(stats.expensesTotal)}`,
     `<b>Net profit: ${fmtInr(stats.netProfit)}</b>`,
+    "",
+    `<i>Tracked separately (not in profit): ${fmtInr(stats.trackingSpend)} restock + bulk shipping</i>`,
   ].join("\n");
   await sendTelegramMessage(chatId, reply);
 }

@@ -23,9 +23,12 @@ import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { EXPENSE_CATEGORIES, type ExpenseCategory } from "@/lib/types";
+import {
+  OPERATING_EXPENSE_CATEGORIES,
+  PACKAGING_COST_PER_ORDER,
+} from "@/lib/site";
 
 const RAZORPAY_FEE_RATE = 0.02; // 2% for online payments
-const ONLINE_PASS_THROUGH_PACKAGING = 0; // already covered via expenses table
 
 type OrderRow = {
   id: number;
@@ -124,10 +127,11 @@ export async function GET(req: Request) {
       o.payment_method === "online" ? Math.round(o.total * RAZORPAY_FEE_RATE) : 0;
     // Shipping the customer paid is real revenue (covers the courier
     // bill, or part of it). Actual courier cost is logged separately
-    // as merchant_cost on the order (via /ship) or as a 'shipping'
-    // expense line — either subtracts here.
-    const netRevenue = o.total - gatewayFee - ONLINE_PASS_THROUGH_PACKAGING;
-    const profit = netRevenue - cogs - merchantCost;
+    // as merchant_cost on the order (via /ship). Packaging is auto-
+    // applied to every order from PACKAGING_COST_PER_ORDER.
+    const packagingCost = PACKAGING_COST_PER_ORDER;
+    const netRevenue = o.total - gatewayFee;
+    const profit = netRevenue - cogs - merchantCost - packagingCost;
     return {
       id: o.id,
       orderNumber: o.order_number,
@@ -140,6 +144,7 @@ export async function GET(req: Request) {
       shipping: o.shipping,
       total: o.total,
       merchantCost,
+      packagingCost,
       gatewayFee,
       cogs,
       netRevenue,
@@ -184,15 +189,30 @@ export async function GET(req: Request) {
     packaging: 0,
     other: 0,
   };
-  let monthExpensesTotal = 0;
+  const operatingSet = new Set<string>(OPERATING_EXPENSE_CATEGORIES);
+  let monthOperatingExpenses = 0;
+  let monthTrackingSpend = 0;
+  let allOperatingExpenses = 0;
+  let allTrackingSpend = 0;
   for (const e of expenses) {
     const occ = new Date(e.occurredAt).getTime();
-    if (occ >= monthStart && EXPENSE_CATEGORIES.includes(e.category)) {
-      monthExpensesByCategory[e.category] += e.amount;
-      monthExpensesTotal += e.amount;
+    const isOperating = operatingSet.has(e.category);
+    if (EXPENSE_CATEGORIES.includes(e.category)) {
+      if (isOperating) allOperatingExpenses += e.amount;
+      else allTrackingSpend += e.amount;
+      if (occ >= monthStart) {
+        monthExpensesByCategory[e.category] += e.amount;
+        if (isOperating) monthOperatingExpenses += e.amount;
+        else monthTrackingSpend += e.amount;
+      }
     }
   }
-  const allExpensesTotal = expenses.reduce((s, e) => s + e.amount, 0);
+
+  const monthPackagingCost = monthOrders.reduce(
+    (s, o) => s + o.packagingCost,
+    0
+  );
+  const allPackagingCost = orders.reduce((s, o) => s + o.packagingCost, 0);
 
   return NextResponse.json({
     orders,
@@ -202,18 +222,22 @@ export async function GET(req: Request) {
       cogs: monthCogs,
       gatewayFees: monthGatewayFees,
       merchantCost: monthMerchantCost,
+      packagingCost: monthPackagingCost,
       grossProfit: monthGrossProfit,
-      expensesTotal: monthExpensesTotal,
+      expensesTotal: monthOperatingExpenses,
+      trackingSpend: monthTrackingSpend,
       expensesByCategory: monthExpensesByCategory,
-      netProfit: monthGrossProfit - monthExpensesTotal,
+      netProfit: monthGrossProfit - monthOperatingExpenses,
       orderCount: monthOrders.length,
     },
     allTime: {
       revenue: allRevenue,
       cogs: allCogs,
+      packagingCost: allPackagingCost,
       grossProfit: allGrossProfit,
-      expensesTotal: allExpensesTotal,
-      netProfit: allGrossProfit - allExpensesTotal,
+      expensesTotal: allOperatingExpenses,
+      trackingSpend: allTrackingSpend,
+      netProfit: allGrossProfit - allOperatingExpenses,
       orderCount: orders.length,
     },
   });

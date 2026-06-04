@@ -38,6 +38,7 @@ type FinanceOrder = {
   shipping: number;
   total: number;
   merchantCost: number;
+  packagingCost: number;
   gatewayFee: number;
   cogs: number;
   netRevenue: number;
@@ -63,8 +64,10 @@ type FinanceData = {
     cogs: number;
     gatewayFees: number;
     merchantCost: number;
+    packagingCost: number;
     grossProfit: number;
     expensesTotal: number;
+    trackingSpend: number;
     expensesByCategory: Record<ExpenseCategory, number>;
     netProfit: number;
     orderCount: number;
@@ -72,8 +75,10 @@ type FinanceData = {
   allTime: {
     revenue: number;
     cogs: number;
+    packagingCost: number;
     grossProfit: number;
     expensesTotal: number;
+    trackingSpend: number;
     netProfit: number;
     orderCount: number;
   };
@@ -190,7 +195,7 @@ export default function AdminFinance() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Stat label="Revenue" value={fmt(data.month.revenue)} sub={`${data.month.orderCount} orders`} />
           <Stat label="COGS" value={fmt(data.month.cogs)} sub="cost of goods" />
-          <Stat label="Expenses" value={fmt(data.month.expensesTotal)} sub="ads + collabs + restock" />
+          <Stat label="Expenses" value={fmt(data.month.expensesTotal)} sub="ads + collabs + other" />
           <Stat
             label="Net profit"
             value={fmt(data.month.netProfit)}
@@ -199,22 +204,32 @@ export default function AdminFinance() {
           />
         </div>
         <p className="font-serif italic text-bone-dim text-[11px] mt-3">
-          Net profit = total revenue (incl shipping the customer paid) − COGS − gateway fees − per-order courier cost − all expenses (ads, collab, restock, packaging, bulk shipping, other).
+          Net profit = revenue (incl shipping) − COGS − gateway fees − courier per order − packaging per order − operating expenses (ads + collab + other). Restock + bulk shipping are tracked but NOT subtracted — restock is inventory you still own, shipping is captured per-order via /ship.
         </p>
 
         {/* Expense breakdown */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-6">
-          {EXPENSE_CATEGORIES.map((cat) => (
-            <div key={cat} className="border border-bone/10 px-3 py-2">
-              <p className="text-[9px] text-bone-dim uppercase tracking-[0.15em]">
-                {EXPENSE_CATEGORY_LABEL[cat]}
-              </p>
-              <p className="font-display text-bone text-base mt-1">
-                {fmt(data.month.expensesByCategory[cat])}
-              </p>
-            </div>
-          ))}
+          {EXPENSE_CATEGORIES.map((cat) => {
+            const isOperating = cat === "advertising" || cat === "collab" || cat === "other";
+            return (
+              <div
+                key={cat}
+                className={`border px-3 py-2 ${isOperating ? "border-bone/10" : "border-bone/10 bg-charcoal/20"}`}
+              >
+                <p className="text-[9px] text-bone-dim uppercase tracking-[0.15em]">
+                  {EXPENSE_CATEGORY_LABEL[cat]}
+                  {!isOperating ? <span className="text-gold/60"> · track only</span> : null}
+                </p>
+                <p className="font-display text-bone text-base mt-1">
+                  {fmt(data.month.expensesByCategory[cat])}
+                </p>
+              </div>
+            );
+          })}
         </div>
+        <p className="font-serif italic text-bone-dim text-[11px] mt-3">
+          This month: <span className="text-bone">{fmt(data.month.packagingCost)}</span> packaging across {data.month.orderCount} orders · <span className="text-bone">{fmt(data.month.trackingSpend)}</span> tracking-only spend (restock, shipping, bulk packaging) shown separately and NOT pulled from net profit.
+        </p>
       </section>
 
       {/* All-time numbers */}
@@ -223,13 +238,16 @@ export default function AdminFinance() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Stat label="Revenue" value={fmt(data.allTime.revenue)} sub={`${data.allTime.orderCount} orders`} />
           <Stat label="COGS" value={fmt(data.allTime.cogs)} />
-          <Stat label="Expenses" value={fmt(data.allTime.expensesTotal)} />
+          <Stat label="Expenses" value={fmt(data.allTime.expensesTotal)} sub="ads + collabs + other" />
           <Stat
             label="Net profit"
             value={fmt(data.allTime.netProfit)}
             highlight={data.allTime.netProfit >= 0 ? "good" : "bad"}
           />
         </div>
+        <p className="font-serif italic text-bone-dim text-[11px] mt-3">
+          Tracking-only spend (restock + bulk shipping + bulk packaging): <span className="text-bone">{fmt(data.allTime.trackingSpend)}</span>
+        </p>
       </section>
 
       {/* Orders log */}
@@ -374,6 +392,7 @@ function OrdersTable({
                   <span className="text-bone-dim">Shipping charged</span><span className="text-right">{fmt(o.shipping)}</span>
                   <span className="text-bone-dim">Gateway fee</span><span className="text-right">−{fmt(o.gatewayFee)}</span>
                   <span className="text-bone-dim">COGS</span><span className="text-right">−{fmt(o.cogs)}</span>
+                  <span className="text-bone-dim">Packaging</span><span className="text-right">−{fmt(o.packagingCost)}</span>
                   <span className="text-bone-dim">Courier paid</span><span className="text-right">−{fmt(o.merchantCost)}</span>
                   <span className="text-gold">Profit</span>
                   <span className={`text-right ${o.profit >= 0 ? "text-emerald-400" : "text-oxblood"}`}>
