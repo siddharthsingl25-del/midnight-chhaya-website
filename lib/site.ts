@@ -127,7 +127,7 @@ export function computeShipping(subtotal: number): number {
  * bubble wrap, thank-you card, etc). Auto-subtracted from each order's
  * profit in the finance dashboard. Change this number if your real
  * average packaging cost differs. */
-export const PACKAGING_COST_PER_ORDER = 20;
+export const PACKAGING_COST_PER_ORDER = 16;
 
 /** Expense categories that affect net profit. The other categories
  * (restock, shipping, packaging) are tracking-only:
