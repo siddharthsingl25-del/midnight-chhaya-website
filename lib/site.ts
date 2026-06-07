@@ -76,6 +76,7 @@ export const NAV: readonly NavItem[] = [
   { label: "Shop All",  href: "/collections" },
   { label: "Chains",    href: "/collections?cat=chains" },
   { label: "Keychains", href: "/collections?cat=keychains" },
+  { label: "Rings",     href: "/collections?cat=rings" },
 ];
 
 /** Footer navigation (richer than the header — includes brand/story pages). */
