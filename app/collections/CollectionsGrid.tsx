@@ -110,10 +110,10 @@ export default function CollectionsGrid() {
       <div className="mx-auto max-w-[1400px]">
         <div className="mb-10 sm:mb-16 border-b border-bone/10 pb-4 sm:pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
           {/* category filter — horizontal scrolling pill row.
-           * Pills keep the bar one-line on phones (no wrapping),
-           * and the active pill is filled gold instead of a separate
-           * animated underline (which misbehaved when items wrapped). */}
-          <div className="-mx-6 md:-mx-10 sm:mx-0 overflow-x-auto px-6 md:px-10 sm:px-0 scrollbar-none">
+           * Phones only. On tablet+ the nav bar already shows the same
+           * categories (Chains / Keychains / Rings) so duplicating them
+           * here was redundant. */}
+          <div className="sm:hidden -mx-6 overflow-x-auto px-6 scrollbar-none">
             <div className="flex items-center gap-2 sm:gap-3 w-max">
               {CATEGORIES.map((c) => {
                 const selected = c.id === active;
