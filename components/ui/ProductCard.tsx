@@ -85,6 +85,25 @@ export default function ProductCard({
               sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
               className="object-cover"
             />
+            {/* Second photo (when uploaded): fades in on hover so the
+             * customer sees the alternate angle without leaving the grid.
+             * Desktop only — on touch devices there's no hover state so
+             * this layer stays at opacity 0. */}
+            {product.images[1] ? (
+              <motion.div
+                className="absolute inset-0"
+                variants={{ rest: { opacity: 0 }, hover: { opacity: 1 } }}
+                transition={{ duration: 0.5, ease: easeHover }}
+              >
+                <Image
+                  src={product.images[1]}
+                  alt={product.name}
+                  fill
+                  sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
+                  className="object-cover"
+                />
+              </motion.div>
+            ) : null}
           </motion.div>
 
           {/* Top-left badge stack: sold-out always wins; otherwise show
