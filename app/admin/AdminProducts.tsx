@@ -366,6 +366,7 @@ function ProductForm({
   const [shortDesc, setShortDesc] = useState(product?.shortDescription ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
   const [image, setImage] = useState(product?.images[0] ?? "");
+  const [image2, setImage2] = useState(product?.images[1] ?? "");
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [exclusive, setExclusive] = useState(product?.exclusive ?? false);
   const [forWomen, setForWomen] = useState(product?.forWomen ?? false);
@@ -407,7 +408,7 @@ function ProductForm({
       cost_price: costPrice === "" ? null : Number(costPrice),
       short_description: shortDesc.trim(),
       description: description.trim(),
-      images: [image],
+      images: [image, image2].filter(Boolean),
       featured,
       exclusive,
       for_women: forWomen,
@@ -481,6 +482,22 @@ function ProductForm({
         folder="products"
         label="Photo *"
       />
+
+      <ImageUpload
+        value={image2}
+        onUploaded={setImage2}
+        folder="products"
+        label="Second photo (optional)"
+      />
+      {image2 ? (
+        <button
+          type="button"
+          onClick={() => setImage2("")}
+          className="self-start eyebrow text-bone-dim hover:text-oxblood transition-colors text-[10px]"
+        >
+          Remove second photo
+        </button>
+      ) : null}
 
       <Field
         label="Name *"
