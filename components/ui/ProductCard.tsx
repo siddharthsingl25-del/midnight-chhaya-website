@@ -87,14 +87,11 @@ export default function ProductCard({
             />
             {/* Second photo (when uploaded): fades in on hover so the
              * customer sees the alternate angle without leaving the grid.
-             * Desktop only — on touch devices there's no hover state so
-             * this layer stays at opacity 0. */}
+             * Uses Tailwind group-hover so the swap holds steady while
+             * the cursor is over the card (was flickering with Framer
+             * variants because of mount-time animations). */}
             {product.images[1] ? (
-              <motion.div
-                className="absolute inset-0"
-                variants={{ rest: { opacity: 0 }, hover: { opacity: 1 } }}
-                transition={{ duration: 0.5, ease: easeHover }}
-              >
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out">
                 <Image
                   src={product.images[1]}
                   alt={product.name}
@@ -102,7 +99,7 @@ export default function ProductCard({
                   sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 90vw"
                   className="object-cover"
                 />
-              </motion.div>
+              </div>
             ) : null}
           </motion.div>
 
