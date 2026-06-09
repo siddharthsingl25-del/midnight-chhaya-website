@@ -31,12 +31,12 @@ export const SITE = {
  */
 export const ACTIVE_OFFER = {
   title: "BUY 1 GET 1 FREE",
-  subtitle: "Monster Keychains",
-  /** ISO timestamp — 11:59 PM IST = 18:29 UTC */
-  deadlineIso: "2026-06-03T18:29:00.000Z",
+  subtitle: "Mini Red Bull Charm",
+  /** ISO timestamp — 11:59 PM IST 10 June 2026 = 18:29 UTC 10 June 2026 */
+  deadlineIso: "2026-06-10T18:29:00.000Z",
   /** Slug substrings (lowercase) — a line is eligible if its slug
    *  contains any of these. */
-  slugMatches: ["monster"],
+  slugMatches: ["mini-red-bull"],
 } as const;
 
 /** Has the offer expired? Compares against the supplied time (defaults
