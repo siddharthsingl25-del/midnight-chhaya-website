@@ -38,9 +38,13 @@ export default function FeaturedPieces() {
             <Link
               href="/collections"
               data-cursor="See all"
-              className="eyebrow text-gold gold-underline inline-block"
+              className="eyebrow inline-flex items-center gap-2 px-6 py-3
+                         bg-gold text-ink
+                         hover:bg-gold-soft transition-colors duration-300
+                         shadow-[0_0_24px_-8px_rgba(184,147,90,0.5)]
+                         hover:shadow-[0_0_36px_-6px_rgba(184,147,90,0.7)]"
             >
-              See all →
+              See all <span aria-hidden>→</span>
             </Link>
           </Reveal>
         </div>
