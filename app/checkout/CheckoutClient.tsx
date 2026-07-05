@@ -103,13 +103,89 @@ export default function CheckoutClient() {
   const [codeChecking, setCodeChecking] = useState(false);
   const codeDiscount = appliedCode?.amountOff ?? 0;
   const discountedSubtotal = Math.max(0, subtotal - bogoAmount - codeDiscount);
-  const shipping = computeShipping(discountedSubtotal);
+
+  /* Shipping quote (Shiprocket). Starts as the flat default; when the
+   * customer types a valid pincode and clicks "Check delivery" (or once
+   * the PIN debounces), we hit /api/shipping/quote to get the real
+   * courier rate for their pincode + our origin. Falls back silently
+   * to the flat rate if Shiprocket is down or unserviceable. */
+  const [quote, setQuote] = useState<{
+    pincode: string;
+    rate: number;
+    free: boolean;
+    courierName: string;
+    etdDays: number | null;
+    fallback?: boolean;
+    notServiceable?: boolean;
+  } | null>(null);
+  const [quoting, setQuoting] = useState(false);
+  const [quoteErr, setQuoteErr] = useState("");
+  const shipping = quote ? quote.rate : computeShipping(discountedSubtotal);
   const grandTotal = discountedSubtotal + shipping;
   const [form, setForm] = useState<Form>(EMPTY);
   const [status, setStatus] = useState<Status>("idle");
   const [orderText, setOrderText] = useState<string>("");
   const [orderNumber, setOrderNumber] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string>("");
+
+  /* Fetch a real shipping quote from Shiprocket for the current pincode.
+   * Called from the "Check delivery" button and re-invoked automatically
+   * if the subtotal crosses the free-shipping threshold. */
+  const quoteShipping = async () => {
+    const pin = form.pin.trim();
+    if (!/^\d{6}$/.test(pin)) {
+      setQuoteErr("Enter a 6-digit pincode.");
+      setQuote(null);
+      return;
+    }
+    setQuoting(true);
+    setQuoteErr("");
+    try {
+      const res = await fetch("/api/shipping/quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pincode: pin, subtotal: discountedSubtotal }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        pincode?: string;
+        rate?: number;
+        free?: boolean;
+        courierName?: string;
+        etdDays?: number | null;
+        fallback?: boolean;
+        notServiceable?: boolean;
+        error?: string;
+      };
+      if (!res.ok || data.rate == null) {
+        setQuoteErr(data.error || "Couldn't check this pincode.");
+        setQuote(null);
+        return;
+      }
+      setQuote({
+        pincode: data.pincode ?? pin,
+        rate: data.rate,
+        free: !!data.free,
+        courierName: data.courierName ?? "Standard shipping",
+        etdDays: data.etdDays ?? null,
+        fallback: data.fallback,
+        notServiceable: data.notServiceable,
+      });
+    } catch {
+      setQuoteErr("Network error — try again.");
+    } finally {
+      setQuoting(false);
+    }
+  };
+
+  /* When cart changes such that free-shipping crosses (or un-crosses)
+   * the threshold, re-run the quote so the number stays accurate. */
+  useEffect(() => {
+    if (!quote) return;
+    const shouldBeFree = discountedSubtotal >= SHIPPING_THRESHOLD;
+    if (shouldBeFree !== quote.free) void quoteShipping();
+    // quoteShipping is stable enough; deliberately omit from deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [discountedSubtotal]);
 
   const applyDiscount = async () => {
     const code = discountCode.trim().toUpperCase();
@@ -327,6 +403,7 @@ export default function CheckoutClient() {
             email: form.email,
           },
           discountCode: appliedCode?.code,
+          pincode: form.pin.trim(),
         }),
       });
       if (!res.ok) {
@@ -583,11 +660,53 @@ export default function CheckoutClient() {
                 <Field
                   label="PIN"
                   value={form.pin}
-                  onChange={(v) => set("pin", v)}
+                  onChange={(v) => {
+                    set("pin", v);
+                    // Clear the last quote when they change the pin so
+                    // the summary can't stay wrong for a different area.
+                    if (quote && v.trim() !== quote.pincode) setQuote(null);
+                  }}
                   required
                   autoComplete="postal-code"
                   inputMode="numeric"
                 />
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void quoteShipping()}
+                  disabled={quoting || !/^\d{6}$/.test(form.pin.trim())}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5
+                             border border-gold text-gold
+                             hover:bg-gold/5 transition-colors
+                             disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <span className="eyebrow text-[10px]">
+                    {quoting ? "Checking…" : "Check delivery charges"}
+                  </span>
+                </button>
+                {quote ? (
+                  <p className="text-[11px] text-bone-dim">
+                    {quote.free ? (
+                      <>Free shipping to {quote.pincode}. 🎉</>
+                    ) : quote.notServiceable ? (
+                      <>Not directly serviceable — using standard rate {formatPrice(quote.rate)}.</>
+                    ) : (
+                      <>
+                        {quote.courierName} · {formatPrice(quote.rate)}
+                        {quote.etdDays ? ` · ~${quote.etdDays} days` : ""}
+                        {quote.fallback ? " (standard rate)" : ""}
+                      </>
+                    )}
+                  </p>
+                ) : quoteErr ? (
+                  <p className="text-[11px] text-oxblood">{quoteErr}</p>
+                ) : (
+                  <p className="text-[11px] text-bone-dim italic">
+                    Enter your PIN and click to see the actual courier rate.
+                  </p>
+                )}
               </div>
               <Field
                 label="Notes (optional)"
@@ -718,9 +837,14 @@ export default function CheckoutClient() {
                   {shipping === 0 ? "Free" : formatPrice(shipping)}
                 </span>
               </div>
-              {shipping > 0 ? (
+              {quote && !quote.free ? (
                 <p className="text-[10px] text-bone-dim italic">
-                  Add {formatPrice(SHIPPING_THRESHOLD - discountedSubtotal)} more to your cart for free shipping.
+                  {quote.courierName}
+                  {quote.etdDays ? ` · ~${quote.etdDays} days` : ""} · to {quote.pincode}
+                </p>
+              ) : shipping > 0 && !quote ? (
+                <p className="text-[10px] text-bone-dim italic">
+                  Add {formatPrice(SHIPPING_THRESHOLD - discountedSubtotal)} more for free shipping · or enter your PIN above for the exact courier rate.
                 </p>
               ) : null}
 
