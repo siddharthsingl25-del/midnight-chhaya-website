@@ -2,19 +2,20 @@
  * POST /api/shipping/quote
  *
  * Body: { pincode: string, subtotal?: number }
- * Returns: {
- *   pincode, rate, free, courierName, etdDays,
- *   fallback?: true       — set when Shiprocket errored / not serviceable
- *                           and we're returning the flat default instead
- * }
+ * Returns:
+ *   { pincode, free: true, couriers: [] }              — free shipping
+ *   { pincode, couriers: [{...}, {...}, ...] }         — real list
+ *   { pincode, fallback: true, couriers: [...] }       — Shiprocket down
+ *                                                        or unserviceable,
+ *                                                        one synthetic
+ *                                                        "Standard" option
  *
- * Free-shipping threshold still overrides Shiprocket — if the customer's
- * subtotal is above SHIPPING_THRESHOLD, we return rate: 0 without hitting
- * the Shiprocket API at all.
+ * The customer picks a courier from the returned list and pays that
+ * courier's exact rate. Same behaviour as Shiprocket's own calculator.
  */
 
 import { NextResponse } from "next/server";
-import { getShippingQuote } from "@/lib/shiprocket";
+import { getCourierOptions, type CourierOption } from "@/lib/shiprocket";
 import { SHIPPING_FEE, SHIPPING_THRESHOLD } from "@/lib/site";
 
 export async function POST(req: Request) {
@@ -35,43 +36,43 @@ export async function POST(req: Request) {
   if (Number.isFinite(subtotal) && subtotal >= SHIPPING_THRESHOLD) {
     return NextResponse.json({
       pincode,
-      rate: 0,
       free: true,
-      courierName: "Free shipping",
-      etdDays: null,
+      couriers: [],
     });
   }
 
   try {
-    const quote = await getShippingQuote(pincode);
-    if (!quote) {
+    const couriers = await getCourierOptions(pincode);
+    if (couriers.length === 0) {
       return NextResponse.json({
         pincode,
-        rate: SHIPPING_FEE,
-        free: false,
-        courierName: "Standard shipping",
-        etdDays: null,
         fallback: true,
         notServiceable: true,
+        couriers: [fallbackOption()],
       });
     }
     return NextResponse.json({
       pincode,
-      rate: quote.rate,
       free: false,
-      courierName: quote.courierName,
-      etdDays: quote.etdDays,
+      couriers: couriers.slice(0, 12), // cap at 12 options for the UI
     });
   } catch (e) {
     console.error("[shipping.quote]", e);
-    // Fail safe → flat fee so checkout still works.
     return NextResponse.json({
       pincode,
-      rate: SHIPPING_FEE,
-      free: false,
-      courierName: "Standard shipping",
-      etdDays: null,
       fallback: true,
+      couriers: [fallbackOption()],
     });
   }
+}
+
+function fallbackOption(): CourierOption {
+  return {
+    courierCompanyId: -1,
+    courierName: "Standard shipping",
+    rate: SHIPPING_FEE,
+    etdDays: null,
+    isSurface: true,
+    recommended: false,
+  };
 }

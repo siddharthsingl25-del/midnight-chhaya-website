@@ -24,7 +24,7 @@ import {
   computeShipping,
   offerActiveAt,
 } from "@/lib/site";
-import { getShippingQuote } from "@/lib/shiprocket";
+import { getCourierOptions } from "@/lib/shiprocket";
 
 type IncomingItem = { slug: string; qty: number; chainId?: string };
 
@@ -42,6 +42,10 @@ type Body = {
    * Shiprocket for the true courier rate so a tampered client can't
    * underpay shipping. */
   pincode?: string;
+  /** Courier picked by the customer from Shiprocket's serviceability
+   * list. Server re-fetches the list and uses that courier's real
+   * rate. If null / not found, falls back to the recommended/cheapest. */
+  courierCompanyId?: number | null;
 };
 
 export async function POST(req: Request) {
@@ -218,16 +222,26 @@ export async function POST(req: Request) {
   const subtotalPaise = Math.max(0, grossSubtotalPaise - discountPaise - bogoPaise);
   const subtotalInr = subtotalPaise / 100;
 
-  // Shipping — re-quote server-side so the client can't lie. Prefer the
-  // Shiprocket rate when a valid pincode is passed; fall back to the flat
-  // computeShipping default if the API fails, is unserviceable, or no
-  // pincode was sent. Free shipping threshold still overrides.
+  // Shipping — re-quote Shiprocket server-side and use the rate of the
+  // courier the customer selected. If they selected one, we look it up
+  // in the fresh list and use ITS rate (matches what the customer saw);
+  // if they didn't, we default to the recommended/cheapest. Free shipping
+  // threshold above ₹999 always overrides. Falls back to the flat
+  // computeShipping default if Shiprocket fails so checkout never breaks.
   let shippingInr = computeShipping(subtotalInr);
   const pincode = typeof body.pincode === "string" ? body.pincode.trim() : "";
+  const requestedCourierId =
+    typeof body.courierCompanyId === "number" ? body.courierCompanyId : null;
   if (subtotalInr < 999 && /^\d{6}$/.test(pincode)) {
     try {
-      const quote = await getShippingQuote(pincode);
-      if (quote) shippingInr = quote.rate;
+      const list = await getCourierOptions(pincode);
+      if (list.length > 0) {
+        const picked =
+          (requestedCourierId != null
+            ? list.find((c) => c.courierCompanyId === requestedCourierId)
+            : undefined) ?? list[0];
+        shippingInr = picked.rate;
+      }
     } catch (e) {
       console.error("[create-order.shiprocket]", e);
       // keep the flat fallback

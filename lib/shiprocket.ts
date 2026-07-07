@@ -61,25 +61,43 @@ async function getToken(force = false): Promise<string> {
   return data.token;
 }
 
+/** Single courier option in a rate list — mirrors Shiprocket's calculator. */
+export type CourierOption = {
+  courierCompanyId: number;
+  courierName: string;
+  rate: number; // total INR (rounded up)
+  etdDays: number | null;
+  isSurface: boolean;
+  recommended: boolean;
+};
+
+/** Back-compat: single-quote used elsewhere. */
 export type ShippingQuote = {
   courierName: string;
-  rate: number; // total INR (rounded up to whole rupees)
+  rate: number;
   cod: boolean;
-  etdDays: number | null; // estimated delivery days
+  etdDays: number | null;
 };
 
 type ShiprocketCourier = {
+  courier_company_id: number;
   courier_name: string;
   rate: number;
   cod: number;
   estimated_delivery_days?: string | number;
   recommended?: number;
+  is_surface?: boolean;
 };
 
-export async function getShippingQuote(
+/**
+ * Full list of courier options for a pincode — same set Shiprocket's
+ * own rate calculator shows. Sorted cheapest first with the
+ * "recommended" option floated to the top.
+ */
+export async function getCourierOptions(
   deliveryPincode: string,
   opts: { cod?: boolean } = {}
-): Promise<ShippingQuote | null> {
+): Promise<CourierOption[]> {
   const { pickup } = env();
   const cod = opts.cod ?? false;
 
@@ -100,7 +118,6 @@ export async function getShippingQuote(
 
   let res = await request(await getToken());
   if (res.status === 401 || res.status === 403) {
-    // Token expired or revoked → force a fresh one and retry once.
     cachedToken = null;
     res = await request(await getToken(true));
   }
@@ -110,30 +127,42 @@ export async function getShippingQuote(
       `Shiprocket serviceability failed (${res.status}): ${text.slice(0, 200)}`
     );
   }
-
   const data = (await res.json()) as {
     data?: { available_courier_companies?: ShiprocketCourier[] };
   };
-  const couriers = data?.data?.available_courier_companies ?? [];
-  if (couriers.length === 0) return null; // pincode not serviceable
+  const raw = data?.data?.available_courier_companies ?? [];
+  const list: CourierOption[] = raw.map((c) => ({
+    courierCompanyId: c.courier_company_id,
+    courierName: c.courier_name,
+    rate: Math.ceil(c.rate),
+    etdDays:
+      c.estimated_delivery_days != null
+        ? Number(c.estimated_delivery_days) || null
+        : null,
+    isSurface: !!c.is_surface,
+    recommended: c.recommended === 1,
+  }));
 
-  // Prefer Shiprocket's recommended courier; fall back to the cheapest.
-  const chosen =
-    couriers.find((c) => c.recommended === 1) ??
-    couriers.reduce<ShiprocketCourier>(
-      (min, c) => (c.rate < min.rate ? c : min),
-      couriers[0]
-    );
+  // Cheapest first, with recommended floated to the top.
+  list.sort((a, b) => {
+    if (a.recommended !== b.recommended) return a.recommended ? -1 : 1;
+    return a.rate - b.rate;
+  });
+  return list;
+}
 
-  const etdDays =
-    chosen.estimated_delivery_days != null
-      ? Number(chosen.estimated_delivery_days) || null
-      : null;
-
+export async function getShippingQuote(
+  deliveryPincode: string,
+  opts: { cod?: boolean } = {}
+): Promise<ShippingQuote | null> {
+  const cod = opts.cod ?? false;
+  const list = await getCourierOptions(deliveryPincode, { cod });
+  if (list.length === 0) return null;
+  const top = list[0]; // already sorted: recommended first, then cheapest
   return {
-    courierName: chosen.courier_name,
-    rate: Math.ceil(chosen.rate),
+    courierName: top.courierName,
+    rate: top.rate,
     cod,
-    etdDays,
+    etdDays: top.etdDays,
   };
 }

@@ -104,23 +104,35 @@ export default function CheckoutClient() {
   const codeDiscount = appliedCode?.amountOff ?? 0;
   const discountedSubtotal = Math.max(0, subtotal - bogoAmount - codeDiscount);
 
-  /* Shipping quote (Shiprocket). Starts as the flat default; when the
-   * customer types a valid pincode and clicks "Check delivery" (or once
-   * the PIN debounces), we hit /api/shipping/quote to get the real
-   * courier rate for their pincode + our origin. Falls back silently
-   * to the flat rate if Shiprocket is down or unserviceable. */
+  /* Shipping quote (Shiprocket). Same list Shiprocket's own rate
+   * calculator shows — customer picks whichever courier they want and
+   * pays that exact rate. Falls back to a single synthetic "Standard"
+   * option if Shiprocket is down or unserviceable so checkout still
+   * works. */
+  type Courier = {
+    courierCompanyId: number;
+    courierName: string;
+    rate: number;
+    etdDays: number | null;
+    recommended: boolean;
+  };
   const [quote, setQuote] = useState<{
     pincode: string;
-    rate: number;
     free: boolean;
-    courierName: string;
-    etdDays: number | null;
+    couriers: Courier[];
     fallback?: boolean;
     notServiceable?: boolean;
   } | null>(null);
+  const [selectedCourierId, setSelectedCourierId] = useState<number | null>(null);
   const [quoting, setQuoting] = useState(false);
   const [quoteErr, setQuoteErr] = useState("");
-  const shipping = quote ? quote.rate : computeShipping(discountedSubtotal);
+  const selectedCourier =
+    quote?.couriers.find((c) => c.courierCompanyId === selectedCourierId) ?? null;
+  const shipping = quote?.free
+    ? 0
+    : selectedCourier
+      ? selectedCourier.rate
+      : computeShipping(discountedSubtotal);
   const grandTotal = discountedSubtotal + shipping;
   const [form, setForm] = useState<Form>(EMPTY);
   const [status, setStatus] = useState<Status>("idle");
@@ -128,9 +140,8 @@ export default function CheckoutClient() {
   const [orderNumber, setOrderNumber] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string>("");
 
-  /* Fetch a real shipping quote from Shiprocket for the current pincode.
-   * Called from the "Check delivery" button and re-invoked automatically
-   * if the subtotal crosses the free-shipping threshold. */
+  /* Fetch the full courier list from Shiprocket for the current
+   * pincode. Same list Shiprocket's own rate calculator shows. */
   const quoteShipping = async () => {
     const pin = form.pin.trim();
     if (!/^\d{6}$/.test(pin)) {
@@ -148,28 +159,33 @@ export default function CheckoutClient() {
       });
       const data = (await res.json().catch(() => ({}))) as {
         pincode?: string;
-        rate?: number;
         free?: boolean;
-        courierName?: string;
-        etdDays?: number | null;
+        couriers?: Courier[];
         fallback?: boolean;
         notServiceable?: boolean;
         error?: string;
       };
-      if (!res.ok || data.rate == null) {
+      if (!res.ok) {
         setQuoteErr(data.error || "Couldn't check this pincode.");
         setQuote(null);
         return;
       }
+      const couriers = data.couriers ?? [];
       setQuote({
         pincode: data.pincode ?? pin,
-        rate: data.rate,
         free: !!data.free,
-        courierName: data.courierName ?? "Standard shipping",
-        etdDays: data.etdDays ?? null,
+        couriers,
         fallback: data.fallback,
         notServiceable: data.notServiceable,
       });
+      // Default-select: recommended > cheapest > first
+      if (couriers.length > 0) {
+        const recommended = couriers.find((c) => c.recommended);
+        const cheapest = couriers.reduce((min, c) => (c.rate < min.rate ? c : min), couriers[0]);
+        setSelectedCourierId((recommended ?? cheapest).courierCompanyId);
+      } else {
+        setSelectedCourierId(null);
+      }
     } catch {
       setQuoteErr("Network error — try again.");
     } finally {
@@ -404,6 +420,7 @@ export default function CheckoutClient() {
           },
           discountCode: appliedCode?.code,
           pincode: form.pin.trim(),
+          courierCompanyId: selectedCourier?.courierCompanyId ?? null,
         }),
       });
       if (!res.ok) {
@@ -672,41 +689,85 @@ export default function CheckoutClient() {
                 />
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => void quoteShipping()}
-                  disabled={quoting || !/^\d{6}$/.test(form.pin.trim())}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5
-                             border border-gold text-gold
-                             hover:bg-gold/5 transition-colors
-                             disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <span className="eyebrow text-[10px]">
-                    {quoting ? "Checking…" : "Check delivery charges"}
-                  </span>
-                </button>
-                {quote ? (
-                  <p className="text-[11px] text-bone-dim">
-                    {quote.free ? (
-                      <>Free shipping to {quote.pincode}. 🎉</>
-                    ) : quote.notServiceable ? (
-                      <>Not directly serviceable — using standard rate {formatPrice(quote.rate)}.</>
-                    ) : (
-                      <>
-                        {quote.courierName} · {formatPrice(quote.rate)}
-                        {quote.etdDays ? ` · ~${quote.etdDays} days` : ""}
-                        {quote.fallback ? " (standard rate)" : ""}
-                      </>
-                    )}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void quoteShipping()}
+                    disabled={quoting || !/^\d{6}$/.test(form.pin.trim())}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5
+                               border border-gold text-gold
+                               hover:bg-gold/5 transition-colors
+                               disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <span className="eyebrow text-[10px]">
+                      {quoting ? "Checking…" : quote ? "Refresh rates" : "Check delivery options"}
+                    </span>
+                  </button>
+                  {quoteErr ? (
+                    <p className="text-[11px] text-oxblood">{quoteErr}</p>
+                  ) : !quote ? (
+                    <p className="text-[11px] text-bone-dim italic">
+                      Enter your PIN and click to see all couriers + rates.
+                    </p>
+                  ) : null}
+                </div>
+
+                {quote?.free ? (
+                  <p className="text-sm text-gold">
+                    Free shipping to {quote.pincode} — no courier selection needed. 🎉
                   </p>
-                ) : quoteErr ? (
-                  <p className="text-[11px] text-oxblood">{quoteErr}</p>
-                ) : (
-                  <p className="text-[11px] text-bone-dim italic">
-                    Enter your PIN and click to see the actual courier rate.
-                  </p>
-                )}
+                ) : quote && quote.couriers.length > 0 ? (
+                  <div className="border border-bone/10 divide-y divide-bone/10">
+                    <p className="px-3 py-2 text-[10px] text-bone-dim uppercase tracking-[0.15em]">
+                      {quote.notServiceable
+                        ? "Not directly serviceable · standard rate"
+                        : quote.fallback
+                          ? "Live rates unavailable · standard rate"
+                          : `Choose a courier for ${quote.pincode}`}
+                    </p>
+                    <ul className="max-h-64 overflow-y-auto">
+                      {quote.couriers.map((c) => {
+                        const isSelected = selectedCourierId === c.courierCompanyId;
+                        return (
+                          <li key={c.courierCompanyId}>
+                            <label
+                              className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${
+                                isSelected ? "bg-gold/5" : "hover:bg-bone/5"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="courier"
+                                checked={isSelected}
+                                onChange={() => setSelectedCourierId(c.courierCompanyId)}
+                                className="accent-gold"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-body text-bone text-sm truncate">
+                                  {c.courierName}
+                                  {c.recommended ? (
+                                    <span className="ml-2 text-[9px] uppercase tracking-[0.15em] text-gold">
+                                      recommended
+                                    </span>
+                                  ) : null}
+                                </p>
+                                {c.etdDays ? (
+                                  <p className="text-[10px] text-bone-dim">
+                                    ~{c.etdDays} day{c.etdDays === 1 ? "" : "s"}
+                                  </p>
+                                ) : null}
+                              </div>
+                              <span className="font-display text-bone text-sm">
+                                {formatPrice(c.rate)}
+                              </span>
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
               <Field
                 label="Notes (optional)"
@@ -837,14 +898,14 @@ export default function CheckoutClient() {
                   {shipping === 0 ? "Free" : formatPrice(shipping)}
                 </span>
               </div>
-              {quote && !quote.free ? (
+              {selectedCourier && quote && !quote.free ? (
                 <p className="text-[10px] text-bone-dim italic">
-                  {quote.courierName}
-                  {quote.etdDays ? ` · ~${quote.etdDays} days` : ""} · to {quote.pincode}
+                  {selectedCourier.courierName}
+                  {selectedCourier.etdDays ? ` · ~${selectedCourier.etdDays} days` : ""} · to {quote.pincode}
                 </p>
               ) : shipping > 0 && !quote ? (
                 <p className="text-[10px] text-bone-dim italic">
-                  Add {formatPrice(SHIPPING_THRESHOLD - discountedSubtotal)} more for free shipping · or enter your PIN above for the exact courier rate.
+                  Add {formatPrice(SHIPPING_THRESHOLD - discountedSubtotal)} more for free shipping · or enter your PIN above for live courier rates.
                 </p>
               ) : null}
 
