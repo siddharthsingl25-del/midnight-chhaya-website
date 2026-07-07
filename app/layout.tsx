@@ -6,6 +6,7 @@ import SmoothScroll from "@/components/animations/SmoothScroll";
 import Header from "@/components/ui/Header";
 import FilmGrain from "@/components/ui/FilmGrain";
 import PromoBanner from "@/components/ui/PromoBanner";
+import PreOrderBanner from "@/components/ui/PreOrderBanner";
 import { CartProvider } from "@/lib/cart";
 import { CatalogProvider } from "@/lib/catalog-context";
 import { StockProvider } from "@/lib/stock";
@@ -96,6 +97,7 @@ export default async function RootLayout({
           <StockProvider>
             <CartProvider>
               <SmoothScroll>
+                <PreOrderBanner />
                 <PromoBanner />
                 <Header />
                 <main>{children}</main>
