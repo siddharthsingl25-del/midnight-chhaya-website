@@ -42,6 +42,13 @@ export type Product = {
    * Pieces section at the bottom of the detail page. Empty = fall back
    * to automatic category siblings. */
   relatedSlugs: string[];
+  /** Pre-order flag. When true, the product surfaces in the homepage
+   * pre-order section with a badge, and its price appears next to a
+   * struck-through launchPrice for reference. */
+  isPreOrder: boolean;
+  /** The eventual full price after launch, shown crossed-out beside the
+   * current price during the pre-order phase. Null when not applicable. */
+  launchPrice: number | null;
   displayOrder: number;
 };
 
@@ -86,6 +93,8 @@ type ProductRow = {
   badge_text: string | null;
   badge_image: string | null;
   related_slugs: string[] | null;
+  is_pre_order: boolean | null;
+  launch_price: number | null;
   display_order: number;
 };
 
@@ -111,6 +120,11 @@ export function productFromRow(row: ProductRow): Product {
     badgeText: row.badge_text?.trim() || null,
     badgeImage: row.badge_image?.trim() || null,
     relatedSlugs: Array.isArray(row.related_slugs) ? row.related_slugs : [],
+    isPreOrder: !!row.is_pre_order,
+    launchPrice:
+      typeof row.launch_price === "number" && row.launch_price >= 0
+        ? row.launch_price
+        : null,
     displayOrder: row.display_order ?? 0,
   };
 }

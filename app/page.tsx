@@ -1,4 +1,5 @@
 import Hero from "@/components/sections/Hero";
+import PreOrder from "@/components/sections/PreOrder";
 import FeaturedPieces from "@/components/sections/FeaturedPieces";
 import BrandTeaser from "@/components/sections/BrandTeaser";
 import InstagramCTA from "@/components/sections/InstagramCTA";
@@ -8,6 +9,7 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <PreOrder />
       <FeaturedPieces />
       <BrandTeaser />
       <InstagramCTA />

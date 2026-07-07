@@ -375,6 +375,10 @@ function ProductForm({
   );
   const [badgeText, setBadgeText] = useState(product?.badgeText ?? "");
   const [badgeImage, setBadgeImage] = useState(product?.badgeImage ?? "");
+  const [isPreOrder, setIsPreOrder] = useState(product?.isPreOrder ?? false);
+  const [launchPrice, setLaunchPrice] = useState<string>(
+    product?.launchPrice != null ? String(product.launchPrice) : ""
+  );
   const [relatedSlugs, setRelatedSlugs] = useState<string[]>(
     product?.relatedSlugs ?? []
   );
@@ -415,6 +419,8 @@ function ProductForm({
       variant_kind: variantKind || null,
       badge_text: badgeText.trim() || null,
       badge_image: badgeImage.trim() || null,
+      is_pre_order: isPreOrder,
+      launch_price: launchPrice === "" ? null : Number(launchPrice),
       related_slugs: relatedSlugs,
     };
 
@@ -652,6 +658,36 @@ function ProductForm({
               selfSlug={product?.slug}
               value={relatedSlugs}
               onChange={setRelatedSlugs}
+            />
+          </div>
+
+          {/* Pre-order — when checked, product surfaces in the homepage
+           * Pre-order section with a badge, and the launch price shows
+           * struck-through beside the current price. */}
+          <div className="border-t border-bone/10 pt-6 flex flex-col gap-4">
+            <p className="eyebrow text-gold">Pre-order</p>
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={isPreOrder}
+                onChange={(e) => setIsPreOrder(e.target.checked)}
+                className="w-5 h-5 accent-gold"
+              />
+              <span className="font-body text-bone text-sm">
+                Currently taking pre-orders
+              </span>
+            </label>
+            <p className="font-serif italic text-bone-dim text-[11px] -mt-2">
+              When on, this product appears in the &ldquo;Pre-order&rdquo; section on the home page with a badge. The regular <code className="text-bone">Price</code> field above is what the customer actually pays right now.
+            </p>
+            <Field
+              label="Launch price (₹) — the eventual full price"
+              value={launchPrice}
+              onChange={setLaunchPrice}
+              placeholder="e.g. 599 · shown struck-through beside the current price"
+              type="tel"
+              inputMode="numeric"
+              help="Optional. Only rendered while the pre-order flag is on. Leave blank to skip the discount indicator."
             />
           </div>
 

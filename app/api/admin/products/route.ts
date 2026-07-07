@@ -56,6 +56,8 @@ export async function POST(req: Request) {
     badge_text = null,
     badge_image = null,
     related_slugs = [],
+    is_pre_order = false,
+    launch_price = null,
   } = body as Record<string, unknown>;
 
   if (typeof slug !== "string" || !slug.trim()) {
@@ -81,6 +83,13 @@ export async function POST(req: Request) {
       : Number(cost_price);
   if (costVal !== null && (!Number.isFinite(costVal) || costVal < 0)) {
     return NextResponse.json({ error: "Bad cost price" }, { status: 400 });
+  }
+  const launchVal =
+    launch_price === null || launch_price === undefined || launch_price === ""
+      ? null
+      : Number(launch_price);
+  if (launchVal !== null && (!Number.isFinite(launchVal) || launchVal < 0)) {
+    return NextResponse.json({ error: "Bad launch price" }, { status: 400 });
   }
 
   // Next display_order = max + 1
@@ -113,6 +122,8 @@ export async function POST(req: Request) {
     related_slugs: Array.isArray(related_slugs)
       ? (related_slugs as unknown[]).filter((s): s is string => typeof s === "string" && !!s.trim()).map((s) => s.trim()).slice(0, 12)
       : [],
+    is_pre_order: Boolean(is_pre_order),
+    launch_price: launchVal,
     display_order,
     updated_at: new Date().toISOString(),
   };

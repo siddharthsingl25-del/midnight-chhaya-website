@@ -181,9 +181,24 @@ export default function ProductDetail({
               className="font-display text-bone uppercase text-[clamp(2rem,5vw,3.5rem)] leading-[1.05]"
             />
             <Reveal delay={0.15}>
-              <p className="font-serif italic text-bone text-2xl">
-                {formatPrice(displayedUnitPrice)}
-              </p>
+              <div className="flex flex-col gap-1">
+                {product.isPreOrder ? (
+                  <span className="eyebrow text-gold text-[11px]">
+                    Pre-order
+                  </span>
+                ) : null}
+                <p className="font-serif italic text-bone text-2xl flex items-baseline gap-3 flex-wrap">
+                  <span>{formatPrice(displayedUnitPrice)}</span>
+                  {product.isPreOrder &&
+                  product.launchPrice != null &&
+                  product.price != null &&
+                  product.launchPrice > product.price ? (
+                    <span className="text-base text-bone-dim line-through">
+                      {formatPrice(product.launchPrice)}
+                    </span>
+                  ) : null}
+                </p>
+              </div>
             </Reveal>
             <Reveal delay={0.2}>
               <p className="font-serif text-bone-dim text-lg leading-relaxed">
@@ -268,7 +283,9 @@ export default function ProductDetail({
                   ) : (
                     <>
                       <Plus size={18} strokeWidth={1.75} />
-                      <span className="eyebrow text-ink">Add to cart</span>
+                      <span className="eyebrow text-ink">
+                        {product.isPreOrder ? "Pre-order now" : "Add to cart"}
+                      </span>
                     </>
                   )}
                 </button>

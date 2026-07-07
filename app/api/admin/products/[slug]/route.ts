@@ -77,6 +77,15 @@ export async function PUT(req: Request, { params }: Params) {
       .map((s) => s.trim())
       .slice(0, 12);
   }
+  if (typeof body.is_pre_order === "boolean") patch.is_pre_order = body.is_pre_order;
+  if (body.launch_price === null || body.launch_price === "") patch.launch_price = null;
+  else if (body.launch_price !== undefined) {
+    const n = Number(body.launch_price);
+    if (!Number.isFinite(n) || n < 0) {
+      return NextResponse.json({ error: "Bad launch price" }, { status: 400 });
+    }
+    patch.launch_price = n;
+  }
   if (typeof body.display_order === "number" && Number.isFinite(body.display_order)) {
     patch.display_order = Math.floor(body.display_order);
   }
