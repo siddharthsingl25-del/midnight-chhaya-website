@@ -193,7 +193,7 @@ export default function ProductDetail({
                   product.launchPrice != null &&
                   product.price != null &&
                   product.launchPrice > product.price ? (
-                    <span className="text-base text-bone-dim line-through">
+                    <span className="text-2xl text-bone-dim line-through">
                       {formatPrice(product.launchPrice)}
                     </span>
                   ) : null}
