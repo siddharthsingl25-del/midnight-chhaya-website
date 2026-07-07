@@ -37,10 +37,10 @@ export default function PreOrderBanner() {
       href={href}
       style={{ height: "32px" }}
       className="fixed top-0 left-0 right-0 z-[70] flex w-full items-center justify-center
-                 bg-ink text-gold px-4
+                 bg-gold text-ink px-4
                  text-[11px] sm:text-xs uppercase tracking-[0.18em] font-medium
-                 border-b border-gold/30
-                 hover:bg-gold hover:text-ink transition-colors duration-500"
+                 border-b border-gold-soft
+                 hover:bg-gold-soft transition-colors duration-500"
     >
       <span>{label}</span>
       <span className="ml-3 opacity-60">→</span>
