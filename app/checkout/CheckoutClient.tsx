@@ -103,105 +103,13 @@ export default function CheckoutClient() {
   const [codeChecking, setCodeChecking] = useState(false);
   const codeDiscount = appliedCode?.amountOff ?? 0;
   const discountedSubtotal = Math.max(0, subtotal - bogoAmount - codeDiscount);
-
-  /* Shipping quote (Shiprocket). Same list Shiprocket's own rate
-   * calculator shows — customer picks whichever courier they want and
-   * pays that exact rate. Falls back to a single synthetic "Standard"
-   * option if Shiprocket is down or unserviceable so checkout still
-   * works. */
-  type Courier = {
-    courierCompanyId: number;
-    courierName: string;
-    rate: number;
-    etdDays: number | null;
-    recommended: boolean;
-  };
-  const [quote, setQuote] = useState<{
-    pincode: string;
-    free: boolean;
-    couriers: Courier[];
-    fallback?: boolean;
-    notServiceable?: boolean;
-  } | null>(null);
-  const [selectedCourierId, setSelectedCourierId] = useState<number | null>(null);
-  const [quoting, setQuoting] = useState(false);
-  const [quoteErr, setQuoteErr] = useState("");
-  const selectedCourier =
-    quote?.couriers.find((c) => c.courierCompanyId === selectedCourierId) ?? null;
-  const shipping = quote?.free
-    ? 0
-    : selectedCourier
-      ? selectedCourier.rate
-      : computeShipping(discountedSubtotal);
+  const shipping = computeShipping(discountedSubtotal);
   const grandTotal = discountedSubtotal + shipping;
   const [form, setForm] = useState<Form>(EMPTY);
   const [status, setStatus] = useState<Status>("idle");
   const [orderText, setOrderText] = useState<string>("");
   const [orderNumber, setOrderNumber] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string>("");
-
-  /* Fetch the full courier list from Shiprocket for the current
-   * pincode. Same list Shiprocket's own rate calculator shows. */
-  const quoteShipping = async () => {
-    const pin = form.pin.trim();
-    if (!/^\d{6}$/.test(pin)) {
-      setQuoteErr("Enter a 6-digit pincode.");
-      setQuote(null);
-      return;
-    }
-    setQuoting(true);
-    setQuoteErr("");
-    try {
-      const res = await fetch("/api/shipping/quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pincode: pin, subtotal: discountedSubtotal }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        pincode?: string;
-        free?: boolean;
-        couriers?: Courier[];
-        fallback?: boolean;
-        notServiceable?: boolean;
-        error?: string;
-      };
-      if (!res.ok) {
-        setQuoteErr(data.error || "Couldn't check this pincode.");
-        setQuote(null);
-        return;
-      }
-      const couriers = data.couriers ?? [];
-      setQuote({
-        pincode: data.pincode ?? pin,
-        free: !!data.free,
-        couriers,
-        fallback: data.fallback,
-        notServiceable: data.notServiceable,
-      });
-      // Default-select: recommended > cheapest > first
-      if (couriers.length > 0) {
-        const recommended = couriers.find((c) => c.recommended);
-        const cheapest = couriers.reduce((min, c) => (c.rate < min.rate ? c : min), couriers[0]);
-        setSelectedCourierId((recommended ?? cheapest).courierCompanyId);
-      } else {
-        setSelectedCourierId(null);
-      }
-    } catch {
-      setQuoteErr("Network error — try again.");
-    } finally {
-      setQuoting(false);
-    }
-  };
-
-  /* When cart changes such that free-shipping crosses (or un-crosses)
-   * the threshold, re-run the quote so the number stays accurate. */
-  useEffect(() => {
-    if (!quote) return;
-    const shouldBeFree = discountedSubtotal >= SHIPPING_THRESHOLD;
-    if (shouldBeFree !== quote.free) void quoteShipping();
-    // quoteShipping is stable enough; deliberately omit from deps.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [discountedSubtotal]);
 
   const applyDiscount = async () => {
     const code = discountCode.trim().toUpperCase();
@@ -419,8 +327,6 @@ export default function CheckoutClient() {
             email: form.email,
           },
           discountCode: appliedCode?.code,
-          pincode: form.pin.trim(),
-          courierCompanyId: selectedCourier?.courierCompanyId ?? null,
         }),
       });
       if (!res.ok) {
@@ -677,97 +583,11 @@ export default function CheckoutClient() {
                 <Field
                   label="PIN"
                   value={form.pin}
-                  onChange={(v) => {
-                    set("pin", v);
-                    // Clear the last quote when they change the pin so
-                    // the summary can't stay wrong for a different area.
-                    if (quote && v.trim() !== quote.pincode) setQuote(null);
-                  }}
+                  onChange={(v) => set("pin", v)}
                   required
                   autoComplete="postal-code"
                   inputMode="numeric"
                 />
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => void quoteShipping()}
-                    disabled={quoting || !/^\d{6}$/.test(form.pin.trim())}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5
-                               border border-gold text-gold
-                               hover:bg-gold/5 transition-colors
-                               disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <span className="eyebrow text-[10px]">
-                      {quoting ? "Checking…" : quote ? "Refresh rates" : "Check delivery options"}
-                    </span>
-                  </button>
-                  {quoteErr ? (
-                    <p className="text-[11px] text-oxblood">{quoteErr}</p>
-                  ) : !quote ? (
-                    <p className="text-[11px] text-bone-dim italic">
-                      Enter your PIN and click to see all couriers + rates.
-                    </p>
-                  ) : null}
-                </div>
-
-                {quote?.free ? (
-                  <p className="text-sm text-gold">
-                    Free shipping to {quote.pincode} — no courier selection needed. 🎉
-                  </p>
-                ) : quote && quote.couriers.length > 0 ? (
-                  <div className="border border-bone/10 divide-y divide-bone/10">
-                    <p className="px-3 py-2 text-[10px] text-bone-dim uppercase tracking-[0.15em]">
-                      {quote.notServiceable
-                        ? "Not directly serviceable · standard rate"
-                        : quote.fallback
-                          ? "Live rates unavailable · standard rate"
-                          : `Choose a courier for ${quote.pincode}`}
-                    </p>
-                    <ul className="max-h-64 overflow-y-auto">
-                      {quote.couriers.map((c) => {
-                        const isSelected = selectedCourierId === c.courierCompanyId;
-                        return (
-                          <li key={c.courierCompanyId}>
-                            <label
-                              className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors ${
-                                isSelected ? "bg-gold/5" : "hover:bg-bone/5"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="courier"
-                                checked={isSelected}
-                                onChange={() => setSelectedCourierId(c.courierCompanyId)}
-                                className="accent-gold"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-body text-bone text-sm truncate">
-                                  {c.courierName}
-                                  {c.recommended ? (
-                                    <span className="ml-2 text-[9px] uppercase tracking-[0.15em] text-gold">
-                                      recommended
-                                    </span>
-                                  ) : null}
-                                </p>
-                                {c.etdDays ? (
-                                  <p className="text-[10px] text-bone-dim">
-                                    ~{c.etdDays} day{c.etdDays === 1 ? "" : "s"}
-                                  </p>
-                                ) : null}
-                              </div>
-                              <span className="font-display text-bone text-sm">
-                                {formatPrice(c.rate)}
-                              </span>
-                            </label>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                ) : null}
               </div>
               <Field
                 label="Notes (optional)"
@@ -898,14 +718,9 @@ export default function CheckoutClient() {
                   {shipping === 0 ? "Free" : formatPrice(shipping)}
                 </span>
               </div>
-              {selectedCourier && quote && !quote.free ? (
+              {shipping > 0 ? (
                 <p className="text-[10px] text-bone-dim italic">
-                  {selectedCourier.courierName}
-                  {selectedCourier.etdDays ? ` · ~${selectedCourier.etdDays} days` : ""} · to {quote.pincode}
-                </p>
-              ) : shipping > 0 && !quote ? (
-                <p className="text-[10px] text-bone-dim italic">
-                  Add {formatPrice(SHIPPING_THRESHOLD - discountedSubtotal)} more for free shipping · or enter your PIN above for live courier rates.
+                  Add {formatPrice(SHIPPING_THRESHOLD - discountedSubtotal)} more to your cart for free shipping.
                 </p>
               ) : null}
 
