@@ -68,7 +68,7 @@ export async function POST(req: Request) {
   }
   if (
     typeof category !== "string" ||
-    !["rings", "chains", "keychains", "bracelets"].includes(category)
+    !["rings", "chains", "keychains", "bracelets", "earbuds"].includes(category)
   ) {
     return NextResponse.json({ error: "Bad category" }, { status: 400 });
   }

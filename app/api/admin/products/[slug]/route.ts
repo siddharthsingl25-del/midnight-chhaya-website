@@ -33,7 +33,7 @@ export async function PUT(req: Request, { params }: Params) {
   if (typeof body.name === "string") patch.name = body.name.trim();
   if (
     typeof body.category === "string" &&
-    ["rings", "chains", "keychains", "bracelets"].includes(body.category)
+    ["rings", "chains", "keychains", "bracelets", "earbuds"].includes(body.category)
   ) {
     patch.category = body.category;
   }
