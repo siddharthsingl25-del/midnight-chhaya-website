@@ -20,6 +20,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getAllProducts, getChain } from "@/lib/catalog";
 import {
   ACTIVE_OFFER,
+  COD_CHARGE,
   computeBogoDiscount,
   computeShipping,
   offerActiveAt,
@@ -37,6 +38,10 @@ type Body = {
   };
   /** Optional abandoned-cart recovery code (BACK10-XXXXXX). */
   discountCode?: string;
+  /** 'online' (default) or 'cod'. For COD, the Razorpay charge covers
+   * only shipping + the COD fee; the product subtotal is collected
+   * as cash on delivery. */
+  paymentMethod?: "online" | "cod";
 };
 
 export async function POST(req: Request) {
@@ -213,7 +218,18 @@ export async function POST(req: Request) {
   const subtotalPaise = Math.max(0, grossSubtotalPaise - discountPaise - bogoPaise);
   const subtotalInr = subtotalPaise / 100;
   const shippingPaise = computeShipping(subtotalInr) * 100;
-  const amountPaise = subtotalPaise + shippingPaise;
+
+  // Payment method: 'online' bills the full total; 'cod' bills only
+  // shipping + COD fee up front and leaves the product subtotal to be
+  // collected in cash on delivery.
+  const paymentMethod: "online" | "cod" =
+    body.paymentMethod === "cod" ? "cod" : "online";
+  const codChargePaise = paymentMethod === "cod" ? COD_CHARGE * 100 : 0;
+  const totalPaise = subtotalPaise + shippingPaise + codChargePaise;
+  const amountPaise =
+    paymentMethod === "cod"
+      ? shippingPaise + codChargePaise
+      : totalPaise;
 
   // 4. Create the Razorpay order.
   const rzp = new Razorpay({ key_id: keyId, key_secret: keySecret });
@@ -262,7 +278,7 @@ export async function POST(req: Request) {
             })),
             subtotal: Math.round(subtotalPaise / 100),
             shipping: Math.round(shippingPaise / 100),
-            total: Math.round(amountPaise / 100),
+            total: Math.round(totalPaise / 100),
             recovery_code: appliedCode,
             recovery_percent_off: appliedCode ? discountPercent : 10,
           },
@@ -275,6 +291,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       razorpayOrderId: order.id,
       amountPaise,
+      totalPaise,
+      codChargePaise,
+      paymentMethod,
       currency: "INR",
       keyId,
       appliedCode,

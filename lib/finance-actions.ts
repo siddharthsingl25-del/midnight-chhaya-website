@@ -281,7 +281,7 @@ export async function getStatsForRange(
   const [ordersRes, productsRes, chainsRes, expensesRes] = await Promise.all([
     sb
       .from("orders")
-      .select("payment_method, items, subtotal, shipping, total, merchant_cost, packaging_cost")
+      .select("payment_method, items, subtotal, shipping, total, merchant_cost, packaging_cost, prepaid_amount")
       .neq("status", "cancelled")
       .gte("created_at", fromIso)
       .lt("created_at", toIso),
@@ -315,13 +315,14 @@ export async function getStatsForRange(
   let cashOrderCount = 0;
   let onlineOrderCount = 0;
   const orderRows = (ordersRes.data ?? []) as Array<{
-    payment_method: "online" | "cash";
+    payment_method: "online" | "cash" | "cod";
     items: Array<{ slug: string; qty: number; chainId?: string | null }>;
     subtotal: number;
     shipping: number;
     total: number;
     merchant_cost: number | null;
     packaging_cost: number | null;
+    prepaid_amount: number | null;
   }>;
   let packagingCost = 0;
   for (const o of orderRows) {
@@ -332,11 +333,13 @@ export async function getStatsForRange(
     revenue += o.total;
     merchantCost += o.merchant_cost ?? 0;
     packagingCost += o.packaging_cost ?? PACKAGING_COST_PER_ORDER;
-    if (o.payment_method === "online") {
-      gatewayFees += Math.round(o.total * RAZORPAY_FEE_RATE);
-      onlineOrderCount++;
-    } else {
+    if (o.payment_method === "cash") {
       cashOrderCount++;
+    } else {
+      // online + cod both pay Razorpay's 2% on the prepaid amount.
+      const chargeBase = o.prepaid_amount ?? o.total;
+      gatewayFees += Math.round(chargeBase * RAZORPAY_FEE_RATE);
+      onlineOrderCount++;
     }
     for (const it of o.items ?? []) {
       const c = costBySlug.get(it.slug);

@@ -132,6 +132,12 @@ export function computeShipping(subtotal: number): number {
  * average packaging cost differs. */
 export const PACKAGING_COST_PER_ORDER = 12.5;
 
+/** Flat cash-on-delivery charge added to the customer's total when they
+ * pick COD. The customer prepays this + shipping via Razorpay; the
+ * product subtotal is paid in cash to the courier on delivery. Cover
+ * fake orders + courier's COD collection fee. */
+export const COD_CHARGE = 250;
+
 /** Expense categories that affect net profit. The other categories
  * (restock, shipping, packaging) are tracking-only:
  *   - restock = buying inventory; the cost flows in via COGS per unit

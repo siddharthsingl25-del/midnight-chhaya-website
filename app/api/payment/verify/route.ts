@@ -48,6 +48,13 @@ type Body = {
   /** Optional fields persisted on the order row for merchant lookup. */
   instagram?: string;
   notes?: string;
+  /** 'online' (full prepaid) or 'cod' (partial prepaid, rest on delivery). */
+  paymentMethod?: "online" | "cod";
+  /** Amount actually charged via Razorpay (in INR). For COD this is
+   * shipping + COD fee; for online it's the full order total. */
+  prepaidAmount?: number;
+  /** Amount the customer will pay to the courier in cash (COD only). */
+  amountDueOnDelivery?: number;
 };
 
 export async function POST(req: Request) {
@@ -217,11 +224,19 @@ export async function POST(req: Request) {
   // already paid, so we never want to error out here.
   let orderNumber: string = razorpay_payment_id;
   if (body.snapshot) {
+    const isCod = body.paymentMethod === "cod";
+    const codNote = isCod
+      ? `COD · prepaid ₹${body.prepaidAmount ?? 0} · balance ₹${body.amountDueOnDelivery ?? body.snapshot.subtotal} due to courier on delivery.`
+      : "";
+    const combinedNotes = [codNote, body.notes ?? ""].filter(Boolean).join(" · ");
+
     const { data: orderRow, error: orderErr } = await sb
       .from("orders")
       .insert({
         razorpay_payment_id,
         razorpay_order_id,
+        payment_method: isCod ? "cod" : "online",
+        prepaid_amount: body.prepaidAmount ?? body.snapshot.total,
         customer_name: body.snapshot.customer.name ?? "",
         customer_email: body.snapshot.customer.email ?? "",
         customer_phone: body.snapshot.customer.phone ?? "",
@@ -231,7 +246,7 @@ export async function POST(req: Request) {
         subtotal: body.snapshot.subtotal,
         shipping: body.snapshot.shipping,
         total: body.snapshot.total,
-        notes: body.notes ?? "",
+        notes: combinedNotes,
       })
       .select("order_number")
       .single();
@@ -249,15 +264,19 @@ export async function POST(req: Request) {
       (body.titleSummary || "Paid order").replace(/[^\x20-\x7E]/g, "") ||
       "Paid order";
     const asciiTitle = `${orderNumber} - ${asciiTitleSummary}`;
+    const isCod = body.paymentMethod === "cod";
+    const codLine = isCod
+      ? `\nCOD - collect Rs${body.amountDueOnDelivery ?? body.snapshot?.subtotal ?? "?"} cash on delivery.\n`
+      : "";
     await fetch(`https://ntfy.sh/${SITE.notifyTopic}`, {
       method: "POST",
       headers: {
-        Title: asciiTitle,
+        Title: (isCod ? "COD " : "") + asciiTitle,
         Priority: "high",
-        Tags: "shopping_bags,sparkles",
+        Tags: isCod ? "package,money_with_wings" : "shopping_bags,sparkles",
       },
       body:
-        `Order: ${orderNumber}\nPayment ID: ${razorpay_payment_id}\n\n` +
+        `Order: ${orderNumber}\nPayment ID: ${razorpay_payment_id}${codLine}\n` +
         (body.orderText ?? "(no order text)"),
     });
   } catch {

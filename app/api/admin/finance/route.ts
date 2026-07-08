@@ -36,7 +36,8 @@ type OrderRow = {
   created_at: string;
   customer_name: string;
   customer_instagram: string;
-  payment_method: "online" | "cash";
+  payment_method: "online" | "cash" | "cod";
+  prepaid_amount: number | null;
   items: Array<{
     slug: string;
     name: string;
@@ -69,7 +70,7 @@ export async function GET(req: Request) {
     sb
       .from("orders")
       .select(
-        "id, order_number, created_at, customer_name, customer_instagram, payment_method, items, subtotal, shipping, total, merchant_cost, packaging_cost, status"
+        "id, order_number, created_at, customer_name, customer_instagram, payment_method, prepaid_amount, items, subtotal, shipping, total, merchant_cost, packaging_cost, status"
       )
       .neq("status", "cancelled")
       .order("created_at", { ascending: false })
@@ -125,7 +126,9 @@ export async function GET(req: Request) {
     }
     const merchantCost = o.merchant_cost ?? 0;
     const gatewayFee =
-      o.payment_method === "online" ? Math.round(o.total * RAZORPAY_FEE_RATE) : 0;
+      o.payment_method === "cash"
+        ? 0
+        : Math.round((o.prepaid_amount ?? o.total) * RAZORPAY_FEE_RATE);
     // Shipping the customer paid is real revenue. Courier cost lives
     // on merchant_cost (set via /ship or the cash form). Packaging is
     // per-order: order.packaging_cost overrides the global default

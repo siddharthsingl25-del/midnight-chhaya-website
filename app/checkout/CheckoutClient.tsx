@@ -31,6 +31,7 @@ import { useCart } from "@/lib/cart";
 import { useStockRefresh } from "@/lib/stock";
 import {
   ACTIVE_OFFER,
+  COD_CHARGE,
   computeBogoDiscount,
   computeShipping,
   formatPrice,
@@ -104,7 +105,15 @@ export default function CheckoutClient() {
   const codeDiscount = appliedCode?.amountOff ?? 0;
   const discountedSubtotal = Math.max(0, subtotal - bogoAmount - codeDiscount);
   const shipping = computeShipping(discountedSubtotal);
-  const grandTotal = discountedSubtotal + shipping;
+  const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
+  const codCharge = paymentMethod === "cod" ? COD_CHARGE : 0;
+  const grandTotal = discountedSubtotal + shipping + codCharge;
+  /* For COD, only shipping + COD fee are prepaid via Razorpay.
+   * The product subtotal is collected in cash on delivery. */
+  const amountDueNow =
+    paymentMethod === "cod" ? shipping + codCharge : grandTotal;
+  const amountDueOnDelivery =
+    paymentMethod === "cod" ? discountedSubtotal : 0;
   const [form, setForm] = useState<Form>(EMPTY);
   const [status, setStatus] = useState<Status>("idle");
   const [orderText, setOrderText] = useState<string>("");
@@ -273,6 +282,9 @@ export default function CheckoutClient() {
             snapshot,
             instagram: form.instagram,
             notes: form.notes,
+            paymentMethod,
+            prepaidAmount: amountDueNow,
+            amountDueOnDelivery,
           }),
         });
         if (!verifyRes.ok) {
@@ -327,6 +339,7 @@ export default function CheckoutClient() {
             email: form.email,
           },
           discountCode: appliedCode?.code,
+          paymentMethod,
         }),
       });
       if (!res.ok) {
@@ -625,7 +638,9 @@ export default function CheckoutClient() {
                 transition={{ duration: 0.35, ease: easeCinematic }}
                 className="eyebrow text-ink"
               >
-                {status === "submitting" ? "Opening payment…" : `Pay · ${formatPrice(grandTotal)}`}
+                {status === "submitting"
+                  ? "Opening payment…"
+                  : `Pay · ${formatPrice(amountDueNow)}${paymentMethod === "cod" ? " now" : ""}`}
               </motion.span>
             </AnimatePresence>
           </button>
@@ -724,6 +739,46 @@ export default function CheckoutClient() {
                 </p>
               ) : null}
 
+              {paymentMethod === "cod" ? (
+                <div className="flex items-baseline justify-between">
+                  <span className="eyebrow text-bone-dim">COD charge</span>
+                  <span className="text-sm text-bone">+{formatPrice(codCharge)}</span>
+                </div>
+              ) : null}
+
+              {/* Payment method choice */}
+              <div className="mt-3 pt-3 border-t border-bone/10 flex flex-col gap-2">
+                <span className="eyebrow text-bone-dim">Payment method</span>
+                <label className={`flex items-start gap-3 p-3 border cursor-pointer transition-colors ${paymentMethod === "online" ? "border-gold bg-gold/5" : "border-bone/15 hover:border-bone/30"}`}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    checked={paymentMethod === "online"}
+                    onChange={() => setPaymentMethod("online")}
+                    className="accent-gold mt-1"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-body text-bone text-sm">Prepaid (online)</p>
+                    <p className="text-[10px] text-bone-dim">Pay the full amount now via Razorpay.</p>
+                  </div>
+                </label>
+                <label className={`flex items-start gap-3 p-3 border cursor-pointer transition-colors ${paymentMethod === "cod" ? "border-gold bg-gold/5" : "border-bone/15 hover:border-bone/30"}`}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    checked={paymentMethod === "cod"}
+                    onChange={() => setPaymentMethod("cod")}
+                    className="accent-gold mt-1"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-body text-bone text-sm">
+                      Cash on Delivery <span className="text-bone-dim">· +{formatPrice(COD_CHARGE)}</span>
+                    </p>
+                    <p className="text-[10px] text-bone-dim">Prepay {formatPrice(shipping + COD_CHARGE)} now (shipping + COD fee). Pay {formatPrice(discountedSubtotal)} in cash to the courier on delivery.</p>
+                  </div>
+                </label>
+              </div>
+
               {/* Discount code input — collapsed when one is applied. */}
               {!appliedCode ? (
                 <div className="mt-3 flex flex-col gap-1">
@@ -761,6 +816,23 @@ export default function CheckoutClient() {
                   {formatPrice(grandTotal)}
                 </span>
               </div>
+
+              {paymentMethod === "cod" ? (
+                <div className="mt-3 p-3 border border-gold/30 bg-gold/5 flex flex-col gap-1">
+                  <div className="flex items-baseline justify-between">
+                    <span className="eyebrow text-gold text-[10px]">Pay now</span>
+                    <span className="font-body text-bone text-base">
+                      {formatPrice(amountDueNow)}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="eyebrow text-bone-dim text-[10px]">On delivery</span>
+                    <span className="font-body text-bone-dim text-base">
+                      {formatPrice(amountDueOnDelivery)}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </aside>
