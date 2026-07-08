@@ -786,7 +786,7 @@ export default function CheckoutClient() {
                       type="text"
                       value={discountCode}
                       onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                      placeholder="Discount code"
+                      placeholder="Discount code (if any)"
                       className="flex-1 bg-transparent border border-bone/20 px-3 py-2
                                  font-body text-bone text-sm uppercase tracking-wide
                                  placeholder:text-bone-dim/50 placeholder:normal-case placeholder:tracking-normal
