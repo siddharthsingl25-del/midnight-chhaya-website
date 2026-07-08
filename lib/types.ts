@@ -183,3 +183,12 @@ export type Expense = {
   occurredAt: string;
   createdAt: string;
 };
+
+/* ─── Reviews ────────────────────────────────────────────────────────── */
+
+export type Review = {
+  id: number;
+  imageUrl: string;
+  displayOrder: number;
+  createdAt: string;
+};
