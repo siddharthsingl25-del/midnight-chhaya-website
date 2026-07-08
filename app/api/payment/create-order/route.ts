@@ -217,19 +217,18 @@ export async function POST(req: Request) {
 
   const subtotalPaise = Math.max(0, grossSubtotalPaise - discountPaise - bogoPaise);
   const subtotalInr = subtotalPaise / 100;
-  const shippingPaise = computeShipping(subtotalInr) * 100;
 
-  // Payment method: 'online' bills the full total; 'cod' bills only
-  // shipping + COD fee up front and leaves the product subtotal to be
-  // collected in cash on delivery.
+  // Payment method: 'online' bills subtotal + shipping upfront.
+  // 'cod' bills ONLY the flat COD fee upfront — no shipping — and
+  // leaves the product subtotal to be collected in cash on delivery.
   const paymentMethod: "online" | "cod" =
     body.paymentMethod === "cod" ? "cod" : "online";
+  const shippingPaise =
+    paymentMethod === "cod" ? 0 : computeShipping(subtotalInr) * 100;
   const codChargePaise = paymentMethod === "cod" ? COD_CHARGE * 100 : 0;
   const totalPaise = subtotalPaise + shippingPaise + codChargePaise;
   const amountPaise =
-    paymentMethod === "cod"
-      ? shippingPaise + codChargePaise
-      : totalPaise;
+    paymentMethod === "cod" ? codChargePaise : totalPaise;
 
   // 4. Create the Razorpay order.
   const rzp = new Razorpay({ key_id: keyId, key_secret: keySecret });

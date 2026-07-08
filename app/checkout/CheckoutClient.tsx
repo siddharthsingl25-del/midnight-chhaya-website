@@ -104,14 +104,13 @@ export default function CheckoutClient() {
   const [codeChecking, setCodeChecking] = useState(false);
   const codeDiscount = appliedCode?.amountOff ?? 0;
   const discountedSubtotal = Math.max(0, subtotal - bogoAmount - codeDiscount);
-  const shipping = computeShipping(discountedSubtotal);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
+  /* COD skips shipping entirely — the customer just pays the ₹250 COD fee
+   * upfront and the product subtotal in cash on delivery. */
+  const shipping = paymentMethod === "cod" ? 0 : computeShipping(discountedSubtotal);
   const codCharge = paymentMethod === "cod" ? COD_CHARGE : 0;
   const grandTotal = discountedSubtotal + shipping + codCharge;
-  /* For COD, only shipping + COD fee are prepaid via Razorpay.
-   * The product subtotal is collected in cash on delivery. */
-  const amountDueNow =
-    paymentMethod === "cod" ? shipping + codCharge : grandTotal;
+  const amountDueNow = paymentMethod === "cod" ? codCharge : grandTotal;
   const amountDueOnDelivery =
     paymentMethod === "cod" ? discountedSubtotal : 0;
   const [form, setForm] = useState<Form>(EMPTY);
@@ -774,7 +773,7 @@ export default function CheckoutClient() {
                     <p className="font-body text-bone text-sm">
                       Cash on Delivery <span className="text-bone-dim">· +{formatPrice(COD_CHARGE)}</span>
                     </p>
-                    <p className="text-[10px] text-bone-dim">Prepay {formatPrice(shipping + COD_CHARGE)} now (shipping + COD fee). Pay {formatPrice(discountedSubtotal)} in cash to the courier on delivery.</p>
+                    <p className="text-[10px] text-bone-dim">Prepay {formatPrice(COD_CHARGE)} now (COD fee). Pay {formatPrice(discountedSubtotal)} in cash to the courier on delivery. No shipping charge.</p>
                   </div>
                 </label>
               </div>
