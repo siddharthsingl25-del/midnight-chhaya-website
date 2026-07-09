@@ -192,14 +192,16 @@ export default function CollectionsGrid() {
         </AnimatePresence>
 
         {items.length === 0 ? (
-          active === "bracelets" || active === "rings" || active === "earbuds" ? (
+          active === "bracelets" || active === "rings" || active === "earbuds" || active === "glasses" ? (
             <div className="text-center py-32">
               <span className="eyebrow block mb-6 text-gold">
                 {active === "bracelets"
                   ? "Bracelets"
                   : active === "rings"
                     ? "Rings"
-                    : "Chrome Earbuds"}
+                    : active === "glasses"
+                      ? "Glasses"
+                      : "Chrome Earbuds"}
               </span>
               <p className="font-display uppercase text-bone text-[clamp(2rem,6vw,4rem)] leading-[1.05]">
                 Coming soon.

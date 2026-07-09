@@ -77,6 +77,7 @@ export const NAV: readonly NavItem[] = [
   { label: "Chains",    href: "/collections?cat=chains" },
   { label: "Keychains", href: "/collections?cat=keychains" },
   { label: "Earbuds",   href: "/collections?cat=earbuds" },
+  { label: "Glasses",   href: "/collections?cat=glasses" },
   { label: "Rings",     href: "/collections?cat=rings" },
 ];
 
