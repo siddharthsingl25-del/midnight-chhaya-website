@@ -255,6 +255,60 @@ export async function POST(req: Request) {
       .single();
     if (orderErr) {
       console.error("[orders.insert]", razorpay_payment_id, orderErr.message);
+      // Order row failed to save (schema drift, connectivity, RLS, etc).
+      // Roll back the stock we already decremented so inventory doesn't
+      // drift out of sync with the orders ledger. The customer has
+      // already been charged, so we also fire a MANUAL-review push and
+      // return a 500 so the client's success screen doesn't lie.
+      for (const { slug, qty } of appliedProducts) {
+        const { data } = await sb
+          .from("inventory")
+          .select("stock")
+          .eq("slug", slug)
+          .maybeSingle();
+        const next = (data?.stock ?? 0) + qty;
+        await sb
+          .from("inventory")
+          .upsert({ slug, stock: next, updated_at: new Date().toISOString() });
+      }
+      for (const { id, qty } of appliedChains) {
+        const { data } = await sb
+          .from("chain_options")
+          .select("stock")
+          .eq("id", id)
+          .maybeSingle();
+        const next = (data?.stock ?? 0) + qty;
+        await sb
+          .from("chain_options")
+          .update({ stock: next, updated_at: new Date().toISOString() })
+          .eq("id", id);
+      }
+      try {
+        await fetch(`https://ntfy.sh/${SITE.notifyTopic}`, {
+          method: "POST",
+          headers: {
+            Title: `MANUAL REVIEW - order-row insert failed (${razorpay_payment_id})`,
+            Priority: "max",
+            Tags: "warning,money_with_wings",
+          },
+          body:
+            `Payment succeeded but the orders row could not be saved.\n` +
+            `Reason: ${orderErr.message}\n\n` +
+            `Payment ID: ${razorpay_payment_id}\n` +
+            `Razorpay order: ${razorpay_order_id}\n\n` +
+            (body.orderText ?? ""),
+        });
+      } catch {
+        /* swallowed */
+      }
+      return NextResponse.json(
+        {
+          error: "Order save failed",
+          paymentId: razorpay_payment_id,
+          details: orderErr.message,
+        },
+        { status: 500 }
+      );
     } else if (orderRow?.order_number) {
       orderNumber = orderRow.order_number;
     }
