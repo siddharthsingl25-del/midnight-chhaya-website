@@ -160,18 +160,32 @@ export default function ProductCard({
         >
           <span className="eyebrow text-[10px]">Sold out</span>
         </div>
-      ) : product.category === "chains" && hasChains ? (
-        <Link
-          href={`/collections/${product.slug}`}
-          data-cursor="Choose chain"
-          aria-label={`Choose chain for ${product.name}`}
-          className="mt-2 sm:mt-3 w-full inline-flex items-center justify-center gap-2 py-2.5 sm:py-3
-                     bg-gold text-ink
-                     hover:bg-gold-soft transition-colors duration-300"
-        >
-          <span className="eyebrow text-[10px] sm:text-xs text-ink">Choose chain</span>
-          <ArrowRight size={14} strokeWidth={1.75} />
-        </Link>
+      ) : (product.variantKind ??
+          (product.category === "chains" && hasChains ? "chain" : null)) ? (
+        (() => {
+          const vk =
+            product.variantKind ??
+            (product.category === "chains" ? "chain" : null);
+          const label =
+            vk === "car"
+              ? "Choose car"
+              : vk === "color"
+                ? "Choose colour"
+                : "Choose chain";
+          return (
+            <Link
+              href={`/collections/${product.slug}`}
+              data-cursor={label}
+              aria-label={`${label} for ${product.name}`}
+              className="mt-2 sm:mt-3 w-full inline-flex items-center justify-center gap-2 py-2.5 sm:py-3
+                         bg-gold text-ink
+                         hover:bg-gold-soft transition-colors duration-300"
+            >
+              <span className="eyebrow text-[10px] sm:text-xs text-ink">{label}</span>
+              <ArrowRight size={14} strokeWidth={1.75} />
+            </Link>
+          );
+        })()
       ) : productExhausted ? (
         <div
           aria-label={`${product.name} max in cart`}

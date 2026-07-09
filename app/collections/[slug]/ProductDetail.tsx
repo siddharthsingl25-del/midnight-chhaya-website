@@ -44,7 +44,7 @@ export default function ProductDetail({
    * Backward-compat fallback: chain-category products default to the
    * chain picker when variantKind is null, so existing chain pendants
    * keep their picker without a data migration. */
-  const variantKind: "chain" | "car" | null =
+  const variantKind: "chain" | "car" | "color" | null =
     product.variantKind ?? (product.category === "chains" ? "chain" : null);
   const variantPool = variantKind
     ? chains.filter((c) => c.kind === variantKind)

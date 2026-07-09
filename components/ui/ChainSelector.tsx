@@ -30,15 +30,26 @@ export default function ChainSelector({
 }: {
   value: string | null;
   onChange: (id: string) => void;
-  /** Which variant pool to show. 'chain' for necklaces, 'car' for keychains. */
-  kind?: "chain" | "car";
+  /** Which variant pool to show. 'chain' = necklaces, 'car' = keychain
+   * livery, 'color' = colourways (glasses etc). */
+  kind?: "chain" | "car" | "color";
 }) {
   const ALL = useChains();
   const CHAIN_OPTIONS = ALL.filter((c) => c.kind === kind);
   const [preview, setPreview] = useState<ChainOption | null>(null);
 
-  const headerLabel = kind === "car" ? "Choose a car" : "Choose a chain";
-  const previewSelectLabel = kind === "car" ? "Select this car" : "Select this chain";
+  const headerLabel =
+    kind === "car"
+      ? "Choose a car"
+      : kind === "color"
+        ? "Choose a colour"
+        : "Choose a chain";
+  const previewSelectLabel =
+    kind === "car"
+      ? "Select this car"
+      : kind === "color"
+        ? "Select this colour"
+        : "Select this chain";
 
   // auto-pick the first IN-STOCK variant on mount, so the cart always
   // has one the customer can actually buy. If everything is sold out,

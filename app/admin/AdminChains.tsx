@@ -20,7 +20,7 @@ export default function AdminChains() {
   const chains = useChains();
   const refresh = useCatalogRefresh();
   const [mode, setMode] = useState<Mode>({ kind: "list" });
-  const [activeKind, setActiveKind] = useState<"chain" | "car">("chain");
+  const [activeKind, setActiveKind] = useState<"chain" | "car" | "color">("chain");
 
   if (mode.kind === "new") {
     return (
@@ -53,12 +53,24 @@ export default function AdminChains() {
   }
 
   const visible = chains.filter((c) => c.kind === activeKind);
-  const isCar = activeKind === "car";
+
+  const kindLabel: Record<"chain" | "car" | "color", string> = {
+    chain: "Chains",
+    car: "Cars",
+    color: "Colours",
+  };
+  const kindHint: Record<"chain" | "car" | "color", string> = {
+    chain:
+      "Chain styles offered at checkout. Customers pick one when adding any chain-category product to cart.",
+    car: "Car designs offered on the race-car keychain product. Customers pick one when adding it to cart.",
+    color:
+      "Colourways offered on products with a colour picker (glasses, etc). Customers pick one before adding to cart.",
+  };
 
   return (
     <>
       <div className="flex items-center gap-2 mb-4">
-        {(["chain", "car"] as const).map((k) => (
+        {(["chain", "car", "color"] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -70,17 +82,14 @@ export default function AdminChains() {
                 : "border-bone/20 text-bone-dim hover:text-bone",
             ].join(" ")}
           >
-            {k === "chain" ? "Chains" : "Cars"}
+            {kindLabel[k]}
           </button>
         ))}
       </div>
 
       <div className="flex items-center justify-between gap-4 mb-6">
         <p className="font-serif italic text-bone-dim text-sm">
-          {isCar
-            ? "Car designs offered on the race-car keychain product. Customers pick one when adding it to cart."
-            : "Chain styles offered at checkout. Customers pick one when adding any chain-category product to cart."}
-          {" "}Use the +/- to adjust quantity.
+          {kindHint[activeKind]} Use the +/- to adjust quantity.
         </p>
         <button
           type="button"
@@ -88,7 +97,9 @@ export default function AdminChains() {
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-gold text-ink flex-shrink-0"
         >
           <Plus size={14} strokeWidth={1.75} />
-          <span className="eyebrow text-[10px] text-ink">New {isCar ? "car" : "chain"}</span>
+          <span className="eyebrow text-[10px] text-ink">
+            New {activeKind === "car" ? "car" : activeKind === "color" ? "colour" : "chain"}
+          </span>
         </button>
       </div>
 
@@ -279,7 +290,7 @@ function ChainForm({
 }: {
   mode: "create" | "edit";
   chain?: ChainOption;
-  defaultKind: "chain" | "car";
+  defaultKind: "chain" | "car" | "color";
   onDone: () => void | Promise<void>;
   onCancel: () => void;
 }) {
@@ -296,7 +307,7 @@ function ChainForm({
   const [stock, setStock] = useState<string>(
     chain ? String(chain.stock ?? 0) : ""
   );
-  const [variantKind] = useState<"chain" | "car">(chain?.kind ?? defaultKind);
+  const [variantKind] = useState<"chain" | "car" | "color">(chain?.kind ?? defaultKind);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");

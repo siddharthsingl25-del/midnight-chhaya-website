@@ -35,7 +35,7 @@ export type Product = {
   forWomen: boolean;
   /** Which variant picker (if any) to show on the product detail page.
    * null = no picker. */
-  variantKind: "chain" | "car" | null;
+  variantKind: "chain" | "car" | "color" | null;
   /** Optional short text overlay on the product card (e.g. "NEW", "BEST SELLER"). */
   badgeText: string | null;
   /** Optional image overlay (URL) — takes precedence over badgeText. */
@@ -65,8 +65,9 @@ export type ChainOption = {
   costPrice: number | null;
   /** Physical stock count — mirrors product inventory. 0 = sold out. */
   stock: number;
-  /** Variant kind. Chains attach to necklaces, cars to keychains. */
-  kind: "chain" | "car";
+  /** Variant kind. Chains attach to necklaces, cars to keychains,
+   * colours to any product with multiple colourways (glasses, etc). */
+  kind: "chain" | "car" | "color";
   displayOrder: number;
 };
 
@@ -116,7 +117,9 @@ export function productFromRow(row: ProductRow): Product {
     featured: !!row.featured,
     forWomen: !!row.for_women,
     variantKind:
-      row.variant_kind === "chain" || row.variant_kind === "car"
+      row.variant_kind === "chain" ||
+      row.variant_kind === "car" ||
+      row.variant_kind === "color"
         ? row.variant_kind
         : null,
     badgeText: row.badge_text?.trim() || null,
@@ -150,7 +153,8 @@ export function chainFromRow(row: ChainRow): ChainOption {
     priceModifier: row.price_modifier ?? 0,
     costPrice: row.cost_price ?? null,
     stock: row.stock ?? 0,
-    kind: row.kind === "car" ? "car" : "chain",
+    kind:
+      row.kind === "car" ? "car" : row.kind === "color" ? "color" : "chain",
     displayOrder: row.display_order ?? 0,
   };
 }

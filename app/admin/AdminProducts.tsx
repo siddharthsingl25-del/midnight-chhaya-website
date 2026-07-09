@@ -370,7 +370,7 @@ function ProductForm({
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [exclusive, setExclusive] = useState(product?.exclusive ?? false);
   const [forWomen, setForWomen] = useState(product?.forWomen ?? false);
-  const [variantKind, setVariantKind] = useState<"" | "chain" | "car">(
+  const [variantKind, setVariantKind] = useState<"" | "chain" | "car" | "color">(
     product?.variantKind ?? ""
   );
   const [badgeText, setBadgeText] = useState(product?.badgeText ?? "");
@@ -632,7 +632,7 @@ function ProductForm({
             </span>
             <select
               value={variantKind}
-              onChange={(e) => setVariantKind(e.target.value as "" | "chain" | "car")}
+              onChange={(e) => setVariantKind(e.target.value as "" | "chain" | "car" | "color")}
               className="w-full bg-transparent border-b-2 border-bone/30 px-1 py-3
                          font-body text-bone text-lg
                          focus:outline-none focus:border-gold transition-colors"
@@ -640,6 +640,7 @@ function ProductForm({
               <option value="" className="bg-ink text-bone">No picker</option>
               <option value="chain" className="bg-ink text-bone">Chains (customer picks a chain)</option>
               <option value="car" className="bg-ink text-bone">Cars (customer picks a car design)</option>
+              <option value="color" className="bg-ink text-bone">Colours (customer picks a colour, e.g. Silver / Gold)</option>
             </select>
             <p className="mt-1 text-[10px] text-bone-dim font-body">
               Choose what the customer picks on this product&apos;s detail page. Most products = No picker. Only set this for products where the customer should choose a specific variant.

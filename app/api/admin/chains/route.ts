@@ -37,7 +37,8 @@ export async function POST(req: Request) {
   if (typeof image !== "string" || !image) {
     return NextResponse.json({ error: "Missing image" }, { status: 400 });
   }
-  const safeKind = kind === "car" ? "car" : "chain";
+  const safeKind =
+    kind === "car" ? "car" : kind === "color" ? "color" : "chain";
 
   const { data: lastRow } = await supabaseAdmin()
     .from("chain_options")

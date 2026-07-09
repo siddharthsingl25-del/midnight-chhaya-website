@@ -64,7 +64,11 @@ export async function PUT(req: Request, { params }: Params) {
   if (typeof body.featured === "boolean") patch.featured = body.featured;
   if (typeof body.for_women === "boolean") patch.for_women = body.for_women;
   if (body.variant_kind === null || body.variant_kind === "") patch.variant_kind = null;
-  else if (body.variant_kind === "chain" || body.variant_kind === "car") {
+  else if (
+    body.variant_kind === "chain" ||
+    body.variant_kind === "car" ||
+    body.variant_kind === "color"
+  ) {
     patch.variant_kind = body.variant_kind;
   }
   if (body.badge_text === null || body.badge_text === "") patch.badge_text = null;
