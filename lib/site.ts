@@ -120,7 +120,7 @@ export function formatPrice(price: number | null): string {
 /** Shipping is free above this subtotal threshold (INR). */
 export const SHIPPING_THRESHOLD = 999;
 /** Flat shipping fee when subtotal is below the threshold (INR). */
-export const SHIPPING_FEE = 100;
+export const SHIPPING_FEE = 60;
 
 /** Shipping fee for a given subtotal. 0 once the threshold is met. */
 export function computeShipping(subtotal: number): number {
