@@ -284,6 +284,7 @@ export default function CheckoutClient() {
             paymentMethod,
             prepaidAmount: amountDueNow,
             amountDueOnDelivery,
+            appliedPromoCode: createData.appliedPromoCode ? createData.appliedCode : null,
           }),
         });
         if (!verifyRes.ok) {
@@ -320,6 +321,8 @@ export default function CheckoutClient() {
       amountPaise: number;
       currency: string;
       keyId: string;
+      appliedCode?: string | null;
+      appliedPromoCode?: boolean;
     };
     try {
       const res = await fetch("/api/payment/create-order", {

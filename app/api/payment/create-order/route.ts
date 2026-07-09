@@ -176,29 +176,59 @@ export async function POST(req: Request) {
   // subtotal so we don't accidentally cross the free-shipping line
   // because of the discount.
   let discountPercent = 0;
+  let discountPaise = 0;
   let appliedCode: string | null = null;
+  let appliedPromoCode = false;
   if (body.discountCode) {
     const code = body.discountCode.trim().toUpperCase();
-    const { data: codeRow } = await supabaseAdmin()
-      .from("pending_orders")
-      .select("recovery_code, recovery_percent_off, recovered_at, completed_at")
-      .eq("recovery_code", code)
-      .is("completed_at", null)
+    // 1. Try the merchant-issued promo_codes table first.
+    const { data: promo } = await supabaseAdmin()
+      .from("promo_codes")
+      .select("code, flat_amount_off, percent_off, min_subtotal, max_uses, times_used, active")
+      .eq("code", code)
       .maybeSingle();
-    if (codeRow) {
-      const recovered = codeRow.recovered_at
-        ? new Date(codeRow.recovered_at).getTime()
-        : null;
-      const expired =
-        recovered !== null && Date.now() > recovered + 7 * 24 * 3600 * 1000;
-      if (!expired) {
-        discountPercent = Math.max(0, Math.min(50, codeRow.recovery_percent_off ?? 10));
+    if (promo && promo.active) {
+      const usable =
+        promo.max_uses == null || promo.times_used < promo.max_uses;
+      const meetsMin = promo.min_subtotal <= grossSubtotalPaise / 100;
+      if (usable && meetsMin) {
+        const flatPaise = (promo.flat_amount_off ?? 0) * 100;
+        const percentPaise = Math.round(
+          (grossSubtotalPaise * (promo.percent_off ?? 0)) / 100
+        );
+        discountPaise = Math.min(grossSubtotalPaise, flatPaise + percentPaise);
+        discountPercent = promo.percent_off ?? 0;
         appliedCode = code;
+        appliedPromoCode = true;
+      }
+    }
+    // 2. Fall back to the per-cart abandoned-cart recovery codes.
+    if (!appliedCode) {
+      const { data: codeRow } = await supabaseAdmin()
+        .from("pending_orders")
+        .select("recovery_code, recovery_percent_off, recovered_at, completed_at")
+        .eq("recovery_code", code)
+        .is("completed_at", null)
+        .maybeSingle();
+      if (codeRow) {
+        const recovered = codeRow.recovered_at
+          ? new Date(codeRow.recovered_at).getTime()
+          : null;
+        const expired =
+          recovered !== null && Date.now() > recovered + 7 * 24 * 3600 * 1000;
+        if (!expired) {
+          discountPercent = Math.max(
+            0,
+            Math.min(50, codeRow.recovery_percent_off ?? 10)
+          );
+          discountPaise = Math.round(
+            (grossSubtotalPaise * discountPercent) / 100
+          );
+          appliedCode = code;
+        }
       }
     }
   }
-
-  const discountPaise = Math.round((grossSubtotalPaise * discountPercent) / 100);
 
   // 3c. Apply the live BOGO offer when it's active. Server-side gate
   // checks the deadline so a stale client can't claim an expired deal.
@@ -296,6 +326,7 @@ export async function POST(req: Request) {
       currency: "INR",
       keyId,
       appliedCode,
+      appliedPromoCode,
       discountPercent,
       discountPaise,
     });

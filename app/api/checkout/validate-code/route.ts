@@ -32,7 +32,42 @@ export async function POST(req: Request) {
     return NextResponse.json({ valid: false, error: "Invalid cart total" });
   }
 
-  const { data, error } = await supabaseAdmin()
+  const sb = supabaseAdmin();
+
+  // 1. Check the promo_codes table (merchant-issued public codes).
+  const { data: promo } = await sb
+    .from("promo_codes")
+    .select("code, flat_amount_off, percent_off, min_subtotal, max_uses, times_used, active")
+    .eq("code", code)
+    .maybeSingle();
+  if (promo) {
+    if (!promo.active) {
+      return NextResponse.json({ valid: false, error: "Code is not active" });
+    }
+    if (promo.max_uses != null && promo.times_used >= promo.max_uses) {
+      return NextResponse.json({ valid: false, error: "Code already used" });
+    }
+    if (promo.min_subtotal > subtotal) {
+      return NextResponse.json({
+        valid: false,
+        error: `Add ₹${promo.min_subtotal - subtotal} more to use this code`,
+      });
+    }
+    const flat = promo.flat_amount_off ?? 0;
+    const percent = promo.percent_off ?? 0;
+    const amountOff = Math.min(
+      subtotal,
+      flat + Math.round((subtotal * percent) / 100)
+    );
+    return NextResponse.json({
+      valid: true,
+      percentOff: percent,
+      amountOff,
+    });
+  }
+
+  // 2. Fall back to the per-cart abandoned-cart recovery codes.
+  const { data, error } = await sb
     .from("pending_orders")
     .select("recovery_code, recovery_percent_off, completed_at, recovered_at")
     .eq("recovery_code", code)
@@ -46,7 +81,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ valid: false, error: "Code not found or already used" });
   }
 
-  // Codes expire 7 days after the recovery email was sent.
   if (data.recovered_at) {
     const expires = new Date(data.recovered_at).getTime() + 7 * 24 * 3600 * 1000;
     if (Date.now() > expires) {

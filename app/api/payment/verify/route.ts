@@ -55,6 +55,9 @@ type Body = {
   prepaidAmount?: number;
   /** Amount the customer will pay to the courier in cash (COD only). */
   amountDueOnDelivery?: number;
+  /** Promo code (from promo_codes table) applied to this order. Verify
+   * increments its times_used counter on success. */
+  appliedPromoCode?: string | null;
 };
 
 export async function POST(req: Request) {
@@ -254,6 +257,30 @@ export async function POST(req: Request) {
       console.error("[orders.insert]", razorpay_payment_id, orderErr.message);
     } else if (orderRow?.order_number) {
       orderNumber = orderRow.order_number;
+    }
+  }
+
+  // 3b. Bump the promo code's times_used counter. Non-critical — if
+  // this fails the merchant can manually adjust in Supabase.
+  if (body.appliedPromoCode) {
+    try {
+      const code = body.appliedPromoCode.trim().toUpperCase();
+      const { data: current } = await sb
+        .from("promo_codes")
+        .select("times_used")
+        .eq("code", code)
+        .maybeSingle();
+      if (current) {
+        await sb
+          .from("promo_codes")
+          .update({
+            times_used: (current.times_used ?? 0) + 1,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("code", code);
+      }
+    } catch (e) {
+      console.error("[promo_codes.increment]", e);
     }
   }
 
