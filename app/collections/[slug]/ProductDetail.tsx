@@ -113,37 +113,41 @@ export default function ProductDetail({
           {/* left: image + thumbs. Aspect locked to 945:1110, and on
            * laptop the height is fixed to 78% of viewport height so
            * the full pendant always fits on screen without scrolling.
-           * Width auto-derives from the height via aspect-ratio. */}
-          <div
-            className="w-full lg:w-auto lg:h-[78vh] lg:flex-shrink-0"
-            style={{ aspectRatio: "945 / 1110" }}
-          >
-            <Reveal scale={0.96} y={20} className="block h-full">
-              <div
-                ref={imageRef}
-                className="relative w-full h-full overflow-hidden bg-charcoal"
-              >
-                <motion.div className="absolute inset-0 -top-[4%] -bottom-[4%]" style={{ y: imageY }}>
-                  <Image
-                    key={product.images[active]}
-                    src={product.images[active]}
-                    alt={product.name}
-                    fill
-                    priority
-                    sizes="(min-width:1024px) 945px, 90vw"
-                    className="object-cover"
-                  />
-                </motion.div>
-                {/* corner ticks */}
-                <span className="absolute top-3 left-3 block h-6 w-px bg-gold/70" />
-                <span className="absolute top-3 left-3 block h-px w-6 bg-gold/70" />
-                <span className="absolute bottom-3 right-3 block h-6 w-px bg-gold/70" />
-                <span className="absolute bottom-3 right-3 block h-px w-6 bg-gold/70" />
-              </div>
-            </Reveal>
+           * Width auto-derives from the height via aspect-ratio.
+           * Thumbnails live OUTSIDE the aspect-locked wrapper so they
+           * don't overflow into the next section on mobile. */}
+          <div className="w-full lg:w-auto lg:flex-shrink-0 flex flex-col">
+            <div
+              className="w-full lg:w-auto lg:h-[78vh]"
+              style={{ aspectRatio: "945 / 1110" }}
+            >
+              <Reveal scale={0.96} y={20} className="block h-full">
+                <div
+                  ref={imageRef}
+                  className="relative w-full h-full overflow-hidden bg-charcoal"
+                >
+                  <motion.div className="absolute inset-0 -top-[4%] -bottom-[4%]" style={{ y: imageY }}>
+                    <Image
+                      key={product.images[active]}
+                      src={product.images[active]}
+                      alt={product.name}
+                      fill
+                      priority
+                      sizes="(min-width:1024px) 945px, 90vw"
+                      className="object-cover"
+                    />
+                  </motion.div>
+                  {/* corner ticks */}
+                  <span className="absolute top-3 left-3 block h-6 w-px bg-gold/70" />
+                  <span className="absolute top-3 left-3 block h-px w-6 bg-gold/70" />
+                  <span className="absolute bottom-3 right-3 block h-6 w-px bg-gold/70" />
+                  <span className="absolute bottom-3 right-3 block h-px w-6 bg-gold/70" />
+                </div>
+              </Reveal>
+            </div>
 
             {product.images.length > 1 ? (
-              <div className="mt-4 flex gap-3">
+              <div className="mt-4 flex gap-3 flex-wrap">
                 {product.images.map((src, i) => (
                   <button
                     key={src}
