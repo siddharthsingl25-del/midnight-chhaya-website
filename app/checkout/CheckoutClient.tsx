@@ -830,7 +830,7 @@ export default function CheckoutClient() {
                       className="text-[11px] text-gold text-left mb-1
                                  hover:underline decoration-gold/60 underline-offset-4"
                     >
-                      Use code <span className="font-mono">FIRST10</span> for {first10.percentOff}% off — only for first {first10.usesLeft ?? "few"} people to place an order (min cart {formatPrice(first10.minSubtotal)}).
+                      Use code <span className="font-mono">FIRST10</span> for {first10.percentOff}% off — only for first {first10.usesLeft ?? "few"} people to place an order{first10.minSubtotal > 0 ? ` (min cart ${formatPrice(first10.minSubtotal)})` : ""}.
                     </button>
                   ) : null}
                   <div className="flex gap-2">

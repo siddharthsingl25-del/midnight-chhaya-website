@@ -62,8 +62,9 @@ export default function PromoCodeAnnouncement() {
               First 10 customers get {discountLabel}.
             </h2>
             <p className="font-serif italic text-bone-dim text-base sm:text-lg mt-4 max-w-xl mx-auto">
-              Spend {formatPrice(promo.minSubtotal)} or more and use the code below at
-              checkout. Only for the first 10 customers.
+              {promo.minSubtotal > 0
+                ? `Spend ${formatPrice(promo.minSubtotal)} or more and use the code below at checkout. Only for the first 10 customers.`
+                : "Use the code below at checkout. No minimum cart. Only for the first 10 customers."}
             </p>
 
             <div className="mt-8 inline-flex flex-col items-center">
