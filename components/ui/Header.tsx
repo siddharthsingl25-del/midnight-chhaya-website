@@ -43,6 +43,15 @@ export default function Header() {
           href="/"
           aria-label={`${SITE.name} — home`}
           data-cursor="Home"
+          onClick={() => {
+            // Always take the customer to the very top of the home
+            // page, even if they're already on '/' and Next.js short-
+            // circuits the navigation.
+            if (typeof window !== "undefined") {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+            setOpen(false);
+          }}
           className="flex items-center"
         >
           <Image
