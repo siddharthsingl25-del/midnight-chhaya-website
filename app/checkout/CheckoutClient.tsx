@@ -82,6 +82,37 @@ export default function CheckoutClient() {
     const id = setInterval(() => setBogoActive(offerActiveAt()), 30_000);
     return () => clearInterval(id);
   }, []);
+
+  // Fetch the FIRST10 promo status once on mount so the checkout can
+  // show "Use code FIRST10 — N uses left" as a hint above the discount
+  // input. Silently ignored if the code is missing or deactivated.
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch("/api/promo?code=FIRST10", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          active?: boolean;
+          percentOff?: number;
+          minSubtotal?: number;
+          usesLeft?: number | null;
+        };
+        if (
+          data.active &&
+          (data.usesLeft == null || data.usesLeft > 0)
+        ) {
+          setFirst10({
+            active: true,
+            percentOff: data.percentOff ?? 0,
+            minSubtotal: data.minSubtotal ?? 0,
+            usesLeft: data.usesLeft ?? null,
+          });
+        }
+      } catch {
+        /* silent */
+      }
+    })();
+  }, []);
   const bogoAmount = bogoActive
     ? computeBogoDiscount(
         lines.map(({ line, unitPrice }) => ({
@@ -95,6 +126,12 @@ export default function CheckoutClient() {
     : 0;
 
   const [discountCode, setDiscountCode] = useState<string>("");
+  const [first10, setFirst10] = useState<{
+    active: boolean;
+    percentOff: number;
+    minSubtotal: number;
+    usesLeft: number | null;
+  } | null>(null);
   const [appliedCode, setAppliedCode] = useState<{
     code: string;
     percentOff: number;
@@ -786,6 +823,16 @@ export default function CheckoutClient() {
               {/* Discount code input — collapsed when one is applied. */}
               {!appliedCode ? (
                 <div className="mt-3 flex flex-col gap-1">
+                  {first10 ? (
+                    <button
+                      type="button"
+                      onClick={() => setDiscountCode("FIRST10")}
+                      className="text-[11px] text-gold text-left mb-1
+                                 hover:underline decoration-gold/60 underline-offset-4"
+                    >
+                      Use code <span className="font-mono">FIRST10</span> for {first10.percentOff}% off — only for first {first10.usesLeft ?? "few"} people to place an order (min cart {formatPrice(first10.minSubtotal)}).
+                    </button>
+                  ) : null}
                   <div className="flex gap-2">
                     <input
                       type="text"
