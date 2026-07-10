@@ -251,6 +251,8 @@ export default function CheckoutClient() {
         phone: form.phone,
       },
       items: lines.map(({ product, chain, line, unitPrice }) => ({
+        slug: product.slug,
+        chainId: chain?.id ?? null,
         name: product.name,
         chainName: chain?.name ?? null,
         qty: line.qty,
