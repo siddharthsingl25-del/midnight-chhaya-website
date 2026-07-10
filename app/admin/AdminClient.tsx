@@ -18,12 +18,14 @@ import AdminProducts from "./AdminProducts";
 import AdminChains from "./AdminChains";
 import AdminFeedback from "./AdminFeedback";
 import AdminFinance from "./AdminFinance";
+import AdminOrders from "./AdminOrders";
 import AdminReviews from "./AdminReviews";
 import { easeCinematic } from "@/lib/animations";
 
-type Tab = "stock" | "products" | "chains" | "finance" | "reviews" | "feedback";
+type Tab = "orders" | "stock" | "products" | "chains" | "finance" | "reviews" | "feedback";
 
 const TAB_LABEL: Record<Tab, string> = {
+  orders: "Orders",
   stock: "Stock",
   products: "Products",
   chains: "Chains",
@@ -35,7 +37,7 @@ const TAB_LABEL: Record<Tab, string> = {
 export default function AdminClient() {
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>("stock");
+  const [tab, setTab] = useState<Tab>("orders");
 
   // Probe an admin endpoint to check auth state on mount
   const probe = useCallback(async () => {
@@ -93,7 +95,7 @@ export default function AdminClient() {
 
         {/* Tab bar */}
         <div className="flex gap-6 mb-10 border-b border-bone/10 pb-2 overflow-x-auto">
-          {(["stock", "products", "chains", "finance", "reviews", "feedback"] as const).map((t) => {
+          {(["orders", "stock", "products", "chains", "finance", "reviews", "feedback"] as const).map((t) => {
             const selected = tab === t;
             return (
               <button
@@ -126,6 +128,7 @@ export default function AdminClient() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.4, ease: easeCinematic }}
           >
+            {tab === "orders" ? <AdminOrders /> : null}
             {tab === "stock" ? <AdminStock /> : null}
             {tab === "products" ? <AdminProducts /> : null}
             {tab === "chains" ? <AdminChains /> : null}

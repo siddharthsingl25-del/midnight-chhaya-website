@@ -86,6 +86,143 @@ export async function sendOrderConfirmationEmail(
   }
 }
 
+/* —— Shipped + delivered emails ——————————————————————————— */
+
+export type ShippedInfo = {
+  trackingId?: string | null;
+  courierPartner?: string | null;
+  trackingUrl?: string | null;
+};
+
+export async function sendOrderShippedEmail(
+  order: OrderSnapshot,
+  shipped: ShippedInfo
+): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!user || !pass) return { ok: false, skipped: true };
+  if (!order.customer.email) return { ok: false, skipped: true };
+
+  const host = process.env.SMTP_HOST ?? "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT ?? 465);
+  const fromName = process.env.EMAIL_FROM_NAME ?? SITE.name;
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+    });
+    await transporter.sendMail({
+      from: `"${fromName}" <${user}>`,
+      to: order.customer.email,
+      subject: `Your order has shipped — ${SITE.name} (${order.orderNumber})`,
+      html: renderShippedEmailHtml(order, shipped),
+      text: renderShippedEmailText(order, shipped),
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "unknown" };
+  }
+}
+
+export async function sendOrderDeliveredEmail(
+  order: OrderSnapshot
+): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!user || !pass) return { ok: false, skipped: true };
+  if (!order.customer.email) return { ok: false, skipped: true };
+
+  const host = process.env.SMTP_HOST ?? "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT ?? 465);
+  const fromName = process.env.EMAIL_FROM_NAME ?? SITE.name;
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+    });
+    await transporter.sendMail({
+      from: `"${fromName}" <${user}>`,
+      to: order.customer.email,
+      subject: `Delivered · thank you — ${SITE.name} (${order.orderNumber})`,
+      html: renderDeliveredEmailHtml(order),
+      text: renderDeliveredEmailText(order),
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "unknown" };
+  }
+}
+
+function renderShippedEmailText(o: OrderSnapshot, s: ShippedInfo): string {
+  const lines = [
+    `Hi ${o.customer.name || "there"},`,
+    "",
+    `Your order ${o.orderNumber} has been shipped.`,
+    "",
+  ];
+  if (s.courierPartner) lines.push(`Courier: ${s.courierPartner}`);
+  if (s.trackingId) lines.push(`Tracking ID: ${s.trackingId}`);
+  if (s.trackingUrl) lines.push(`Track: ${s.trackingUrl}`);
+  lines.push("", "— Midnight Chhaya");
+  return lines.join("\n");
+}
+
+function renderShippedEmailHtml(o: OrderSnapshot, s: ShippedInfo): string {
+  const trackButton = s.trackingUrl
+    ? `<div style="text-align:center;margin:28px 0;">
+         <a href="${escapeHtml(s.trackingUrl)}"
+            style="display:inline-block;padding:14px 32px;background:#b8935a;color:#0a0a0a;text-decoration:none;font-family:Arial,sans-serif;font-size:12px;letter-spacing:0.3em;text-transform:uppercase;">
+           Track shipment
+         </a>
+       </div>`
+    : "";
+  return `
+  <html><body style="margin:0;background:#0a0a0a;font-family:Arial,sans-serif;color:#e8e2d4;">
+    <div style="max-width:560px;margin:0 auto;padding:40px 24px;">
+      <p style="text-align:center;color:#b8935a;font-size:11px;letter-spacing:0.3em;text-transform:uppercase;margin:0 0 8px;">Midnight Chhaya</p>
+      <h1 style="text-align:center;font-family:Georgia,serif;color:#e8e2d4;font-size:24px;font-weight:normal;letter-spacing:0.04em;text-transform:uppercase;margin:18px 0 6px;">Your order is on the way.</h1>
+      <p style="text-align:center;color:#8a8578;font-style:italic;font-size:14px;margin:6px 0 30px;">${escapeHtml(o.customer.name || "Order")} — ${escapeHtml(o.orderNumber)}</p>
+      <div style="border:1px solid rgba(184,147,90,0.3);padding:20px 24px;margin:24px 0;">
+        ${s.courierPartner ? `<p style="margin:6px 0;font-size:14px;"><span style="color:#8a8578;">Courier:</span> <strong>${escapeHtml(s.courierPartner)}</strong></p>` : ""}
+        ${s.trackingId ? `<p style="margin:6px 0;font-size:14px;"><span style="color:#8a8578;">Tracking ID:</span> <strong style="font-family:monospace;">${escapeHtml(s.trackingId)}</strong></p>` : ""}
+      </div>
+      ${trackButton}
+      <p style="text-align:center;color:#8a8578;font-style:italic;font-size:12px;margin:32px 0 0;">Adornments forged in shadow.</p>
+    </div>
+  </body></html>`;
+}
+
+function renderDeliveredEmailText(o: OrderSnapshot): string {
+  return [
+    `Hi ${o.customer.name || "there"},`,
+    "",
+    `Your order ${o.orderNumber} has been delivered. We hope you love it.`,
+    "",
+    "If anything is off, reply to this email and we'll make it right.",
+    "",
+    "— Midnight Chhaya",
+  ].join("\n");
+}
+
+function renderDeliveredEmailHtml(o: OrderSnapshot): string {
+  return `
+  <html><body style="margin:0;background:#0a0a0a;font-family:Arial,sans-serif;color:#e8e2d4;">
+    <div style="max-width:560px;margin:0 auto;padding:40px 24px;">
+      <p style="text-align:center;color:#b8935a;font-size:11px;letter-spacing:0.3em;text-transform:uppercase;margin:0 0 8px;">Midnight Chhaya</p>
+      <h1 style="text-align:center;font-family:Georgia,serif;color:#e8e2d4;font-size:24px;font-weight:normal;letter-spacing:0.04em;text-transform:uppercase;margin:18px 0 6px;">Delivered.</h1>
+      <p style="text-align:center;color:#8a8578;font-style:italic;font-size:14px;margin:6px 0 30px;">${escapeHtml(o.customer.name || "Order")} — ${escapeHtml(o.orderNumber)}</p>
+      <p style="text-align:center;font-size:14px;margin:24px 0;">We hope you love it. If anything is off, reply and we'll make it right.</p>
+      <p style="text-align:center;color:#8a8578;font-style:italic;font-size:12px;margin:32px 0 0;">Adornments forged in shadow.</p>
+    </div>
+  </body></html>`;
+}
+
 /* —— WhatsApp (Meta Cloud API) ——————————————————————————— */
 
 export async function sendOrderConfirmationWhatsApp(
