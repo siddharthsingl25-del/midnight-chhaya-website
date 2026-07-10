@@ -24,6 +24,7 @@ import { isAdmin } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { EXPENSE_CATEGORIES, type ExpenseCategory } from "@/lib/types";
 import {
+  DEFAULT_COURIER_COST,
   OPERATING_EXPENSE_CATEGORIES,
   PACKAGING_COST_PER_ORDER,
 } from "@/lib/site";
@@ -124,7 +125,15 @@ export async function GET(req: Request) {
         if (cc != null) cogs += cc * (it.qty ?? 0);
       }
     }
-    const merchantCost = o.merchant_cost ?? 0;
+    // Per-order courier cost: use the /ship value when set, else fall
+    // back to the payment-method default (₹60 online, ₹250 COD, 0 cash).
+    const merchantCost =
+      o.merchant_cost ??
+      (o.payment_method === "cod"
+        ? DEFAULT_COURIER_COST.cod
+        : o.payment_method === "online"
+          ? DEFAULT_COURIER_COST.online
+          : 0);
     const gatewayFee =
       o.payment_method === "cash"
         ? 0

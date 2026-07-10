@@ -139,6 +139,19 @@ export const PACKAGING_COST_PER_ORDER = 12.5;
  * fake orders + courier's COD collection fee. */
 export const COD_CHARGE = 250;
 
+/** Default courier cost the merchant pays out per order, keyed by
+ * payment method. Used in the Finance dashboard when the per-order
+ * merchant_cost column is null (i.e. you didn't run /ship on it):
+ *   - online: customer paid ₹60 shipping revenue, the courier bill
+ *             matches, so profit nets out to zero on shipping.
+ *   - cod:    higher because the courier's COD collection fee stacks
+ *             on top of the plain courier charge.
+ * If you actually /ship <order> <amount>, that number wins. */
+export const DEFAULT_COURIER_COST = {
+  online: 60,
+  cod: 250,
+} as const;
+
 /** Expense categories that affect net profit. The other categories
  * (restock, shipping, packaging) are tracking-only:
  *   - restock = buying inventory; the cost flows in via COGS per unit

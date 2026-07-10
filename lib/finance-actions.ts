@@ -11,6 +11,7 @@ import { revalidateTag } from "next/cache";
 import { supabaseAdmin } from "./supabase";
 import { getAllProducts, getChain } from "./catalog";
 import {
+  DEFAULT_COURIER_COST,
   OPERATING_EXPENSE_CATEGORIES,
   PACKAGING_COST_PER_ORDER,
   computeShipping,
@@ -331,7 +332,13 @@ export async function getStatsForRange(
     // separately as merchant_cost per order or as a 'shipping' expense
     // line so it nets out correctly.
     revenue += o.total;
-    merchantCost += o.merchant_cost ?? 0;
+    merchantCost +=
+      o.merchant_cost ??
+      (o.payment_method === "cod"
+        ? DEFAULT_COURIER_COST.cod
+        : o.payment_method === "online"
+          ? DEFAULT_COURIER_COST.online
+          : 0);
     packagingCost += o.packaging_cost ?? PACKAGING_COST_PER_ORDER;
     if (o.payment_method === "cash") {
       cashOrderCount++;
