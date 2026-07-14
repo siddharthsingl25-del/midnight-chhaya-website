@@ -191,13 +191,13 @@ export default function ProductDetail({
                     Pre-order
                   </span>
                 ) : null}
-                <p className="font-serif italic text-bone text-2xl flex items-baseline gap-3 flex-wrap">
+                <p className="font-serif italic text-bone text-4xl sm:text-5xl flex items-baseline gap-3 flex-wrap">
                   <span>{formatPrice(displayedUnitPrice)}</span>
                   {product.isPreOrder &&
                   product.launchPrice != null &&
                   product.price != null &&
                   product.launchPrice > product.price ? (
-                    <span className="text-2xl text-bone-dim line-through">
+                    <span className="text-3xl sm:text-4xl text-bone-dim line-through">
                       {formatPrice(product.launchPrice)}
                     </span>
                   ) : null}
