@@ -251,8 +251,16 @@ export async function POST(req: Request) {
   // Payment method: 'online' bills subtotal + shipping upfront.
   // 'cod' bills ONLY the flat COD fee upfront — no shipping — and
   // leaves the product subtotal to be collected in cash on delivery.
+  // Pre-order items must be prepaid — silently force online when the
+  // cart contains any pre-order product, even if the client asked for
+  // COD. Prevents tampered clients from reserving launch stock without
+  // paying up front.
+  const hasPreOrder = lines.some((l) => {
+    const p = products.find((pp) => pp.slug === l.slug);
+    return !!p?.isPreOrder;
+  });
   const paymentMethod: "online" | "cod" =
-    body.paymentMethod === "cod" ? "cod" : "online";
+    body.paymentMethod === "cod" && !hasPreOrder ? "cod" : "online";
   const shippingPaise =
     paymentMethod === "cod" ? 0 : computeShipping(subtotalInr) * 100;
   const codChargePaise = paymentMethod === "cod" ? COD_CHARGE * 100 : 0;

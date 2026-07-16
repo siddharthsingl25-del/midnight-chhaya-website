@@ -142,6 +142,15 @@ export default function CheckoutClient() {
   const codeDiscount = appliedCode?.amountOff ?? 0;
   const discountedSubtotal = Math.max(0, subtotal - bogoAmount - codeDiscount);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
+  /* Pre-order items must be prepaid — a customer can't reserve a
+   * launch unit for COD. If any line in the cart is flagged pre-order,
+   * COD is locked out and the payment method snaps back to online. */
+  const cartHasPreOrder = lines.some(({ product }) => product.isPreOrder);
+  useEffect(() => {
+    if (cartHasPreOrder && paymentMethod === "cod") {
+      setPaymentMethod("online");
+    }
+  }, [cartHasPreOrder, paymentMethod]);
   /* COD skips shipping entirely — the customer just pays the ₹250 COD fee
    * upfront and the product subtotal in cash on delivery. */
   const shipping = paymentMethod === "cod" ? 0 : computeShipping(discountedSubtotal);
@@ -803,11 +812,20 @@ export default function CheckoutClient() {
                     <p className="text-[10px] text-bone-dim">Pay the full amount now via Razorpay.</p>
                   </div>
                 </label>
-                <label className={`flex items-start gap-3 p-3 border cursor-pointer transition-colors ${paymentMethod === "cod" ? "border-gold bg-gold/5" : "border-bone/15 hover:border-bone/30"}`}>
+                <label
+                  className={`flex items-start gap-3 p-3 border transition-colors ${
+                    cartHasPreOrder
+                      ? "border-bone/10 opacity-40 cursor-not-allowed"
+                      : paymentMethod === "cod"
+                        ? "border-gold bg-gold/5 cursor-pointer"
+                        : "border-bone/15 hover:border-bone/30 cursor-pointer"
+                  }`}
+                >
                   <input
                     type="radio"
                     name="paymentMethod"
                     checked={paymentMethod === "cod"}
+                    disabled={cartHasPreOrder}
                     onChange={() => setPaymentMethod("cod")}
                     className="accent-gold mt-1"
                   />
@@ -815,7 +833,11 @@ export default function CheckoutClient() {
                     <p className="font-body text-bone text-sm">
                       Cash on Delivery <span className="text-bone-dim">· +{formatPrice(COD_CHARGE)}</span>
                     </p>
-                    <p className="text-[10px] text-bone-dim">Prepay {formatPrice(COD_CHARGE)} now (COD fee). Pay {formatPrice(discountedSubtotal)} in cash to the courier on delivery. No shipping charge.</p>
+                    <p className="text-[10px] text-bone-dim">
+                      {cartHasPreOrder
+                        ? "Not available — pre-order items must be prepaid."
+                        : `Prepay ${formatPrice(COD_CHARGE)} now (COD fee). Pay ${formatPrice(discountedSubtotal)} in cash to the courier on delivery. No shipping charge.`}
+                    </p>
                   </div>
                 </label>
               </div>
