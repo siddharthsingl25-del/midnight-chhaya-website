@@ -127,6 +127,28 @@ export function computeShipping(subtotal: number): number {
   return subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
 }
 
+/** Flat shipping fee when the cart contains a bulky category (glasses).
+ * Overrides free shipping — frames cost more to ship regardless of
+ * cart value. */
+export const HEAVY_SHIPPING_FEE = 150;
+
+/** Categories that always carry the heavy shipping fee. */
+const HEAVY_SHIPPING_CATEGORIES = new Set(["glasses"]);
+
+/**
+ * Shipping for a cart with mixed items. If any item belongs to a heavy
+ * category (glasses / frames), returns HEAVY_SHIPPING_FEE. Otherwise
+ * defers to the regular subtotal-based rule.
+ */
+export function computeShippingForCart(
+  items: Array<{ category: string }>,
+  subtotal: number
+): number {
+  const hasHeavy = items.some((i) => HEAVY_SHIPPING_CATEGORIES.has(i.category));
+  if (hasHeavy) return HEAVY_SHIPPING_FEE;
+  return computeShipping(subtotal);
+}
+
 /** Default packaging cost the merchant absorbs on every order (box,
  * bubble wrap, thank-you card, etc). Auto-subtracted from each order's
  * profit in the finance dashboard. Change this number if your real

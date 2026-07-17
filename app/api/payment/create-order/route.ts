@@ -22,7 +22,7 @@ import {
   ACTIVE_OFFER,
   COD_CHARGE,
   computeBogoDiscount,
-  computeShipping,
+  computeShippingForCart,
   offerActiveAt,
 } from "@/lib/site";
 
@@ -76,6 +76,7 @@ export async function POST(req: Request) {
     chainName: string | null;
     unitPaise: number;
     name: string;
+    category: string;
   }[] = [];
   for (const { slug, qty, chainId } of items) {
     if (typeof slug !== "string" || typeof qty !== "number" || qty <= 0) {
@@ -94,6 +95,7 @@ export async function POST(req: Request) {
       chainName: chain?.name ?? null,
       unitPaise: Math.round(unitInr * 100),
       name: product.name,
+      category: product.category,
     });
   }
 
@@ -262,7 +264,12 @@ export async function POST(req: Request) {
   const paymentMethod: "online" | "cod" =
     body.paymentMethod === "cod" && !hasPreOrder ? "cod" : "online";
   const shippingPaise =
-    paymentMethod === "cod" ? 0 : computeShipping(subtotalInr) * 100;
+    paymentMethod === "cod"
+      ? 0
+      : computeShippingForCart(
+          lines.map((l) => ({ category: l.category })),
+          subtotalInr
+        ) * 100;
   const codChargePaise = paymentMethod === "cod" ? COD_CHARGE * 100 : 0;
   const totalPaise = subtotalPaise + shippingPaise + codChargePaise;
   const amountPaise =

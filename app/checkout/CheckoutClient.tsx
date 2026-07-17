@@ -34,6 +34,7 @@ import {
   COD_CHARGE,
   computeBogoDiscount,
   computeShipping,
+  computeShippingForCart,
   formatPrice,
   offerActiveAt,
   SHIPPING_THRESHOLD,
@@ -152,8 +153,15 @@ export default function CheckoutClient() {
     }
   }, [cartHasPreOrder, paymentMethod]);
   /* COD skips shipping entirely — the customer just pays the ₹250 COD fee
-   * upfront and the product subtotal in cash on delivery. */
-  const shipping = paymentMethod === "cod" ? 0 : computeShipping(discountedSubtotal);
+   * upfront and the product subtotal in cash on delivery. Prepaid
+   * shipping is category-aware: heavy items (glasses) get flat ₹150. */
+  const shipping =
+    paymentMethod === "cod"
+      ? 0
+      : computeShippingForCart(
+          lines.map(({ product }) => ({ category: product.category })),
+          discountedSubtotal
+        );
   const codCharge = paymentMethod === "cod" ? COD_CHARGE : 0;
   const grandTotal = discountedSubtotal + shipping + codCharge;
   const amountDueNow = paymentMethod === "cod" ? codCharge : grandTotal;
