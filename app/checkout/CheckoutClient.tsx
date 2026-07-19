@@ -37,7 +37,6 @@ import {
   computeShippingForCart,
   formatPrice,
   offerActiveAt,
-  SHIPPING_THRESHOLD,
   SITE,
 } from "@/lib/site";
 
@@ -791,11 +790,6 @@ export default function CheckoutClient() {
                   {shipping === 0 ? "Free" : formatPrice(shipping)}
                 </span>
               </div>
-              {shipping > 0 ? (
-                <p className="text-[10px] text-bone-dim italic">
-                  Add {formatPrice(SHIPPING_THRESHOLD - discountedSubtotal)} more to your cart for free shipping.
-                </p>
-              ) : null}
 
               {paymentMethod === "cod" ? (
                 <div className="flex items-baseline justify-between">

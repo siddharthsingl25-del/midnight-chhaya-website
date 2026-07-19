@@ -29,7 +29,6 @@ import {
   computeShipping,
   formatPrice,
   offerActiveAt,
-  SHIPPING_THRESHOLD,
   SITE,
 } from "@/lib/site";
 
@@ -313,11 +312,6 @@ export default function CartButton() {
                       {shipping === 0 ? "Free" : formatPrice(shipping)}
                     </span>
                   </div>
-                  {shipping > 0 ? (
-                    <p className="text-[10px] text-bone-dim italic mb-3">
-                      Add {formatPrice(SHIPPING_THRESHOLD - discountedSubtotal)} more for free shipping.
-                    </p>
-                  ) : null}
                   <div className="flex items-baseline justify-between mb-4 pt-2 border-t border-bone/10">
                     <span className="eyebrow text-bone-dim">Total</span>
                     <span className="font-display text-lg text-bone">

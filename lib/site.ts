@@ -122,9 +122,11 @@ export const SHIPPING_THRESHOLD = 999;
 /** Flat shipping fee when subtotal is below the threshold (INR). */
 export const SHIPPING_FEE = 60;
 
-/** Shipping fee for a given subtotal. 0 once the threshold is met. */
-export function computeShipping(subtotal: number): number {
-  return subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+/** Shipping fee for a given subtotal. Currently flat — every order
+ * pays SHIPPING_FEE regardless of cart size. (Free-shipping threshold
+ * kept as a constant in case we revive it later.) */
+export function computeShipping(_subtotal: number): number {
+  return SHIPPING_FEE;
 }
 
 /** Flat shipping fee when the cart contains a bulky category (glasses).
