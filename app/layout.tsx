@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cinzel, Cormorant_Garamond, Inter } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 
 import SmoothScroll from "@/components/animations/SmoothScroll";
@@ -7,6 +8,7 @@ import Header from "@/components/ui/Header";
 import FilmGrain from "@/components/ui/FilmGrain";
 import PromoBanner from "@/components/ui/PromoBanner";
 import PreOrderBanner from "@/components/ui/PreOrderBanner";
+import MetaPixel from "@/components/analytics/MetaPixel";
 import { CartProvider } from "@/lib/cart";
 import { CatalogProvider } from "@/lib/catalog-context";
 import { StockProvider } from "@/lib/stock";
@@ -93,6 +95,11 @@ export default async function RootLayout({
       className={`${cinzel.variable} ${cormorant.variable} ${inter.variable}`}
     >
       <body className="bg-ink text-bone min-h-screen overflow-x-hidden">
+        {/* Meta Pixel — loaded once, fires PageView on every route change.
+         * Suspense wrapper is required because MetaPixel reads useSearchParams. */}
+        <Suspense fallback={null}>
+          <MetaPixel />
+        </Suspense>
         <CatalogProvider initialProducts={products} initialChains={chains}>
           <StockProvider>
             <CartProvider>

@@ -39,6 +39,7 @@ import {
   offerActiveAt,
   SITE,
 } from "@/lib/site";
+import { trackFbq } from "@/components/analytics/MetaPixel";
 
 type Form = {
   name: string;
@@ -358,6 +359,15 @@ export default function CheckoutClient() {
           paymentId?: string;
         };
         setOrderNumber(verifyData.orderNumber ?? verifyData.paymentId ?? resp.razorpay_payment_id);
+        // Fire Meta Pixel Purchase event so Meta's ad optimisation
+        // learns which audiences convert. Grand total in INR.
+        trackFbq("Purchase", {
+          value: amountDueNow,
+          currency: "INR",
+          num_items: lines.reduce((s, { line }) => s + line.qty, 0),
+          content_ids: lines.map(({ line }) => line.slug),
+          content_type: "product",
+        });
         await refreshStock();
         setStatus("ready");
       } catch {
@@ -424,6 +434,13 @@ export default function CheckoutClient() {
     }
 
     /* 2. Load Razorpay's checkout script and open the modal. */
+    trackFbq("InitiateCheckout", {
+      value: amountDueNow,
+      currency: "INR",
+      num_items: lines.reduce((s, { line }) => s + line.qty, 0),
+      content_ids: lines.map(({ line }) => line.slug),
+      content_type: "product",
+    });
     const ok = await loadRazorpay();
     if (!ok) {
       setErrorMsg("Couldn't load the payment widget. Disable ad-blockers and retry.");

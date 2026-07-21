@@ -23,6 +23,7 @@ import { easeHover } from "@/lib/animations";
 import { formatPrice } from "@/lib/site";
 import { useCart } from "@/lib/cart";
 import { useStock } from "@/lib/stock";
+import { trackFbq } from "@/components/analytics/MetaPixel";
 import { useChains } from "@/lib/catalog-context";
 import type { Product } from "@/lib/types";
 
@@ -51,6 +52,13 @@ export default function ProductCard({
   const onAdd = () => {
     if (disableInlineAdd) return;
     add(product.slug, { qty: 1 });
+    trackFbq("AddToCart", {
+      content_ids: [product.slug],
+      content_name: product.name,
+      content_type: "product",
+      value: product.price ?? 0,
+      currency: "INR",
+    });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
