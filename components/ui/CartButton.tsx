@@ -290,6 +290,14 @@ export default function CartButton() {
                 </ul>
 
                 <div className="border-t border-bone/10 px-6 py-5">
+                  {lines.some(({ product }) => product.isPreOrder) ? (
+                    <div className="mb-4 border border-gold/60 bg-gold/10 px-3 py-2">
+                      <p className="eyebrow text-gold text-[9px] mb-0.5">Pre-order in cart</p>
+                      <p className="font-body text-bone text-xs leading-snug">
+                        Pre-ordered items dispatch <strong>10–15 days</strong> after ordering.
+                      </p>
+                    </div>
+                  ) : null}
                   <div className="flex items-baseline justify-between mb-2">
                     <span className="eyebrow text-bone-dim text-[10px]">Subtotal</span>
                     <span className="text-sm text-bone">

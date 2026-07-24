@@ -731,6 +731,17 @@ export default function CheckoutClient() {
           <div className="lg:sticky lg:top-32 bg-charcoal/60 border border-bone/10 p-6 md:p-8">
             <h2 className="eyebrow text-gold mb-6">Order summary</h2>
 
+            {cartHasPreOrder ? (
+              <div className="mb-6 border border-gold/60 bg-gold/10 px-4 py-3">
+                <p className="eyebrow text-gold text-[10px] mb-1">
+                  Pre-order in cart
+                </p>
+                <p className="font-body text-bone text-sm leading-snug">
+                  Pre-ordered items will be dispatched <strong>10–15 days</strong> after the date of ordering.
+                </p>
+              </div>
+            ) : null}
+
             <ul className="flex flex-col gap-5 max-h-[60vh] overflow-y-auto pr-1 -mr-1">
               {lines.map(({ line, product, chain, unitPrice }) => (
                 <li
@@ -750,6 +761,11 @@ export default function CheckoutClient() {
                     <span className="block font-display text-sm text-bone truncate">
                       {product.name}
                     </span>
+                    {product.isPreOrder ? (
+                      <span className="inline-block mt-1 text-[9px] uppercase tracking-[0.2em] text-gold border border-gold/50 px-1.5 py-px">
+                        Pre-order · dispatches in 10–15 days
+                      </span>
+                    ) : null}
                     {chain ? (
                       <span className="block text-[10px] uppercase tracking-[0.2em] text-gold-soft mt-0.5">
                         {chain.name}
