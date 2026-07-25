@@ -721,8 +721,8 @@ export default function CheckoutClient() {
 
           <p className="font-serif italic text-bone-dim text-sm max-w-md leading-relaxed">
             Secure payment via Razorpay — UPI, cards, netbanking, wallets all
-            supported. Your order ships within 1–3 business days; we&apos;ll DM
-            you on Instagram with tracking once dispatched.
+            supported. Your order ships within 1–3 business days; the tracking
+            ID will be shared on your email once your order is dispatched.
           </p>
         </form>
 
@@ -942,6 +942,10 @@ export default function CheckoutClient() {
                 </div>
               ) : null}
             </div>
+
+            <p className="mt-4 text-[11px] text-bone-dim italic leading-relaxed">
+              Tracking ID will be shared on your email once your order is dispatched.
+            </p>
           </div>
         </aside>
       </div>
