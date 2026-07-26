@@ -195,12 +195,12 @@ export function computeShippingForCart(
  * where to collect / where to return the parcel if delivery fails. */
 export const STORE_SENDER = {
   name: "Midnight Chhaya",
-  line1: "",
+  line1: "1095, Urban Estate Phase 2",
   line2: "",
-  city: "",
-  state: "",
-  pincode: "",
-  phone: "",
+  city: "Ludhiana",
+  state: "Punjab",
+  pincode: "141010",
+  phone: "7009308099",
 } as const;
 
 /** Default packaging cost the merchant absorbs on every order (box,
