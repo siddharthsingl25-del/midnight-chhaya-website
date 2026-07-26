@@ -14,7 +14,7 @@ export async function GET() {
   const { data, error } = await supabaseAdmin()
     .from("orders")
     .select(
-      "id, order_number, created_at, customer_name, customer_email, customer_phone, customer_instagram, delivery_address, items, subtotal, shipping, total, payment_method, prepaid_amount, status, tracking_id, courier_partner, tracking_url, shipped_at, delivered_at, notes"
+      "id, order_number, created_at, customer_name, customer_email, customer_phone, customer_instagram, delivery_address, items, subtotal, shipping, total, payment_method, prepaid_amount, status, tracking_id, courier_partner, tracking_url, shipped_at, delivered_at, label_printed_at, notes"
     )
     .order("created_at", { ascending: false })
     .limit(200);

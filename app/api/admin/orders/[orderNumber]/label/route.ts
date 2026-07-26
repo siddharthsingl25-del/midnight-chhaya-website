@@ -36,6 +36,14 @@ export async function GET(_req: Request, { params }: Params) {
     return NextResponse.json({ error: `Order ${withPrefix} not found` }, { status: 404 });
   }
 
+  // Stamp the print time so this order drops out of the "print all paid"
+  // bulk queue next time. Fire-and-forget — a failed stamp shouldn't
+  // block the label download.
+  void sb
+    .from("orders")
+    .update({ label_printed_at: new Date().toISOString() })
+    .eq("order_number", withPrefix);
+
   const html = renderLabelPage([order as LabelOrder], `Label · ${withPrefix}`);
   return new NextResponse(html, {
     status: 200,

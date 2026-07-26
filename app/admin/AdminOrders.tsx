@@ -41,6 +41,7 @@ type Order = {
   tracking_url: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
+  label_printed_at: string | null;
   notes: string;
 };
 
@@ -110,6 +111,11 @@ export default function AdminOrders() {
     return c;
   }, [rows]);
 
+  const unprintedPaidCount = useMemo(
+    () => rows.filter((r) => r.status === "paid" && !r.label_printed_at).length,
+    [rows]
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap gap-2 items-center justify-between">
@@ -134,16 +140,21 @@ export default function AdminOrders() {
             );
           })}
         </div>
-        {counts.paid > 0 ? (
+        {unprintedPaidCount > 0 ? (
           <a
             href="/api/admin/orders/labels?status=paid"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => setTimeout(() => void load(), 1500)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-gold text-ink eyebrow text-[10px]"
           >
             <Printer size={12} strokeWidth={1.75} />
-            Print all {counts.paid} paid label{counts.paid === 1 ? "" : "s"}
+            Print {unprintedPaidCount} new label{unprintedPaidCount === 1 ? "" : "s"}
           </a>
+        ) : counts.paid > 0 ? (
+          <span className="eyebrow text-[10px] text-bone-dim">
+            All {counts.paid} paid label{counts.paid === 1 ? "" : "s"} already printed
+          </span>
         ) : null}
       </div>
 
@@ -391,10 +402,19 @@ function OrderRow({
                 href={`/api/admin/orders/${encodeURIComponent(order.order_number)}/label`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 border border-bone/40 text-bone hover:bg-bone/5"
+                onClick={() => setTimeout(() => void onChanged(), 1500)}
+                className={
+                  order.label_printed_at
+                    ? "inline-flex items-center gap-2 px-4 py-2 border border-bone/20 text-bone-dim hover:text-bone hover:bg-bone/5"
+                    : "inline-flex items-center gap-2 px-4 py-2 border border-bone/40 text-bone hover:bg-bone/5"
+                }
               >
                 <Printer size={12} strokeWidth={1.75} />
-                <span className="eyebrow text-[10px]">Print / download label</span>
+                <span className="eyebrow text-[10px]">
+                  {order.label_printed_at
+                    ? `Reprint label (printed ${fmtDate(order.label_printed_at)})`
+                    : "Print / download label"}
+                </span>
               </a>
 
               {order.status !== "shipped" && order.status !== "delivered" ? (
