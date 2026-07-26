@@ -108,17 +108,17 @@ export function renderLabelPage(orders: LabelOrder[], title: string): string {
     .toolbar button { background: #d4af37; color: #111; border: none; padding: 8px 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
     .warn { background: #ff9800; color: #111; padding: 10px 16px; font-size: 12px; text-align: center; }
 
-    /* --- A4 sheet, 2x2 grid of 9x9cm labels --- */
+    /* --- A4 sheet, 2x3 grid of 9x9cm labels (6 per page) --- */
     .sheet {
       width: 210mm;
       height: 297mm;
       margin: 12mm auto;
-      padding: 15mm;
+      padding: 13mm 15mm;
       background: #fff;
       box-shadow: 0 4px 20px rgba(0,0,0,0.15);
       display: grid;
       grid-template-columns: 90mm 90mm;
-      grid-template-rows: 90mm 90mm;
+      grid-template-rows: 90mm 90mm 90mm;
       gap: 0;
       align-content: start;
       justify-content: center;
@@ -179,12 +179,14 @@ export function renderLabelPage(orders: LabelOrder[], title: string): string {
 </html>`;
 }
 
+const LABELS_PER_SHEET = 6;
+
 function sheetsHtml(orders: LabelOrder[]): string {
   const sheets: string[] = [];
-  for (let i = 0; i < orders.length; i += 4) {
-    const group = orders.slice(i, i + 4);
+  for (let i = 0; i < orders.length; i += LABELS_PER_SHEET) {
+    const group = orders.slice(i, i + LABELS_PER_SHEET);
     const cards = group.map(labelCard).join("\n");
-    const blanks = 4 - group.length;
+    const blanks = LABELS_PER_SHEET - group.length;
     const blankHtml = Array.from({ length: blanks })
       .map(() => `<div class="label empty"></div>`)
       .join("\n");
