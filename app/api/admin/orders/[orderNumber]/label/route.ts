@@ -26,7 +26,7 @@ export async function GET(_req: Request, { params }: Params) {
   const { data: order, error } = await sb
     .from("orders")
     .select(
-      "order_number, customer_name, customer_phone, delivery_address, payment_method, total"
+      "order_number, customer_name, customer_phone, delivery_address, payment_method, total, items"
     )
     .eq("order_number", withPrefix)
     .maybeSingle();

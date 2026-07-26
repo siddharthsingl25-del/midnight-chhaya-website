@@ -32,7 +32,7 @@ export async function GET(req: Request) {
   let query = sb
     .from("orders")
     .select(
-      "order_number, customer_name, customer_phone, delivery_address, payment_method, total, created_at"
+      "order_number, customer_name, customer_phone, delivery_address, payment_method, total, items, created_at"
     )
     .order("created_at", { ascending: true });
 

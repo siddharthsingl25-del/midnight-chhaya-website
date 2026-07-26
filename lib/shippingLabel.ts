@@ -18,6 +18,7 @@ export type LabelOrder = {
   delivery_address: string | null;
   payment_method: "online" | "cash" | "cod" | string;
   total: number;
+  items?: Array<{ name: string; qty: number; chainName?: string | null }> | null;
 };
 
 const escapeHtml = (s: string) =>
@@ -51,6 +52,22 @@ function paymentBadge(order: LabelOrder): string {
   return `<span class="badge prepaid">PREPAID</span>`;
 }
 
+function itemsBlock(order: LabelOrder): string {
+  const items = order.items ?? [];
+  if (items.length === 0) return "";
+  const totalQty = items.reduce((s, it) => s + (it.qty || 0), 0);
+  const lines = items
+    .map(
+      (it) =>
+        `<div class="item">· ${escapeHtml(it.name)} × ${it.qty}${it.chainName ? ` <em>(${escapeHtml(it.chainName)})</em>` : ""}</div>`
+    )
+    .join("");
+  return `<div class="items">
+    <div class="items-lbl">CONTENTS · ${totalQty} item${totalQty === 1 ? "" : "s"}</div>
+    ${lines}
+  </div>`;
+}
+
 function labelCard(order: LabelOrder): string {
   return `<div class="label">
     <div class="head">
@@ -64,6 +81,8 @@ function labelCard(order: LabelOrder): string {
       <div class="addr">${nl2br(order.delivery_address || "—")}</div>
       <div class="phone">Ph: ${escapeHtml(order.customer_phone || "—")}</div>
     </div>
+
+    ${itemsBlock(order)}
 
     <div class="from">
       <div class="from-lbl">FROM</div>
@@ -109,28 +128,32 @@ export function renderLabelPage(orders: LabelOrder[], title: string): string {
     .label {
       width: 90mm;
       height: 90mm;
-      padding: 4mm 5mm;
+      padding: 3mm 4mm;
       border: 1px dashed #888;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      font-size: 9pt;
-      line-height: 1.25;
+      font-size: 8.5pt;
+      line-height: 1.2;
       color: #000;
       background: #fff;
     }
-    .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2mm; }
-    .ordno { font-family: "Courier New", monospace; font-weight: 700; font-size: 9pt; letter-spacing: 0.05em; }
-    .badge { font-size: 7pt; font-weight: 700; padding: 1mm 2mm; letter-spacing: 0.06em; }
+    .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5mm; }
+    .ordno { font-family: "Courier New", monospace; font-weight: 700; font-size: 8.5pt; letter-spacing: 0.04em; }
+    .badge { font-size: 6.5pt; font-weight: 700; padding: 0.8mm 1.8mm; letter-spacing: 0.05em; }
     .badge.prepaid { border: 1px solid #000; }
     .badge.cod { background: #000; color: #fff; }
-    .to { flex: 1; border-top: 1px solid #000; padding-top: 2mm; }
-    .to-lbl { font-size: 6pt; letter-spacing: 0.2em; color: #666; margin-bottom: 1mm; }
-    .name { font-size: 12pt; font-weight: 700; margin-bottom: 1mm; line-height: 1.1; }
-    .addr { font-size: 9pt; white-space: pre-wrap; line-height: 1.25; }
-    .phone { margin-top: 1.5mm; font-size: 9pt; font-weight: 600; }
-    .from { border-top: 1px dashed #888; padding-top: 1.5mm; margin-top: 2mm; font-size: 7pt; line-height: 1.2; color: #333; }
-    .from-lbl { font-size: 5.5pt; letter-spacing: 0.2em; color: #666; margin-bottom: 0.5mm; }
+    .to { border-top: 1px solid #000; padding-top: 1.5mm; }
+    .to-lbl { font-size: 5.5pt; letter-spacing: 0.2em; color: #666; margin-bottom: 0.5mm; }
+    .name { font-size: 11pt; font-weight: 700; margin-bottom: 0.5mm; line-height: 1.1; }
+    .addr { font-size: 8pt; white-space: pre-wrap; line-height: 1.2; }
+    .phone { margin-top: 1mm; font-size: 8pt; font-weight: 600; }
+    .items { flex: 1; border-top: 1px dashed #888; padding-top: 1.5mm; margin-top: 1.5mm; font-size: 7pt; line-height: 1.25; color: #000; overflow: hidden; }
+    .items-lbl { font-size: 5.5pt; letter-spacing: 0.2em; color: #666; margin-bottom: 0.5mm; font-weight: 700; }
+    .item { font-size: 7pt; }
+    .item em { font-style: normal; color: #555; }
+    .from { border-top: 1px dashed #888; padding-top: 1mm; margin-top: 1.5mm; font-size: 6.5pt; line-height: 1.15; color: #333; }
+    .from-lbl { font-size: 5pt; letter-spacing: 0.2em; color: #666; margin-bottom: 0.3mm; }
     .empty { border: none; }
 
     @media print {
