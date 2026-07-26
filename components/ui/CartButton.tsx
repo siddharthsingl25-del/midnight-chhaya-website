@@ -26,6 +26,7 @@ import { useStockMap } from "@/lib/stock";
 import {
   ACTIVE_OFFER,
   computeBogoDiscount,
+  computeY2KBundleDiscount,
   computeShipping,
   formatPrice,
   offerActiveAt,
@@ -60,7 +61,18 @@ export default function CartButton() {
         }))
       )
     : 0;
-  const discountedSubtotal = Math.max(0, subtotal - bogoAmount);
+  const y2kBundleDiscount = computeY2KBundleDiscount(
+    lines.map(({ line, product, unitPrice }) => ({
+      slug: product.slug,
+      isPreOrder: product.isPreOrder,
+      unitPrice: unitPrice ?? 0,
+      qty: line.qty,
+    }))
+  );
+  const discountedSubtotal = Math.max(
+    0,
+    subtotal - bogoAmount - y2kBundleDiscount
+  );
   const shipping = computeShipping(discountedSubtotal);
   const grandTotal = discountedSubtotal + shipping;
 
@@ -304,6 +316,12 @@ export default function CartButton() {
                       {formatPrice(subtotal)}
                     </span>
                   </div>
+                  {y2kBundleDiscount > 0 ? (
+                    <div className="flex items-baseline justify-between mb-2">
+                      <span className="eyebrow text-gold text-[10px]">Y2K Ring bundle</span>
+                      <span className="text-sm text-gold">−{formatPrice(y2kBundleDiscount)}</span>
+                    </div>
+                  ) : null}
                   {bogoAmount > 0 ? (
                     <div className="flex items-baseline justify-between mb-2">
                       <span className="eyebrow text-gold text-[10px]">

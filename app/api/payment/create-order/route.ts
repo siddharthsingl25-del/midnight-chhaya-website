@@ -23,6 +23,7 @@ import {
   COD_CHARGE,
   computeBogoDiscount,
   computeShippingForCart,
+  computeY2KBundleDiscount,
   offerActiveAt,
 } from "@/lib/site";
 
@@ -247,7 +248,25 @@ export async function POST(req: Request) {
     );
   }
 
-  const subtotalPaise = Math.max(0, grossSubtotalPaise - discountPaise - bogoPaise);
+  // 3d. Y2K ring bundle discount — server-side re-compute so a tampered
+  // client can't claim a bundle price without qualifying cart.
+  const y2kBundlePaise =
+    computeY2KBundleDiscount(
+      lines.map((l) => {
+        const p = products.find((pp) => pp.slug === l.slug);
+        return {
+          slug: l.slug,
+          isPreOrder: !!p?.isPreOrder,
+          unitPrice: l.unitPaise / 100,
+          qty: l.qty,
+        };
+      })
+    ) * 100;
+
+  const subtotalPaise = Math.max(
+    0,
+    grossSubtotalPaise - discountPaise - bogoPaise - y2kBundlePaise
+  );
   const subtotalInr = subtotalPaise / 100;
 
   // Payment method: 'online' bills subtotal + shipping upfront.

@@ -65,6 +65,35 @@ export function computeBogoDiscount(
   return total;
 }
 
+/** Y2K ring bundle pricing — applies when 2 or 3 y2k rings (any of the
+ * 1.0-8.0 variants, mixed OK) are in the cart. Auto-detects pre-order
+ * vs launch pricing from the ring's is_pre_order flag. */
+export const Y2K_BUNDLE = {
+  slugPattern: "y2k-ring",
+  preOrder: { unit: 199, pack2: 349, pack3: 529 },
+  launch:   { unit: 249, pack2: 469, pack3: 650 },
+} as const;
+
+/**
+ * Returns the rupee discount applied when the cart hits a bundle tier
+ * (2-pack or 3-pack of y2k rings). Zero for 1 or 4+ (no bundle).
+ * A line qualifies if its slug contains 'y2k-ring'.
+ */
+export function computeY2KBundleDiscount(
+  lines: { slug: string; isPreOrder: boolean; unitPrice: number; qty: number }[]
+): number {
+  const y2k = lines.filter((l) =>
+    l.slug.toLowerCase().includes(Y2K_BUNDLE.slugPattern)
+  );
+  const totalQty = y2k.reduce((s, l) => s + l.qty, 0);
+  if (totalQty !== 2 && totalQty !== 3) return 0;
+  const isPreOrder = y2k.some((l) => l.isPreOrder);
+  const tier = isPreOrder ? Y2K_BUNDLE.preOrder : Y2K_BUNDLE.launch;
+  const bundlePrice = totalQty === 2 ? tier.pack2 : tier.pack3;
+  const currentTotal = y2k.reduce((s, l) => s + l.unitPrice * l.qty, 0);
+  return Math.max(0, currentTotal - bundlePrice);
+}
+
 /** Top-of-page navigation. Items can have `children` for hover dropdowns. */
 export type NavItem = {
   label: string;

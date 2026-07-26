@@ -35,6 +35,7 @@ import {
   computeBogoDiscount,
   computeShipping,
   computeShippingForCart,
+  computeY2KBundleDiscount,
   formatPrice,
   offerActiveAt,
   SITE,
@@ -141,7 +142,18 @@ export default function CheckoutClient() {
   const [codeError, setCodeError] = useState<string>("");
   const [codeChecking, setCodeChecking] = useState(false);
   const codeDiscount = appliedCode?.amountOff ?? 0;
-  const discountedSubtotal = Math.max(0, subtotal - bogoAmount - codeDiscount);
+  const y2kBundleDiscount = computeY2KBundleDiscount(
+    lines.map(({ line, product, unitPrice }) => ({
+      slug: product.slug,
+      isPreOrder: product.isPreOrder,
+      unitPrice: unitPrice ?? 0,
+      qty: line.qty,
+    }))
+  );
+  const discountedSubtotal = Math.max(
+    0,
+    subtotal - bogoAmount - codeDiscount - y2kBundleDiscount
+  );
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
   /* Pre-order items must be prepaid — a customer can't reserve a
    * launch unit for COD. If any line in the cart is flagged pre-order,
@@ -789,6 +801,12 @@ export default function CheckoutClient() {
                 <span className="eyebrow text-bone-dim">Subtotal</span>
                 <span className="text-sm text-bone">{formatPrice(subtotal)}</span>
               </div>
+              {y2kBundleDiscount > 0 ? (
+                <div className="flex items-baseline justify-between">
+                  <span className="eyebrow text-gold">Y2K Ring bundle</span>
+                  <span className="text-sm text-gold">−{formatPrice(y2kBundleDiscount)}</span>
+                </div>
+              ) : null}
               {bogoAmount > 0 ? (
                 <div className="flex items-baseline justify-between">
                   <span className="eyebrow text-gold">
