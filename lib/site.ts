@@ -69,7 +69,7 @@ export function computeBogoDiscount(
  * 1.0-8.0 variants, mixed OK) are in the cart. Auto-detects pre-order
  * vs launch pricing from the ring's is_pre_order flag. */
 export const Y2K_BUNDLE = {
-  slugPattern: "y2k-ring",
+  slugPattern: "y2k-ring-",
   preOrder: { unit: 199, pack2: 349, pack3: 529 },
   launch:   { unit: 249, pack2: 469, pack3: 650 },
 } as const;
