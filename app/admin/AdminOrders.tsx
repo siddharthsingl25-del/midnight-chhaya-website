@@ -177,6 +177,8 @@ function OrderRow({
   const [trackingId, setTrackingId] = useState(order.tracking_id ?? "");
   const [courier, setCourier] = useState(order.courier_partner ?? "");
   const [trackingUrl, setTrackingUrl] = useState(order.tracking_url ?? "");
+  const [email, setEmail] = useState(order.customer_email ?? "");
+  const [address, setAddress] = useState(order.delivery_address ?? "");
   const [busy, setBusy] = useState<null | "shipped" | "delivered" | "save">(null);
   const [msg, setMsg] = useState("");
 
@@ -195,6 +197,9 @@ function OrderRow({
           tracking_id: trackingId.trim() || null,
           courier_partner: courier.trim() || null,
           tracking_url: trackingUrl.trim() || null,
+          customer_email: email.trim(),
+          delivery_address: address.trim(),
+          send_email: kind !== "save",
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -265,7 +270,9 @@ function OrderRow({
             ))}
           </div>
 
-          {/* Customer + address */}
+          {/* Customer + address — email & address are editable so you
+           * can fix them for orphan-recovered orders where they didn't
+           * get captured. */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <p className="text-[10px] uppercase tracking-[0.15em] text-bone-dim">Phone</p>
@@ -276,10 +283,49 @@ function OrderRow({
               <p className="text-bone">{order.customer_instagram ? `@${order.customer_instagram}` : "—"}</p>
             </div>
           </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.15em] text-bone-dim">Delivery address</p>
-            <p className="text-bone whitespace-pre-line">{order.delivery_address || "—"}</p>
-          </div>
+          <label className="block">
+            <span className="block mb-1 text-[10px] uppercase tracking-[0.15em] text-bone-dim">
+              Email
+            </span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="customer@example.com"
+              className="w-full bg-transparent border-b border-bone/30 px-1 py-2
+                         font-body text-bone text-sm
+                         focus:outline-none focus:border-gold transition-colors"
+            />
+          </label>
+          <label className="block">
+            <span className="block mb-1 text-[10px] uppercase tracking-[0.15em] text-bone-dim">
+              Delivery address
+            </span>
+            <textarea
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Full address including pincode"
+              rows={3}
+              className="w-full bg-transparent border border-bone/20 px-2 py-2
+                         font-body text-bone text-sm resize-none
+                         focus:outline-none focus:border-gold transition-colors"
+            />
+          </label>
+          {(order.customer_email !== email || order.delivery_address !== address) ? (
+            <button
+              type="button"
+              onClick={() => patch(order.status, "save")}
+              disabled={busy !== null}
+              className="self-start inline-flex items-center gap-2 px-3 py-1.5
+                         border border-bone/30 text-bone-dim hover:text-bone
+                         disabled:opacity-60"
+            >
+              <Check size={12} strokeWidth={1.75} />
+              <span className="eyebrow text-[10px]">
+                {busy === "save" ? "Saving…" : "Save email + address (no email fires)"}
+              </span>
+            </button>
+          ) : null}
 
           {/* Tracking */}
           <div className="border-t border-bone/10 pt-4 flex flex-col gap-3">

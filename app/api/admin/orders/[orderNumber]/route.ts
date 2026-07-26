@@ -118,6 +118,8 @@ export async function PATCH(req: Request, { params }: Params) {
     tracking_id?: string | null;
     courier_partner?: string | null;
     tracking_url?: string | null;
+    customer_email?: string;
+    delivery_address?: string;
     send_email?: boolean;
   };
   const status = String(body.status ?? "").trim();
@@ -146,6 +148,10 @@ export async function PATCH(req: Request, { params }: Params) {
   if (typeof body.tracking_url === "string")
     patch.tracking_url = body.tracking_url.trim() || null;
   else if (body.tracking_url === null) patch.tracking_url = null;
+  if (typeof body.customer_email === "string")
+    patch.customer_email = body.customer_email.trim();
+  if (typeof body.delivery_address === "string")
+    patch.delivery_address = body.delivery_address.trim();
 
   if (status === "shipped" && !order.shipped_at) {
     patch.shipped_at = new Date().toISOString();
