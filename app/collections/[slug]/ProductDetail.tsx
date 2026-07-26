@@ -19,7 +19,7 @@ import Reveal from "@/components/animations/Reveal";
 import TextReveal from "@/components/animations/TextReveal";
 import { useMagnetic } from "@/lib/useMagnetic";
 import { easeCinematic } from "@/lib/animations";
-import { formatPrice, SITE } from "@/lib/site";
+import { formatPrice, SITE, Y2K_BUNDLE } from "@/lib/site";
 import { useCart } from "@/lib/cart";
 import { useStock } from "@/lib/stock";
 import { useChainById, useChains } from "@/lib/catalog-context";
@@ -202,6 +202,16 @@ export default function ProductDetail({
                     </span>
                   ) : null}
                 </p>
+                {product.slug.toLowerCase().includes(Y2K_BUNDLE.slugPattern) ? (
+                  <p className="mt-2 text-sm text-gold">
+                    Buy 2 for {formatPrice(
+                      product.isPreOrder ? Y2K_BUNDLE.preOrder.pack2 : Y2K_BUNDLE.launch.pack2
+                    )}{" "}
+                    · Buy 3 for {formatPrice(
+                      product.isPreOrder ? Y2K_BUNDLE.preOrder.pack3 : Y2K_BUNDLE.launch.pack3
+                    )}
+                  </p>
+                ) : null}
               </div>
             </Reveal>
             <Reveal delay={0.2}>
