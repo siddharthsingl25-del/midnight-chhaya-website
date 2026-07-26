@@ -205,6 +205,25 @@ function OrderRow({
   const [address, setAddress] = useState(order.delivery_address ?? "");
   const [busy, setBusy] = useState<null | "shipped" | "delivered" | "save">(null);
   const [msg, setMsg] = useState("");
+  const [togglingLabel, setTogglingLabel] = useState(false);
+
+  const toggleLabelPrinted = async () => {
+    setTogglingLabel(true);
+    try {
+      await fetch(`/api/admin/orders/${encodeURIComponent(order.order_number)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: order.status,
+          label_printed: !order.label_printed_at,
+          send_email: false,
+        }),
+      });
+      await onChanged();
+    } finally {
+      setTogglingLabel(false);
+    }
+  };
 
   const patch = async (
     next: Order["status"],
@@ -248,38 +267,72 @@ function OrderRow({
     }
   };
 
+  const printed = !!order.label_printed_at;
+
   return (
     <li className="border-b border-bone/10">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center gap-3 py-3 text-left"
-      >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <p className="font-display text-bone text-sm">{order.order_number}</p>
-            <span
-              className={`text-[9px] uppercase tracking-[0.15em] px-1.5 py-px border ${STATUS_COLOR[order.status]}`}
-            >
-              {STATUS_LABEL[order.status]}
-            </span>
-            <span className="text-[9px] uppercase tracking-[0.15em] text-bone-dim border border-bone/15 px-1.5 py-px">
-              {order.payment_method}
-            </span>
+      <div className="w-full flex items-center gap-3 py-3">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex-1 min-w-0 flex items-center gap-3 text-left"
+        >
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <p className="font-display text-bone text-sm">{order.order_number}</p>
+              <span
+                className={`text-[9px] uppercase tracking-[0.15em] px-1.5 py-px border ${STATUS_COLOR[order.status]}`}
+              >
+                {STATUS_LABEL[order.status]}
+              </span>
+              <span className="text-[9px] uppercase tracking-[0.15em] text-bone-dim border border-bone/15 px-1.5 py-px">
+                {order.payment_method}
+              </span>
+            </div>
+            <p className="text-[10px] text-bone-dim truncate">
+              {fmtDate(order.created_at)} · {order.customer_name || "—"}{order.customer_email ? ` · ${order.customer_email}` : ""}
+            </p>
           </div>
-          <p className="text-[10px] text-bone-dim truncate">
-            {fmtDate(order.created_at)} · {order.customer_name || "—"}{order.customer_email ? ` · ${order.customer_email}` : ""}
-          </p>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <p className="font-display text-bone text-sm">{fmt(order.total)}</p>
-        </div>
-        <ChevronDown
-          size={14}
-          strokeWidth={1.5}
-          className={`text-bone-dim transition-transform ${isOpen ? "rotate-180" : ""}`}
-        />
-      </button>
+          <div className="text-right flex-shrink-0">
+            <p className="font-display text-bone text-sm">{fmt(order.total)}</p>
+          </div>
+        </button>
+
+        {/* Label-printed tick — sits outside the expand button so it
+         * doesn't fire the row toggle. Click toggles the timestamp. */}
+        <label
+          className={`flex-shrink-0 flex items-center gap-1.5 cursor-pointer select-none px-2 py-1 border transition-colors ${
+            printed
+              ? "border-emerald-400/60 text-emerald-400 bg-emerald-400/5"
+              : "border-bone/25 text-bone-dim hover:text-bone"
+          } ${togglingLabel ? "opacity-50" : ""}`}
+          title={printed ? `Printed ${fmtDate(order.label_printed_at!)}` : "Not printed yet"}
+        >
+          <input
+            type="checkbox"
+            checked={printed}
+            disabled={togglingLabel}
+            onChange={toggleLabelPrinted}
+            className="w-3 h-3 accent-emerald-400"
+          />
+          <span className="text-[9px] uppercase tracking-[0.15em]">
+            {printed ? "Printed" : "Print"}
+          </span>
+        </label>
+
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex-shrink-0"
+          aria-label="Expand"
+        >
+          <ChevronDown
+            size={14}
+            strokeWidth={1.5}
+            className={`text-bone-dim transition-transform ${isOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+      </div>
 
       {isOpen ? (
         <div className="bg-charcoal/30 px-3 py-4 mb-2 text-xs font-body text-bone flex flex-col gap-4">

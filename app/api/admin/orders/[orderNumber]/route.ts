@@ -121,6 +121,7 @@ export async function PATCH(req: Request, { params }: Params) {
     customer_email?: string;
     delivery_address?: string;
     send_email?: boolean;
+    label_printed?: boolean;
   };
   const status = String(body.status ?? "").trim();
   if (!ALLOWED_STATUSES.has(status)) {
@@ -152,6 +153,9 @@ export async function PATCH(req: Request, { params }: Params) {
     patch.customer_email = body.customer_email.trim();
   if (typeof body.delivery_address === "string")
     patch.delivery_address = body.delivery_address.trim();
+  if (typeof body.label_printed === "boolean") {
+    patch.label_printed_at = body.label_printed ? new Date().toISOString() : null;
+  }
 
   if (status === "shipped" && !order.shipped_at) {
     patch.shipped_at = new Date().toISOString();
