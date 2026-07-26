@@ -1,4 +1,5 @@
 import Hero from "@/components/sections/Hero";
+import PromoImageBanner from "@/components/sections/PromoImageBanner";
 import PreOrder from "@/components/sections/PreOrder";
 import PromoCodeAnnouncement from "@/components/sections/PromoCodeAnnouncement";
 import FeaturedPieces from "@/components/sections/FeaturedPieces";
@@ -10,6 +11,7 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <PromoImageBanner />
       <PreOrder />
       <PromoCodeAnnouncement />
       <FeaturedPieces />

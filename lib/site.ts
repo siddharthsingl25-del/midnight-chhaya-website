@@ -74,6 +74,16 @@ export const Y2K_BUNDLE = {
   launch:   { unit: 249, pack2: 469, pack3: 650 },
 } as const;
 
+/** Homepage promo image banner. Set `url` to a hosted image path and
+ * the PromoImageBanner section renders it full-width between the
+ * Hero and the Pre-order section. Set `href` to make it clickable
+ * (link goes anywhere on the site). Set `url` to empty to hide. */
+export const HOMEPAGE_BANNER = {
+  url: "",
+  alt: "Midnight Chhaya launch",
+  href: "/collections?cat=rings",
+} as const;
+
 /**
  * Returns the rupee discount applied when the cart hits a bundle tier
  * (2-pack or 3-pack of y2k rings). Zero for 1 or 4+ (no bundle).
