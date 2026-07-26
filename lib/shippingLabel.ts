@@ -146,14 +146,14 @@ export function renderLabelPage(orders: LabelOrder[], title: string): string {
     .to { border-top: 1px solid #000; padding-top: 1.5mm; }
     .to-lbl { font-size: 5.5pt; letter-spacing: 0.2em; color: #666; margin-bottom: 0.5mm; }
     .name { font-size: 11pt; font-weight: 700; margin-bottom: 0.5mm; line-height: 1.1; }
-    .addr { font-size: 8pt; white-space: pre-wrap; line-height: 1.2; }
-    .phone { margin-top: 1mm; font-size: 8pt; font-weight: 600; }
+    .addr { font-size: 8.5pt; font-weight: 700; color: #000; white-space: pre-wrap; line-height: 1.25; }
+    .phone { margin-top: 1mm; font-size: 9pt; font-weight: 800; color: #000; }
     .items { flex: 1; border-top: 1px dashed #888; padding-top: 1.5mm; margin-top: 1.5mm; font-size: 7pt; line-height: 1.25; color: #000; overflow: hidden; }
     .items-lbl { font-size: 5.5pt; letter-spacing: 0.2em; color: #666; margin-bottom: 0.5mm; font-weight: 700; }
     .item { font-size: 7pt; }
     .item em { font-style: normal; color: #555; }
-    .from { border-top: 1px dashed #888; padding-top: 1mm; margin-top: 1.5mm; font-size: 6.5pt; line-height: 1.15; color: #333; }
-    .from-lbl { font-size: 5pt; letter-spacing: 0.2em; color: #666; margin-bottom: 0.3mm; }
+    .from { border-top: 1px dashed #888; padding-top: 1mm; margin-top: 1.5mm; font-size: 7pt; font-weight: 700; line-height: 1.2; color: #000; }
+    .from-lbl { font-size: 5pt; letter-spacing: 0.2em; color: #666; margin-bottom: 0.3mm; font-weight: 400; }
     .empty { border: none; }
 
     @media print {
