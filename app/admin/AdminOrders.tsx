@@ -14,7 +14,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, Check, Truck, PackageCheck } from "lucide-react";
+import { ChevronDown, Check, Truck, PackageCheck, Printer } from "lucide-react";
 
 type Order = {
   id: number;
@@ -374,6 +374,16 @@ function OrderRow({
 
             {/* Action buttons */}
             <div className="flex flex-wrap gap-2 mt-2">
+              <a
+                href={`/api/admin/orders/${encodeURIComponent(order.order_number)}/label`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-bone/40 text-bone hover:bg-bone/5"
+              >
+                <Printer size={12} strokeWidth={1.75} />
+                <span className="eyebrow text-[10px]">Print / download label</span>
+              </a>
+
               {order.status !== "shipped" && order.status !== "delivered" ? (
                 <button
                   type="button"

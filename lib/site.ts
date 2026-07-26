@@ -190,6 +190,19 @@ export function computeShippingForCart(
   return computeShipping(subtotal);
 }
 
+/** Sender info printed on shipping labels. Edit these to match your
+ * actual pickup address — the courier reads this "From" block to know
+ * where to collect / where to return the parcel if delivery fails. */
+export const STORE_SENDER = {
+  name: "Midnight Chhaya",
+  line1: "",
+  line2: "",
+  city: "",
+  state: "",
+  pincode: "",
+  phone: "",
+} as const;
+
 /** Default packaging cost the merchant absorbs on every order (box,
  * bubble wrap, thank-you card, etc). Auto-subtracted from each order's
  * profit in the finance dashboard. Change this number if your real
