@@ -112,26 +112,39 @@ export default function AdminOrders() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap gap-2">
-        {(["all", "paid", "shipped", "delivered"] as const).map((f) => {
-          const active = filter === f;
-          return (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={[
-                "eyebrow px-3 py-2 border text-[10px] transition-colors",
-                active
-                  ? "border-gold bg-gold/10 text-gold"
-                  : "border-bone/20 text-bone-dim hover:text-bone",
-              ].join(" ")}
-            >
-              {f === "all" ? "All" : STATUS_LABEL[f as Order["status"]]}
-              <span className="ml-2 opacity-60">{counts[f]}</span>
-            </button>
-          );
-        })}
+      <div className="flex flex-wrap gap-2 items-center justify-between">
+        <div className="flex flex-wrap gap-2">
+          {(["all", "paid", "shipped", "delivered"] as const).map((f) => {
+            const active = filter === f;
+            return (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilter(f)}
+                className={[
+                  "eyebrow px-3 py-2 border text-[10px] transition-colors",
+                  active
+                    ? "border-gold bg-gold/10 text-gold"
+                    : "border-bone/20 text-bone-dim hover:text-bone",
+                ].join(" ")}
+              >
+                {f === "all" ? "All" : STATUS_LABEL[f as Order["status"]]}
+                <span className="ml-2 opacity-60">{counts[f]}</span>
+              </button>
+            );
+          })}
+        </div>
+        {counts.paid > 0 ? (
+          <a
+            href="/api/admin/orders/labels?status=paid"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gold text-ink eyebrow text-[10px]"
+          >
+            <Printer size={12} strokeWidth={1.75} />
+            Print all {counts.paid} paid label{counts.paid === 1 ? "" : "s"}
+          </a>
+        ) : null}
       </div>
 
       {err ? (
