@@ -417,6 +417,7 @@ export default function CheckoutClient() {
             phone: form.phone,
             email: form.email,
           },
+          address: addressText,
           discountCode: appliedCode?.code,
           paymentMethod,
         }),

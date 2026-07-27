@@ -37,6 +37,10 @@ type Body = {
     phone: string;
     email: string;
   };
+  /** Full delivery address as a multi-line string. Persisted to
+   * pending_orders so the webhook safety net can rebuild an order
+   * with a full address if the browser closes before verify runs. */
+  address?: string;
   /** Optional abandoned-cart recovery code (BACK10-XXXXXX). */
   discountCode?: string;
   /** 'online' (default) or 'cod'. For COD, the Razorpay charge covers
@@ -332,6 +336,7 @@ export async function POST(req: Request) {
             customer_email: body.customer?.email ?? "",
             customer_phone: body.customer?.phone ?? "",
             customer_instagram: body.customer?.instagram ?? "",
+            delivery_address: body.address ?? "",
             items: lines.map((l) => ({
               slug: l.slug,
               name: l.name,
