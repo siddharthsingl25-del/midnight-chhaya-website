@@ -552,8 +552,8 @@ export default function CheckoutClient() {
           ) : null}
 
           <p className="font-serif italic text-bone-dim text-lg max-w-md leading-relaxed">
-            Payment confirmed. A confirmation has been sent to your email and WhatsApp. Your order ships within 1–3 business days —
-            we&apos;ll DM <strong className="not-italic font-semibold text-bone">{form.instagram || "your Instagram"}</strong> with the tracking link as soon as it&apos;s dispatched.
+            Payment confirmed. A confirmation has been sent to your email and WhatsApp. Your order will be dispatched in 1–3 business days,
+            and the tracking ID will be shared on <strong className="not-italic font-semibold text-bone">{form.email || "your email"}</strong>.
           </p>
 
           <details className="text-left w-full max-w-md mt-2">
