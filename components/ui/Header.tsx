@@ -64,8 +64,8 @@ export default function Header() {
           />
         </Link>
 
-        {/* desktop nav */}
-        <nav className="hidden lg:flex items-center gap-8 xl:gap-10">
+        {/* desktop nav — centered as a tight cluster instead of spread edge-to-edge */}
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-7 mx-auto">
           {NAV.map((item) => (
             <NavLink
               key={item.href}
@@ -185,7 +185,7 @@ function NavLink({
       <Link
         href={item.href}
         data-cursor={item.label}
-        className="eyebrow text-bone hover:text-gold transition-colors duration-500 gold-underline whitespace-nowrap"
+        className="text-[11px] uppercase tracking-[0.18em] font-medium text-bone hover:text-gold transition-colors duration-500 gold-underline whitespace-nowrap"
       >
         {item.label}
       </Link>
@@ -197,7 +197,7 @@ function NavLink({
       <Link
         href={item.href}
         data-cursor={item.label}
-        className="eyebrow inline-flex items-center gap-1.5 text-bone hover:text-gold transition-colors duration-500 gold-underline whitespace-nowrap"
+        className="text-[11px] uppercase tracking-[0.18em] font-medium inline-flex items-center gap-1.5 text-bone hover:text-gold transition-colors duration-500 gold-underline whitespace-nowrap"
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
