@@ -26,6 +26,7 @@ const TILES: readonly Tile[] = [
   { label: "Rings",     cat: "rings",     href: "/collections?cat=rings" },
   { label: "Glasses",   cat: "glasses",   href: "/collections?cat=glasses" },
   { label: "Earbuds",   cat: "earbuds",   href: "/collections?cat=earbuds" },
+  { label: "Wallets",   cat: "wallets",   href: "/collections?cat=wallets" },
 ];
 
 export default async function CategoryTiles() {
@@ -44,7 +45,7 @@ export default async function CategoryTiles() {
 
   return (
     <section className="w-full bg-ink px-4 sm:px-6 pt-6 pb-16">
-      <ul className="mx-auto max-w-[1400px] grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      <ul className="mx-auto max-w-[1400px] grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {TILES.map((t) => {
           const src = imageByCat.get(t.cat) ?? null;
           return (
