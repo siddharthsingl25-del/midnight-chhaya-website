@@ -30,7 +30,7 @@
 import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { SITE } from "@/lib/site";
+import { sendMerchantAlert } from "@/lib/merchantAlert";
 import {
   sendOrderConfirmationEmail,
   sendOrderConfirmationWhatsApp,
@@ -159,20 +159,17 @@ export async function POST(req: Request) {
     // No pending row → cannot reconstruct the order (would happen only
     // if the pending upsert failed on create-order). Alert the merchant
     // so they can look it up in Razorpay manually.
-    void fetch(`https://ntfy.sh/${SITE.notifyTopic}`, {
-      method: "POST",
-      headers: {
-        Title: `MANUAL REVIEW - webhook orphan (${paymentId})`,
-        Priority: "max",
-        Tags: "warning,money_with_wings",
-      },
+    void sendMerchantAlert({
+      title: `MANUAL REVIEW - webhook orphan (${paymentId})`,
+      priority: "max",
+      tags: "warning,money_with_wings",
       body:
         `Razorpay webhook received a payment but no pending_orders row exists.\n\n` +
         `Payment ID: ${paymentId}\n` +
         `Razorpay order: ${razorpayOrderId}\n` +
         `Amount: Rs${Math.round((payment.amount ?? 0) / 100)}\n` +
         `Look it up in Razorpay dashboard and add manually.`,
-    }).catch(() => {});
+    });
 
     return NextResponse.json(
       {
@@ -293,20 +290,17 @@ export async function POST(req: Request) {
 
     // Real error — merchant needs to know so they can recover manually.
     console.error("[webhook] orders.insert failed", paymentId, orderErr);
-    void fetch(`https://ntfy.sh/${SITE.notifyTopic}`, {
-      method: "POST",
-      headers: {
-        Title: `MANUAL REVIEW - webhook insert failed (${paymentId})`,
-        Priority: "max",
-        Tags: "warning,money_with_wings",
-      },
+    void sendMerchantAlert({
+      title: `MANUAL REVIEW - webhook insert failed (${paymentId})`,
+      priority: "max",
+      tags: "warning,money_with_wings",
       body:
         `Payment succeeded but the webhook could not save the order.\n\n` +
         `Payment ID: ${paymentId}\n` +
         `Razorpay order: ${razorpayOrderId}\n` +
         `Reason: ${orderErr.message}\n\n` +
         `Customer: ${pending.customer_name} · ${pending.customer_email} · ${pending.customer_phone}\n`,
-    }).catch(() => {});
+    });
 
     return NextResponse.json(
       { error: "insert-failed", details: orderErr.message },
@@ -327,13 +321,10 @@ export async function POST(req: Request) {
   const itemsSummary = (pending.items as Item[])
     .map((it) => `${it.name} x${it.qty}`)
     .join(", ");
-  void fetch(`https://ntfy.sh/${SITE.notifyTopic}`, {
-    method: "POST",
-    headers: {
-      Title: `${orderNumber} - Paid (webhook recovered)`,
-      Priority: "high",
-      Tags: "shopping_bags,sparkles",
-    },
+  void sendMerchantAlert({
+    title: `${orderNumber} - Paid (webhook recovered)`,
+    priority: "high",
+    tags: "shopping_bags,sparkles",
     body:
       `Order: ${orderNumber}\n` +
       `Payment ID: ${paymentId}\n` +
@@ -347,7 +338,7 @@ export async function POST(req: Request) {
       `Recovered via Razorpay webhook — customer's browser closed before ` +
       `the normal verify flow could run. All details captured, order is ` +
       `ready to ship as usual.`,
-  }).catch(() => {});
+  });
 
   // 7. Customer confirmation — fire and forget.
   if (pending.customer_email) {

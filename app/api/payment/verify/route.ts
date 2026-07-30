@@ -29,6 +29,7 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { SITE } from "@/lib/site";
+import { sendMerchantAlert } from "@/lib/merchantAlert";
 import {
   sendOrderConfirmationEmail,
   sendOrderConfirmationWhatsApp,
@@ -168,24 +169,17 @@ export async function POST(req: Request) {
       ? `product ${stockFailureSlug}`
       : `chain ${stockFailureChainId}`;
     // Notify the merchant — customer has paid but stock check failed.
-    try {
-      await fetch(`https://ntfy.sh/${SITE.notifyTopic}`, {
-        method: "POST",
-        headers: {
-          Title: `MANUAL REVIEW - Paid but stock failed (${razorpay_payment_id})`,
-          Priority: "max",
-          Tags: "warning,money_with_wings",
-        },
-        body:
-          `Payment succeeded but post-payment stock decrement failed.\n\n` +
-          `Payment ID: ${razorpay_payment_id}\n` +
-          `Razorpay order: ${razorpay_order_id}\n` +
-          `Failing item: ${failingThing}\n\n` +
-          (body.orderText ?? ""),
-      });
-    } catch {
-      /* swallowed */
-    }
+    await sendMerchantAlert({
+      title: `MANUAL REVIEW - Paid but stock failed (${razorpay_payment_id})`,
+      priority: "max",
+      tags: "warning,money_with_wings",
+      body:
+        `Payment succeeded but post-payment stock decrement failed.\n\n` +
+        `Payment ID: ${razorpay_payment_id}\n` +
+        `Razorpay order: ${razorpay_order_id}\n` +
+        `Failing item: ${failingThing}\n\n` +
+        (body.orderText ?? ""),
+    });
     return NextResponse.json(
       {
         error: "Stock unavailable after payment",
@@ -283,24 +277,17 @@ export async function POST(req: Request) {
           .update({ stock: next, updated_at: new Date().toISOString() })
           .eq("id", id);
       }
-      try {
-        await fetch(`https://ntfy.sh/${SITE.notifyTopic}`, {
-          method: "POST",
-          headers: {
-            Title: `MANUAL REVIEW - order-row insert failed (${razorpay_payment_id})`,
-            Priority: "max",
-            Tags: "warning,money_with_wings",
-          },
-          body:
-            `Payment succeeded but the orders row could not be saved.\n` +
-            `Reason: ${orderErr.message}\n\n` +
-            `Payment ID: ${razorpay_payment_id}\n` +
-            `Razorpay order: ${razorpay_order_id}\n\n` +
-            (body.orderText ?? ""),
-        });
-      } catch {
-        /* swallowed */
-      }
+      await sendMerchantAlert({
+        title: `MANUAL REVIEW - order-row insert failed (${razorpay_payment_id})`,
+        priority: "max",
+        tags: "warning,money_with_wings",
+        body:
+          `Payment succeeded but the orders row could not be saved.\n` +
+          `Reason: ${orderErr.message}\n\n` +
+          `Payment ID: ${razorpay_payment_id}\n` +
+          `Razorpay order: ${razorpay_order_id}\n\n` +
+          (body.orderText ?? ""),
+      });
       return NextResponse.json(
         {
           error: "Order save failed",
@@ -338,9 +325,9 @@ export async function POST(req: Request) {
     }
   }
 
-  // 4. Merchant push (ntfy) — title carries the order number so it shows on
-  // your lock screen and you can match it to a customer support query --------
-  try {
+  // 4. Merchant push — fires ntfy AND Telegram in parallel so a single
+  // channel failure can't hide the order from the merchant.
+  {
     const asciiTitleSummary =
       (body.titleSummary || "Paid order").replace(/[^\x20-\x7E]/g, "") ||
       "Paid order";
@@ -349,19 +336,14 @@ export async function POST(req: Request) {
     const codLine = isCod
       ? `\nCOD - collect Rs${body.amountDueOnDelivery ?? body.snapshot?.subtotal ?? "?"} cash on delivery.\n`
       : "";
-    await fetch(`https://ntfy.sh/${SITE.notifyTopic}`, {
-      method: "POST",
-      headers: {
-        Title: (isCod ? "COD " : "") + asciiTitle,
-        Priority: "high",
-        Tags: isCod ? "package,money_with_wings" : "shopping_bags,sparkles",
-      },
+    await sendMerchantAlert({
+      title: (isCod ? "COD " : "") + asciiTitle,
+      priority: "high",
+      tags: isCod ? "package,money_with_wings" : "shopping_bags,sparkles",
       body:
         `Order: ${orderNumber}\nPayment ID: ${razorpay_payment_id}${codLine}\n` +
         (body.orderText ?? "(no order text)"),
     });
-  } catch {
-    /* swallowed — order is already booked + paid */
   }
 
   // 5. Customer-facing confirmation: email + WhatsApp -------------------------
