@@ -111,10 +111,18 @@ export type NavItem = {
   children?: { label: string; href: string }[];
 };
 
-// Top nav intentionally empty — the homepage category tiles now carry
-// the "browse categories" job, so the header keeps only the logo + cart.
-// To bring items back, re-populate this array.
-export const NAV: readonly NavItem[] = [];
+// Categories that live inside the hamburger drawer (top-left of every
+// page). Desktop no longer shows an inline nav row — this list appears
+// exclusively when the drawer is open.
+export const NAV: readonly NavItem[] = [
+  { label: "Shop All",  href: "/collections" },
+  { label: "Chains",    href: "/collections?cat=chains" },
+  { label: "Keychains", href: "/collections?cat=keychains" },
+  { label: "Rings",     href: "/collections?cat=rings" },
+  { label: "Glasses",   href: "/collections?cat=glasses" },
+  { label: "Earbuds",   href: "/collections?cat=earbuds" },
+  { label: "Wallets",   href: "/collections?cat=wallets" },
+];
 
 /** Footer navigation (richer than the header — includes brand/story pages). */
 export const FOOTER_NAV: readonly { heading: string; links: { label: string; href: string }[] }[] = [
