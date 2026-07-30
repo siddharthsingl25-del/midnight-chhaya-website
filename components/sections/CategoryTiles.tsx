@@ -60,16 +60,20 @@ export default async function CategoryTiles() {
                     alt={t.label}
                     fill
                     sizes="(min-width: 1024px) 20vw, (min-width: 640px) 33vw, 50vw"
-                    className="object-cover opacity-70 group-hover:opacity-90 group-hover:scale-105 transition-all duration-700 ease-out"
+                    className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                   />
                 ) : null}
 
-                {/* Bottom-heavy gradient so the label always reads on any photo */}
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/95 via-ink/40 to-transparent" />
+                {/* Slim bottom-only gradient — just enough to keep the
+                 * label readable without dimming the photo itself. */}
+                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-ink/90 to-transparent" />
 
                 {/* Label */}
                 <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4 text-center">
-                  <p className="font-display text-bone text-base sm:text-lg tracking-wide group-hover:text-gold transition-colors">
+                  <p
+                    className="font-display text-bone text-base sm:text-lg tracking-wide group-hover:text-gold transition-colors"
+                    style={{ textShadow: "0 2px 8px rgba(0,0,0,0.85)" }}
+                  >
                     {t.label}
                   </p>
                 </div>
