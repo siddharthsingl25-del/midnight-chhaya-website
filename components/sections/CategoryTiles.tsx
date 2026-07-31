@@ -18,10 +18,13 @@ type Tile = {
   label: string;
   cat: Category;
   href: string;
+  /** Pin a specific product's image as the tile backdrop. If null / not
+   * found, falls back to the first product in the category. */
+  pinnedSlug?: string;
 };
 
 const TILES: readonly Tile[] = [
-  { label: "Chains",    cat: "chains",    href: "/collections?cat=chains" },
+  { label: "Chains",    cat: "chains",    href: "/collections?cat=chains",    pinnedSlug: "crimson-filigree-cross" },
   { label: "Keychains", cat: "keychains", href: "/collections?cat=keychains" },
   { label: "Rings",     cat: "rings",     href: "/collections?cat=rings" },
   { label: "Glasses",   cat: "glasses",   href: "/collections?cat=glasses" },
@@ -32,15 +35,20 @@ const TILES: readonly Tile[] = [
 export default async function CategoryTiles() {
   const products = await getAllProducts();
 
-  // Pick one representative image per category — the first product in
-  // display_order that has any image. Null if the category is empty; the
-  // tile still renders (dark box with just the name).
+  // Pick one representative image per category. A pinnedSlug on a tile
+  // wins; otherwise the first product in display_order with any image.
+  // Null → tile still renders as a dark box with just the label.
   const imageByCat = new Map<Category, string | null>();
   for (const t of TILES) {
-    const first = products.find(
-      (p) => p.category === t.cat && (p.images?.length ?? 0) > 0
-    );
-    imageByCat.set(t.cat, first?.images?.[0] ?? null);
+    const pinned = t.pinnedSlug
+      ? products.find((p) => p.slug === t.pinnedSlug && (p.images?.length ?? 0) > 0)
+      : null;
+    const fallback = pinned
+      ? null
+      : products.find(
+          (p) => p.category === t.cat && (p.images?.length ?? 0) > 0
+        );
+    imageByCat.set(t.cat, (pinned ?? fallback)?.images?.[0] ?? null);
   }
 
   return (
