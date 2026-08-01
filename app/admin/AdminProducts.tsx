@@ -382,6 +382,11 @@ function ProductForm({
   const [relatedSlugs, setRelatedSlugs] = useState<string[]>(
     product?.relatedSlugs ?? []
   );
+  // Stock is stored in the separate `inventory` table. In create mode we
+  // pass this as initial_stock on the POST; in edit mode we fetch current
+  // stock once on mount and PUT it back on save (if changed).
+  const [stock, setStock] = useState<string>("");
+  const [initialStock, setInitialStock] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
@@ -397,12 +402,36 @@ function ProductForm({
     }
   }, [name, mode, slugTouched]);
 
+  // In edit mode, load the current stock for this product on mount so
+  // the input reflects reality and only pushes an update when it changes.
+  useEffect(() => {
+    if (mode !== "edit" || !product?.slug) return;
+    let cancelled = false;
+    (async () => {
+      const res = await fetch("/api/admin/stock", { cache: "no-store" });
+      if (!res.ok) return;
+      const d = (await res.json().catch(() => ({}))) as {
+        rows?: Array<{ slug: string; stock: number }>;
+      };
+      const row = d.rows?.find((r) => r.slug === product.slug);
+      if (!cancelled && row) {
+        setStock(String(row.stock));
+        setInitialStock(String(row.stock));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, product?.slug]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!name.trim()) return setError("Name is required");
     if (!slug.trim()) return setError("Slug is required");
     if (!image) return setError("Photo is required");
+
+    const stockNum = stock === "" ? 0 : Math.max(0, Math.floor(Number(stock)));
 
     const body = {
       slug: slug.trim(),
@@ -422,6 +451,8 @@ function ProductForm({
       is_pre_order: isPreOrder,
       launch_price: launchPrice === "" ? null : Number(launchPrice),
       related_slugs: relatedSlugs,
+      // Only used on create; edit mode does a separate PUT below.
+      initial_stock: stockNum,
     };
 
     setSaving(true);
@@ -441,6 +472,22 @@ function ProductForm({
         setError(d.error || "Save failed");
         return;
       }
+
+      // Edit mode: push stock separately if the merchant changed it.
+      // (In create mode, initial_stock on the POST body already handled it.)
+      if (mode === "edit" && stock !== initialStock && stock !== "") {
+        const stockRes = await fetch("/api/admin/stock", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug: slug.trim(), stock: stockNum }),
+        });
+        if (!stockRes.ok) {
+          const d = (await stockRes.json().catch(() => ({}))) as { error?: string };
+          setError(`Product saved but stock update failed: ${d.error ?? "unknown"}`);
+          return;
+        }
+      }
+
       await onDone();
     } finally {
       setSaving(false);
@@ -529,6 +576,18 @@ function ProductForm({
         type="tel"
         inputMode="numeric"
         help="Private. Never shown to customers. Powers the Finance dashboard."
+      />
+
+      <Field
+        label="Stock (quantity in hand)"
+        value={stock}
+        onChange={setStock}
+        placeholder={mode === "create" ? "e.g. 5" : "current stock"}
+        type="tel"
+        inputMode="numeric"
+        help={mode === "create"
+          ? "Starting inventory count. Auto-decreases as customers order."
+          : "Change and save — updates without leaving this page. Or use the Stock tab."}
       />
 
       {mode === "create" ? (

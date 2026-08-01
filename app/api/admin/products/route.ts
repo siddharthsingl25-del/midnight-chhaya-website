@@ -58,6 +58,7 @@ export async function POST(req: Request) {
     related_slugs = [],
     is_pre_order = false,
     launch_price = null,
+    initial_stock = 0,
   } = body as Record<string, unknown>;
 
   if (typeof slug !== "string" || !slug.trim()) {
@@ -137,10 +138,12 @@ export async function POST(req: Request) {
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Also seed an inventory row at 0 so stock controls work immediately
+  // Also seed an inventory row so stock controls work immediately.
+  // Client can pass initial_stock to set the starting count; defaults to 0.
+  const initialStockNum = Math.max(0, Math.floor(Number(initial_stock) || 0));
   await supabaseAdmin()
     .from("inventory")
-    .upsert({ slug: row.slug, stock: 0, updated_at: row.updated_at });
+    .upsert({ slug: row.slug, stock: initialStockNum, updated_at: row.updated_at });
 
   revalidateTag("products", "max");
   return NextResponse.json({ row: data });
