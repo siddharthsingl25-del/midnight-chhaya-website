@@ -28,6 +28,10 @@ export default function CollectionsGrid() {
   const valid = CATEGORIES.some((c) => c.id === fromUrl);
   const audienceFromUrl: Audience =
     params.get("audience") === "women" ? "women" : "all";
+  // Optional "filter=exclusive" special mode — narrows the grid to
+  // products flagged .exclusive in the DB, regardless of category.
+  // Used by the homepage Exclusive tile + hamburger drawer.
+  const exclusiveMode = params.get("filter") === "exclusive";
   const [active, setActive] = useState<Filter>(valid ? fromUrl : "all");
   const [audience, setAudience] = useState<Audience>(audienceFromUrl);
   const [sort, setSort] = useState<SortKey>("featured");
@@ -67,6 +71,7 @@ export default function CollectionsGrid() {
       active === "all"
         ? products
         : products.filter((p) => p.category === active);
+    if (exclusiveMode) base = base.filter((p) => p.exclusive);
     if (audience === "women") base = base.filter((p) => p.forWomen);
 
     /* Always sink sold-out products to the bottom of the grid,

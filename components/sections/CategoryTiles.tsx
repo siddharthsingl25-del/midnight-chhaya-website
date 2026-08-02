@@ -16,7 +16,10 @@ import type { Category } from "@/lib/types";
 
 type Tile = {
   label: string;
-  cat: Category;
+  /** Category to filter by. 'exclusive' is a special virtual category
+   * that pulls products with the .exclusive DB flag regardless of their
+   * real category. */
+  cat: Category | "exclusive";
   href: string;
   /** Pin a specific product's image as the tile backdrop. If null / not
    * found, falls back to the first product in the category. */
@@ -24,6 +27,7 @@ type Tile = {
 };
 
 const TILES: readonly Tile[] = [
+  { label: "Exclusive", cat: "exclusive", href: "/collections?filter=exclusive" },
   { label: "Chains",    cat: "chains",    href: "/collections?cat=chains",    pinnedSlug: "crimson-filigree-cross" },
   { label: "Keychains", cat: "keychains", href: "/collections?cat=keychains" },
   { label: "Rings",     cat: "rings",     href: "/collections?cat=rings" },
@@ -36,25 +40,29 @@ const TILES: readonly Tile[] = [
 export default async function CategoryTiles() {
   const products = await getAllProducts();
 
-  // Pick one representative image per category. A pinnedSlug on a tile
-  // wins; otherwise the first product in display_order with any image.
+  // Pick one representative image per tile. Order of precedence:
+  //   1. pinnedSlug (explicit product chosen for this tile)
+  //   2. For 'exclusive' — first product with .exclusive flag + an image
+  //   3. Otherwise — first product in the category with an image
   // Null → tile still renders as a dark box with just the label.
-  const imageByCat = new Map<Category, string | null>();
+  const imageByCat = new Map<Tile["cat"], string | null>();
   for (const t of TILES) {
     const pinned = t.pinnedSlug
       ? products.find((p) => p.slug === t.pinnedSlug && (p.images?.length ?? 0) > 0)
       : null;
     const fallback = pinned
       ? null
-      : products.find(
-          (p) => p.category === t.cat && (p.images?.length ?? 0) > 0
-        );
+      : t.cat === "exclusive"
+        ? products.find((p) => p.exclusive && (p.images?.length ?? 0) > 0)
+        : products.find(
+            (p) => p.category === t.cat && (p.images?.length ?? 0) > 0
+          );
     imageByCat.set(t.cat, (pinned ?? fallback)?.images?.[0] ?? null);
   }
 
   return (
     <section className="w-full bg-ink px-4 sm:px-6 pt-6 pb-16">
-      <ul className="mx-auto max-w-[1400px] grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 sm:gap-4">
+      <ul className="mx-auto max-w-[1500px] grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
         {TILES.map((t) => {
           const src = imageByCat.get(t.cat) ?? null;
           return (
