@@ -67,11 +67,17 @@ export default function CollectionsGrid() {
   const stockMap = useStockMap();
 
   const items = useMemo<Product[]>(() => {
-    let base =
-      active === "all"
-        ? products
-        : products.filter((p) => p.category === active);
-    if (exclusiveMode) base = base.filter((p) => p.exclusive);
+    let base: Product[];
+    if (active === "all") {
+      base = products;
+    } else if (active === "exclusive") {
+      // Match products in the "exclusive" category OR still flagged with
+      // the legacy .exclusive boolean — so both old and new work.
+      base = products.filter((p) => p.category === "exclusive" || p.exclusive);
+    } else {
+      base = products.filter((p) => p.category === active);
+    }
+    if (exclusiveMode) base = base.filter((p) => p.exclusive || p.category === "exclusive");
     if (audience === "women") base = base.filter((p) => p.forWomen);
 
     /* Always sink sold-out products to the bottom of the grid,

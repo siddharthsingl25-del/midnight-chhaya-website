@@ -3,10 +3,11 @@
  * UI. Mirrors the `products` and `chain_options` tables in Supabase.
  */
 
-export type Category = "rings" | "chains" | "keychains" | "bracelets" | "earbuds" | "glasses" | "wallets";
+export type Category = "rings" | "chains" | "keychains" | "bracelets" | "earbuds" | "glasses" | "wallets" | "exclusive";
 
 export const CATEGORIES: { id: Category | "all"; label: string }[] = [
   { id: "all",        label: "All" },
+  { id: "exclusive",  label: "Exclusive" },
   { id: "chains",     label: "Chains" },
   { id: "keychains",  label: "Keychains" },
   { id: "earbuds",    label: "Chrome Earbuds" },

@@ -138,7 +138,7 @@ export type NavItem = {
 // exclusively when the drawer is open.
 export const NAV: readonly NavItem[] = [
   { label: "Shop All",  href: "/collections" },
-  { label: "Exclusive", href: "/collections?filter=exclusive" },
+  { label: "Exclusive", href: "/collections?cat=exclusive" },
   { label: "Chains",    href: "/collections?cat=chains" },
   { label: "Keychains", href: "/collections?cat=keychains" },
   { label: "Rings",     href: "/collections?cat=rings" },

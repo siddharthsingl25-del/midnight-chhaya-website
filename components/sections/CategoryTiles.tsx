@@ -27,7 +27,7 @@ type Tile = {
 };
 
 const TILES: readonly Tile[] = [
-  { label: "Exclusive", cat: "exclusive", href: "/collections?filter=exclusive" },
+  { label: "Exclusive", cat: "exclusive", href: "/collections?cat=exclusive" },
   { label: "Chains",    cat: "chains",    href: "/collections?cat=chains",    pinnedSlug: "crimson-filigree-cross" },
   { label: "Keychains", cat: "keychains", href: "/collections?cat=keychains" },
   { label: "Rings",     cat: "rings",     href: "/collections?cat=rings" },
@@ -53,7 +53,11 @@ export default async function CategoryTiles() {
     const fallback = pinned
       ? null
       : t.cat === "exclusive"
-        ? products.find((p) => p.exclusive && (p.images?.length ?? 0) > 0)
+        ? // Exclusive tile: match products in the "exclusive" category
+          // OR products still flagged with the legacy .exclusive boolean.
+          products.find(
+            (p) => (p.category === "exclusive" || p.exclusive) && (p.images?.length ?? 0) > 0
+          )
         : products.find(
             (p) => p.category === t.cat && (p.images?.length ?? 0) > 0
           );
