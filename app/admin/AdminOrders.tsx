@@ -203,7 +203,7 @@ function OrderRow({
   const [trackingUrl, setTrackingUrl] = useState(order.tracking_url ?? "");
   const [email, setEmail] = useState(order.customer_email ?? "");
   const [address, setAddress] = useState(order.delivery_address ?? "");
-  const [busy, setBusy] = useState<null | "shipped" | "delivered" | "save">(null);
+  const [busy, setBusy] = useState<null | "shipped" | "delivered" | "save" | "refund">(null);
   const [msg, setMsg] = useState("");
   const [togglingLabel, setTogglingLabel] = useState(false);
 
@@ -222,6 +222,43 @@ function OrderRow({
       await onChanged();
     } finally {
       setTogglingLabel(false);
+    }
+  };
+
+  const markRefunded = async () => {
+    if (
+      !confirm(
+        `Mark ${order.order_number} as refunded?\n\n` +
+          `This will:\n` +
+          `  • Restore all items in this order to your inventory\n` +
+          `  • Remove the order from the Finance dashboard (revenue, profit)\n` +
+          `  • Hide it from the Paid / Shipped / Delivered filter tabs\n\n` +
+          `Does NOT refund the customer's card — do that manually in ` +
+          `Razorpay dashboard first.`
+      )
+    ) {
+      return;
+    }
+    setBusy("refund");
+    setMsg("");
+    try {
+      const res = await fetch(
+        `/api/admin/orders/${encodeURIComponent(order.order_number)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "refunded", send_email: false }),
+        }
+      );
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setMsg(data.error || "Refund mark failed");
+        return;
+      }
+      setMsg("Refunded · stock restored · removed from Finance");
+      await onChanged();
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -508,6 +545,20 @@ function OrderRow({
                   <Check size={12} strokeWidth={1.75} />
                   <span className="eyebrow text-[10px]">
                     {busy === "save" ? "Saving…" : "Save tracking (no email)"}
+                  </span>
+                </button>
+              ) : null}
+
+              {order.status !== "refunded" && order.status !== "cancelled" ? (
+                <button
+                  type="button"
+                  onClick={markRefunded}
+                  disabled={busy !== null}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-oxblood/60 text-oxblood hover:bg-oxblood/10 disabled:opacity-60 ml-auto"
+                  title="Restore stock, remove from Finance, hide from working views"
+                >
+                  <span className="eyebrow text-[10px]">
+                    {busy === "refund" ? "Refunding…" : "Mark refunded"}
                   </span>
                 </button>
               ) : null}

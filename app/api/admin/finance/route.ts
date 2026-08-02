@@ -73,7 +73,7 @@ export async function GET(req: Request) {
       .select(
         "id, order_number, created_at, customer_name, customer_instagram, payment_method, prepaid_amount, items, subtotal, shipping, total, merchant_cost, packaging_cost, status"
       )
-      .neq("status", "cancelled")
+      .not("status", "in", '("cancelled","refunded")')
       .order("created_at", { ascending: false })
       .limit(limit),
     sb.from("products").select("slug, cost_price"),

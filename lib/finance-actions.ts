@@ -283,7 +283,7 @@ export async function getStatsForRange(
     sb
       .from("orders")
       .select("payment_method, items, subtotal, shipping, total, merchant_cost, packaging_cost, prepaid_amount")
-      .neq("status", "cancelled")
+      .not("status", "in", '("cancelled","refunded")')
       .gte("created_at", fromIso)
       .lt("created_at", toIso),
     sb.from("products").select("slug, cost_price"),

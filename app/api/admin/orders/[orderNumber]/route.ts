@@ -167,6 +167,42 @@ export async function PATCH(req: Request, { params }: Params) {
   const { error: upErr } = await sb.from("orders").update(patch).eq("id", order.id);
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 
+  // Refund transition: return the items to inventory (product stock +
+  // any chain-option stock). Only when the order wasn't already refunded,
+  // so double-clicking Refund can't inflate stock. No Razorpay refund
+  // API call happens here — that's manual via the Razorpay dashboard.
+  if (
+    status === "refunded" &&
+    order.status !== "refunded" &&
+    order.status !== "cancelled"
+  ) {
+    const items = (order.items as Array<{ slug: string; qty: number; chainId?: string | null }>) ?? [];
+    for (const it of items) {
+      if (!it.slug || !it.qty || it.qty <= 0) continue;
+      const { data: inv } = await sb
+        .from("inventory")
+        .select("stock")
+        .eq("slug", it.slug)
+        .maybeSingle();
+      const next = (inv?.stock ?? 0) + it.qty;
+      await sb
+        .from("inventory")
+        .upsert({ slug: it.slug, stock: next, updated_at: new Date().toISOString() });
+      if (it.chainId) {
+        const { data: ch } = await sb
+          .from("chain_options")
+          .select("stock")
+          .eq("id", it.chainId)
+          .maybeSingle();
+        const nextCh = (ch?.stock ?? 0) + it.qty;
+        await sb
+          .from("chain_options")
+          .update({ stock: nextCh, updated_at: new Date().toISOString() })
+          .eq("id", it.chainId);
+      }
+    }
+  }
+
   // Send the customer-facing email unless the merchant opted out.
   const sendEmail = body.send_email !== false;
   const emailReport: { attempted: boolean; ok?: boolean; skipped?: boolean; error?: string } = {
