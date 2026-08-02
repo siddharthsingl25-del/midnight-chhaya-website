@@ -31,6 +31,7 @@ import { useCart } from "@/lib/cart";
 import { useStockRefresh } from "@/lib/stock";
 import {
   ACTIVE_OFFER,
+  CATEGORY_BOGO,
   CATEGORY_DISPATCH_NOTICES,
   COD_CHARGE,
   computeBogoDiscount,
@@ -151,9 +152,25 @@ export default function CheckoutClient() {
       qty: line.qty,
     }))
   );
+  const categoryBogoAmount = Object.entries(CATEGORY_BOGO).reduce(
+    (sum, [cat, cfg]) => {
+      if (!cfg?.enabled) return sum;
+      return (
+        sum +
+        computeBogoDiscount(
+          lines.map(({ line, product, unitPrice }) => ({
+            eligible: product.category === cat,
+            unitPrice: unitPrice ?? 0,
+            qty: line.qty,
+          }))
+        )
+      );
+    },
+    0
+  );
   const discountedSubtotal = Math.max(
     0,
-    subtotal - bogoAmount - codeDiscount - y2kBundleDiscount
+    subtotal - bogoAmount - categoryBogoAmount - codeDiscount - y2kBundleDiscount
   );
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
   /* Pre-order items must be prepaid — a customer can't reserve a
@@ -837,6 +854,14 @@ export default function CheckoutClient() {
                   </span>
                   <span className="text-sm text-gold">
                     −{formatPrice(bogoAmount)}
+                  </span>
+                </div>
+              ) : null}
+              {categoryBogoAmount > 0 ? (
+                <div className="flex items-baseline justify-between">
+                  <span className="eyebrow text-gold">Buy 1 Get 1 Free · bracelets</span>
+                  <span className="text-sm text-gold">
+                    −{formatPrice(categoryBogoAmount)}
                   </span>
                 </div>
               ) : null}

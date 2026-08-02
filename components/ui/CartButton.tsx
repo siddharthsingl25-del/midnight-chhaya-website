@@ -25,6 +25,7 @@ import { useCart } from "@/lib/cart";
 import { useStockMap } from "@/lib/stock";
 import {
   ACTIVE_OFFER,
+  CATEGORY_BOGO,
   CATEGORY_DISPATCH_NOTICES,
   computeBogoDiscount,
   computeY2KBundleDiscount,
@@ -70,9 +71,27 @@ export default function CartButton() {
       qty: line.qty,
     }))
   );
+  // Category-wide BOGO (e.g. bracelets) — same rule as ACTIVE_OFFER
+  // but eligibility is by category, not slug.
+  const categoryBogoAmount = Object.entries(CATEGORY_BOGO).reduce(
+    (sum, [cat, cfg]) => {
+      if (!cfg?.enabled) return sum;
+      return (
+        sum +
+        computeBogoDiscount(
+          lines.map(({ line, product, unitPrice }) => ({
+            eligible: product.category === cat,
+            unitPrice: unitPrice ?? 0,
+            qty: line.qty,
+          }))
+        )
+      );
+    },
+    0
+  );
   const discountedSubtotal = Math.max(
     0,
-    subtotal - bogoAmount - y2kBundleDiscount
+    subtotal - bogoAmount - categoryBogoAmount - y2kBundleDiscount
   );
   const shipping = computeShipping(discountedSubtotal);
   const grandTotal = discountedSubtotal + shipping;
@@ -352,6 +371,16 @@ export default function CartButton() {
                       </span>
                       <span className="text-sm text-gold">
                         −{formatPrice(bogoAmount)}
+                      </span>
+                    </div>
+                  ) : null}
+                  {categoryBogoAmount > 0 ? (
+                    <div className="flex items-baseline justify-between mb-2">
+                      <span className="eyebrow text-gold text-[10px]">
+                        Buy 1 Get 1 Free · bracelets
+                      </span>
+                      <span className="text-sm text-gold">
+                        −{formatPrice(categoryBogoAmount)}
                       </span>
                     </div>
                   ) : null}

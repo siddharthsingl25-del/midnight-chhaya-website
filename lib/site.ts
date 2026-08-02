@@ -65,6 +65,17 @@ export function computeBogoDiscount(
   return total;
 }
 
+/** Category-wide BOGO offer. Any cart with ≥2 products in a listed
+ * category triggers "buy 1 get 1 free" on the cheaper unit(s) —
+ * floor(N/2) freebies, cheapest picked first. Reuses computeBogoDiscount.
+ * Set `enabled: false` (or delete the entry) to retire the promo. */
+export const CATEGORY_BOGO: Partial<Record<string, { enabled: boolean; label: string }>> = {
+  bracelets: {
+    enabled: true,
+    label: "Add 2 bracelets · Buy 1 Get 1 Free",
+  },
+};
+
 /** Per-category dispatch notices. When a product's category matches a
  * key here, the notice string is surfaced on:
  *   • the product detail page (right under the price)

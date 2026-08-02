@@ -20,6 +20,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { getAllProducts, getChain } from "@/lib/catalog";
 import {
   ACTIVE_OFFER,
+  CATEGORY_BOGO,
   COD_CHARGE,
   computeBogoDiscount,
   computeShippingForCart,
@@ -252,6 +253,21 @@ export async function POST(req: Request) {
     );
   }
 
+  // 3c.2 Category-wide BOGO — for every enabled category, mark lines
+  // in that category eligible and reuse the same floor(N/2)-cheapest-
+  // free rule as the slug-based ACTIVE_OFFER.
+  let categoryBogoPaise = 0;
+  for (const [cat, cfg] of Object.entries(CATEGORY_BOGO)) {
+    if (!cfg?.enabled) continue;
+    categoryBogoPaise += computeBogoDiscount(
+      lines.map((l) => ({
+        eligible: l.category === cat,
+        unitPrice: l.unitPaise,
+        qty: l.qty,
+      }))
+    );
+  }
+
   // 3d. Y2K ring bundle discount — server-side re-compute so a tampered
   // client can't claim a bundle price without qualifying cart.
   const y2kBundlePaise =
@@ -269,7 +285,7 @@ export async function POST(req: Request) {
 
   const subtotalPaise = Math.max(
     0,
-    grossSubtotalPaise - discountPaise - bogoPaise - y2kBundlePaise
+    grossSubtotalPaise - discountPaise - bogoPaise - categoryBogoPaise - y2kBundlePaise
   );
   const subtotalInr = subtotalPaise / 100;
 
