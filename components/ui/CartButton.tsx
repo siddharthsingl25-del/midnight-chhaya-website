@@ -25,6 +25,7 @@ import { useCart } from "@/lib/cart";
 import { useStockMap } from "@/lib/stock";
 import {
   ACTIVE_OFFER,
+  CATEGORY_DISPATCH_NOTICES,
   computeBogoDiscount,
   computeY2KBundleDiscount,
   computeShipping,
@@ -310,6 +311,28 @@ export default function CartButton() {
                       </p>
                     </div>
                   ) : null}
+                  {/* Per-category dispatch notices — one row per category
+                   * that has both an entry in CATEGORY_DISPATCH_NOTICES and
+                   * a matching line in the cart. */}
+                  {Array.from(
+                    new Set(
+                      lines
+                        .map(({ product }) => product.category)
+                        .filter((c) => CATEGORY_DISPATCH_NOTICES[c])
+                    )
+                  ).map((cat) => (
+                    <div
+                      key={cat}
+                      className="mb-4 border border-gold/60 bg-gold/10 px-3 py-2"
+                    >
+                      <p className="eyebrow text-gold text-[9px] mb-0.5">
+                        Heads up · {cat}
+                      </p>
+                      <p className="font-body text-bone text-xs leading-snug">
+                        {CATEGORY_DISPATCH_NOTICES[cat]}
+                      </p>
+                    </div>
+                  ))}
                   <div className="flex items-baseline justify-between mb-2">
                     <span className="eyebrow text-bone-dim text-[10px]">Subtotal</span>
                     <span className="text-sm text-bone">

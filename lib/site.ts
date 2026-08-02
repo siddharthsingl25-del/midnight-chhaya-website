@@ -65,6 +65,17 @@ export function computeBogoDiscount(
   return total;
 }
 
+/** Per-category dispatch notices. When a product's category matches a
+ * key here, the notice string is surfaced on:
+ *   • the product detail page (right under the price)
+ *   • the cart drawer (per matching line)
+ *   • the checkout page (aggregated per matching line)
+ * Use for launch delays, backorder windows, "ships from a different
+ * warehouse", etc. Set the value to "" (or delete the key) to hide. */
+export const CATEGORY_DISPATCH_NOTICES: Partial<Record<string, string>> = {
+  earbuds: "Chrome earphones dispatch after the 3rd week of September 2026.",
+};
+
 /** Y2K ring bundle pricing — applies when 2 or 3 y2k rings (any of the
  * 1.0-8.0 variants, mixed OK) are in the cart. Auto-detects pre-order
  * vs launch pricing from the ring's is_pre_order flag. */

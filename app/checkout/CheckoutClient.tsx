@@ -31,6 +31,7 @@ import { useCart } from "@/lib/cart";
 import { useStockRefresh } from "@/lib/stock";
 import {
   ACTIVE_OFFER,
+  CATEGORY_DISPATCH_NOTICES,
   COD_CHARGE,
   computeBogoDiscount,
   computeShipping,
@@ -754,6 +755,27 @@ export default function CheckoutClient() {
                 </p>
               </div>
             ) : null}
+
+            {/* Per-category dispatch notices (e.g. earbuds launch delay) */}
+            {Array.from(
+              new Set(
+                lines
+                  .map(({ product }) => product.category)
+                  .filter((c) => CATEGORY_DISPATCH_NOTICES[c])
+              )
+            ).map((cat) => (
+              <div
+                key={cat}
+                className="mb-6 border border-gold/60 bg-gold/10 px-4 py-3"
+              >
+                <p className="eyebrow text-gold text-[10px] mb-1">
+                  Heads up · {cat}
+                </p>
+                <p className="font-body text-bone text-sm leading-snug">
+                  {CATEGORY_DISPATCH_NOTICES[cat]}
+                </p>
+              </div>
+            ))}
 
             <ul className="flex flex-col gap-5 max-h-[60vh] overflow-y-auto pr-1 -mr-1">
               {lines.map(({ line, product, chain, unitPrice }) => (

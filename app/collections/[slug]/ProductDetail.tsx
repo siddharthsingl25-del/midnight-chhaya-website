@@ -19,7 +19,7 @@ import Reveal from "@/components/animations/Reveal";
 import TextReveal from "@/components/animations/TextReveal";
 import { useMagnetic } from "@/lib/useMagnetic";
 import { easeCinematic } from "@/lib/animations";
-import { formatPrice, SITE, Y2K_BUNDLE } from "@/lib/site";
+import { CATEGORY_DISPATCH_NOTICES, formatPrice, SITE, Y2K_BUNDLE } from "@/lib/site";
 import { useCart } from "@/lib/cart";
 import { useStock } from "@/lib/stock";
 import { useChainById, useChains } from "@/lib/catalog-context";
@@ -210,6 +210,11 @@ export default function ProductDetail({
                     · Buy 3 for {formatPrice(
                       product.isPreOrder ? Y2K_BUNDLE.preOrder.pack3 : Y2K_BUNDLE.launch.pack3
                     )}
+                  </p>
+                ) : null}
+                {CATEGORY_DISPATCH_NOTICES[product.category] ? (
+                  <p className="mt-3 text-sm text-gold/90 border border-gold/40 bg-gold/5 px-3 py-2">
+                    ⓘ {CATEGORY_DISPATCH_NOTICES[product.category]}
                   </p>
                 ) : null}
               </div>
