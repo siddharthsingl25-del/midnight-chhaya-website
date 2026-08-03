@@ -340,6 +340,7 @@ export async function POST(req: Request) {
       title: (isCod ? "COD " : "") + asciiTitle,
       priority: "high",
       tags: isCod ? "package,money_with_wings" : "shopping_bags,sparkles",
+      orderNumber,
       body:
         `Order: ${orderNumber}\nPayment ID: ${razorpay_payment_id}${codLine}\n` +
         (body.orderText ?? "(no order text)"),

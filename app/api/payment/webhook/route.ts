@@ -325,6 +325,7 @@ export async function POST(req: Request) {
     title: `${orderNumber} - Paid (webhook recovered)`,
     priority: "high",
     tags: "shopping_bags,sparkles",
+    orderNumber,
     body:
       `Order: ${orderNumber}\n` +
       `Payment ID: ${paymentId}\n` +
