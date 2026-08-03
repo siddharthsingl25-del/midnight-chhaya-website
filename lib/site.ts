@@ -84,7 +84,8 @@ export const CATEGORY_BOGO: Partial<Record<string, { enabled: boolean; label: st
  * Use for launch delays, backorder windows, "ships from a different
  * warehouse", etc. Set the value to "" (or delete the key) to hide. */
 export const CATEGORY_DISPATCH_NOTICES: Partial<Record<string, string>> = {
-  earbuds: "Chrome earphones dispatch after the 3rd week of September 2026.",
+  earbuds:
+    "Chrome earphones will be launched in September. All pre-orders will be dispatched in the 2nd–3rd week of September.",
 };
 
 /** Y2K ring bundle pricing — applies when 2 or 3 y2k rings (any of the
