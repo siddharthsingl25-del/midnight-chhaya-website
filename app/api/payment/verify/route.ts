@@ -331,18 +331,28 @@ export async function POST(req: Request) {
     const asciiTitleSummary =
       (body.titleSummary || "Paid order").replace(/[^\x20-\x7E]/g, "") ||
       "Paid order";
-    const asciiTitle = `${orderNumber} - ${asciiTitleSummary}`;
     const isCod = body.paymentMethod === "cod";
-    const codLine = isCod
-      ? `\nCOD - collect Rs${body.amountDueOnDelivery ?? body.snapshot?.subtotal ?? "?"} cash on delivery.\n`
-      : "";
+    const prepaid = Math.round(body.prepaidAmount ?? body.snapshot?.total ?? 0);
+    const cashDue = Math.round(
+      body.amountDueOnDelivery ?? (isCod ? body.snapshot?.subtotal ?? 0 : 0)
+    );
+    // Title carries the money-flow at a glance so the merchant knows,
+    // just from the phone lock screen, whether this is prepaid or COD
+    // and how much cash to collect on delivery.
+    const moneyTag = isCod
+      ? `COD Rs${prepaid} prepaid + Rs${cashDue} cash`
+      : `PREPAID Rs${prepaid}`;
     await sendMerchantAlert({
-      title: (isCod ? "COD " : "") + asciiTitle,
+      title: `${orderNumber} - ${moneyTag} - ${asciiTitleSummary}`,
       priority: "high",
       tags: isCod ? "package,money_with_wings" : "shopping_bags,sparkles",
       orderNumber,
       body:
-        `Order: ${orderNumber}\nPayment ID: ${razorpay_payment_id}${codLine}\n` +
+        `Order: ${orderNumber}\n` +
+        `Payment ID: ${razorpay_payment_id}\n` +
+        (isCod
+          ? `Type: COD\nPaid on Razorpay: Rs${prepaid}\nCash to collect on delivery: Rs${cashDue}\n\n`
+          : `Type: PREPAID\nPaid on Razorpay: Rs${prepaid}\n\n`) +
         (body.orderText ?? "(no order text)"),
     });
   }

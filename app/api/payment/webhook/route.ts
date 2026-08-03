@@ -321,15 +321,23 @@ export async function POST(req: Request) {
   const itemsSummary = (pending.items as Item[])
     .map((it) => `${it.name} x${it.qty}`)
     .join(", ");
+  const isCod = paymentMethod === "cod";
+  const prepaid = Math.round((payment.amount ?? 0) / 100);
+  const cashDue = isCod ? Math.max(0, pending.total - prepaid) : 0;
+  const moneyTag = isCod
+    ? `COD Rs${prepaid} prepaid + Rs${cashDue} cash`
+    : `PREPAID Rs${prepaid}`;
   void sendMerchantAlert({
-    title: `${orderNumber} - Paid (webhook recovered)`,
+    title: `${orderNumber} - ${moneyTag} - webhook recovered`,
     priority: "high",
-    tags: "shopping_bags,sparkles",
+    tags: isCod ? "package,money_with_wings" : "shopping_bags,sparkles",
     orderNumber,
     body:
       `Order: ${orderNumber}\n` +
       `Payment ID: ${paymentId}\n` +
-      `Amount: Rs${pending.total}\n\n` +
+      (isCod
+        ? `Type: COD\nPaid on Razorpay: Rs${prepaid}\nCash to collect on delivery: Rs${cashDue}\n\n`
+        : `Type: PREPAID\nPaid on Razorpay: Rs${prepaid}\n\n`) +
       `Customer: ${pending.customer_name}\n` +
       `Phone: ${pending.customer_phone}\n` +
       `Email: ${pending.customer_email}\n` +
