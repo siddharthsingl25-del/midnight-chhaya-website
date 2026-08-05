@@ -186,15 +186,15 @@ export function formatPrice(price: number | null): string {
 }
 
 /** Shipping is free above this subtotal threshold (INR). */
-export const SHIPPING_THRESHOLD = 999;
+export const SHIPPING_THRESHOLD = 1100;
 /** Flat shipping fee when subtotal is below the threshold (INR). */
 export const SHIPPING_FEE = 99;
 
-/** Shipping fee for a given subtotal. Currently flat — every order
- * pays SHIPPING_FEE regardless of cart size. (Free-shipping threshold
- * kept as a constant in case we revive it later.) */
-export function computeShipping(_subtotal: number): number {
-  return SHIPPING_FEE;
+/** Shipping fee for a given subtotal. Free above SHIPPING_THRESHOLD,
+ * otherwise SHIPPING_FEE. (Heavy items like glasses bypass this via
+ * computeShippingForCart — they keep the flat HEAVY_SHIPPING_FEE.) */
+export function computeShipping(subtotal: number): number {
+  return subtotal >= SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
 }
 
 /** Flat shipping fee when the cart contains a bulky category (glasses).

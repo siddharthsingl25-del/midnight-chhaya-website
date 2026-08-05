@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { NAV, SITE } from "@/lib/site";
-import { useProducts } from "@/lib/catalog-context";
 import InstagramButton from "./InstagramButton";
 import CartButton from "./CartButton";
 import { easeCinematic } from "@/lib/animations";
@@ -15,10 +14,8 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [mobileOpenSection, setMobileOpenSection] = useState<string | null>(null);
-  // Push the header down when the PreOrderBanner is showing so its
-  // fixed row doesn't overlay the nav.
-  const products = useProducts();
-  const hasPreOrder = products.some((p) => p.isPreOrder);
+  // Header always sits below the (always-on) announcement bar.
+  const hasPreOrder = true;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
