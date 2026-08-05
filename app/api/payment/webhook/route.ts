@@ -31,6 +31,7 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { sendMerchantAlert } from "@/lib/merchantAlert";
+import { SITE } from "@/lib/site";
 import {
   sendOrderConfirmationEmail,
   sendOrderConfirmationWhatsApp,
@@ -333,6 +334,7 @@ export async function POST(req: Request) {
     tags: isCod ? "package,money_with_wings" : "shopping_bags,sparkles",
     orderNumber,
     body:
+      `${SITE.name} · midnightchhaya.com\n` +
       `Order: ${orderNumber}\n` +
       `Payment ID: ${paymentId}\n` +
       (isCod
@@ -346,7 +348,8 @@ export async function POST(req: Request) {
       `Items: ${itemsSummary}\n\n` +
       `Recovered via Razorpay webhook — customer's browser closed before ` +
       `the normal verify flow could run. All details captured, order is ` +
-      `ready to ship as usual.`,
+      `ready to ship as usual.\n\n` +
+      `Open admin: ${SITE.url}/admin`,
   });
 
   // 7. Customer confirmation — fire and forget.

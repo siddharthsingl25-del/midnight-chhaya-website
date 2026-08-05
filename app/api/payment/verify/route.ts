@@ -348,12 +348,14 @@ export async function POST(req: Request) {
       tags: isCod ? "package,money_with_wings" : "shopping_bags,sparkles",
       orderNumber,
       body:
+        `${SITE.name} · midnightchhaya.com\n` +
         `Order: ${orderNumber}\n` +
         `Payment ID: ${razorpay_payment_id}\n` +
         (isCod
           ? `Type: COD\nPaid on Razorpay: Rs${prepaid}\nCash to collect on delivery: Rs${cashDue}\n\n`
           : `Type: PREPAID\nPaid on Razorpay: Rs${prepaid}\n\n`) +
-        (body.orderText ?? "(no order text)"),
+        (body.orderText ?? "(no order text)") +
+        `\n\nOpen admin: ${SITE.url}/admin`,
     });
   }
 
