@@ -1,0 +1,64 @@
+"use client";
+
+/**
+ * Defensive wrapper around HeroAtmosphere so a WebGL failure or an
+ * incompatible browser (Instagram in-app browser, low-end Android,
+ * disabled hardware acceleration) can never blank the whole page.
+ *
+ *   - Small phones (< 640px) skip the R3F canvas entirely — cheaper
+ *     to render and avoids the class of WebGL crashes we were seeing
+ *     as "site won't open" for a chunk of mobile visitors.
+ *   - Any runtime error inside the WebGL scene renders nothing rather
+ *     than propagating up and blanking the hero.
+ *   - Only mounts on the client after `window` is available so an SSR
+ *     glitch can't hurt the initial paint either.
+ */
+
+import { Component, type ReactNode, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+
+const HeroAtmosphere = dynamic(() => import("./HeroAtmosphere"), {
+  ssr: false,
+  loading: () => null,
+});
+
+class WebglErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(err: unknown) {
+    console.warn("[HeroAtmosphere] disabled after runtime error:", err);
+  }
+  render() {
+    if (this.state.failed) return null;
+    return this.props.children;
+  }
+}
+
+export default function HeroAtmosphereSafe() {
+  const [enabled, setEnabled] = useState(false);
+
+  useEffect(() => {
+    // Skip on small viewports — the R3F canvas is expensive on cheap
+    // Android phones and Instagram's in-app browser sometimes refuses
+    // to compile WebGL shaders on those devices.
+    const supportsWebGL = (() => {
+      try {
+        const canvas = document.createElement("canvas");
+        return !!(canvas.getContext("webgl") || canvas.getContext("experimental-webgl"));
+      } catch {
+        return false;
+      }
+    })();
+    setEnabled(window.innerWidth >= 640 && supportsWebGL);
+  }, []);
+
+  if (!enabled) return null;
+
+  return (
+    <WebglErrorBoundary>
+      <HeroAtmosphere />
+    </WebglErrorBoundary>
+  );
+}

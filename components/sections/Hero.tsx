@@ -15,8 +15,9 @@ import { motion } from "framer-motion";
 import { easeCinematic } from "@/lib/animations";
 import { SITE } from "@/lib/site";
 
-// R3F + CSS droplets — client-only (ssr:false must live in a client component in Next 16)
-const HeroAtmosphere = dynamic(() => import("@/components/three/HeroAtmosphere"), {
+// Defensive wrapper: skips WebGL on small phones + catches runtime
+// errors so a shader crash can't blank the whole homepage.
+const HeroAtmosphere = dynamic(() => import("@/components/three/HeroAtmosphereSafe"), {
   ssr: false,
   loading: () => null,
 });
