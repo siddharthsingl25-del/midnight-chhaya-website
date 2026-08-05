@@ -6,7 +6,7 @@ export const SITE = {
   tagline: "Adornments forged in shadow.",
   description:
     "Handcrafted gothic jewelry — chains, keychains, bracelets and rings, born in shadow and finished by hand.",
-  url: "https://midnight-chhaya-website.vercel.app",
+  url: "https://midnightchhaya.com",
   instagram: "https://www.instagram.com/midnight_chhaya/",
   instagramHandle: "@midnight_chhaya",
   /** ntfy.sh push-notification topic — install the ntfy app on your phone
