@@ -177,6 +177,12 @@ export default function CheckoutClient() {
    * launch unit for COD. If any line in the cart is flagged pre-order,
    * COD is locked out and the payment method snaps back to online. */
   const cartHasPreOrder = lines.some(({ product }) => product.isPreOrder);
+  // Skip the generic "Pre-order in cart · dispatch in 10-15 days" notice
+  // when every pre-order line is an earbud — earbuds carry their own,
+  // more specific dispatch notice via CATEGORY_DISPATCH_NOTICES.
+  const showGenericPreOrderNotice =
+    cartHasPreOrder &&
+    lines.some(({ product }) => product.isPreOrder && product.category !== "earbuds");
   useEffect(() => {
     if (cartHasPreOrder && paymentMethod === "cod") {
       setPaymentMethod("online");
@@ -762,7 +768,7 @@ export default function CheckoutClient() {
           <div className="lg:sticky lg:top-32 bg-charcoal/60 border border-bone/10 p-6 md:p-8">
             <h2 className="eyebrow text-gold mb-6">Order summary</h2>
 
-            {cartHasPreOrder ? (
+            {showGenericPreOrderNotice ? (
               <div className="mb-6 border border-gold/60 bg-gold/10 px-4 py-3">
                 <p className="eyebrow text-gold text-[10px] mb-1">
                   Pre-order in cart

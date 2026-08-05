@@ -322,7 +322,12 @@ export default function CartButton() {
                 </ul>
 
                 <div className="border-t border-bone/10 px-6 py-5">
-                  {lines.some(({ product }) => product.isPreOrder) ? (
+                  {/* Generic pre-order notice — hidden if every pre-order
+                   * line is an earbud, since earbuds show their own more
+                   * specific launch notice below. */}
+                  {lines.some(
+                    ({ product }) => product.isPreOrder && product.category !== "earbuds"
+                  ) ? (
                     <div className="mb-4 border border-gold/60 bg-gold/10 px-3 py-2">
                       <p className="eyebrow text-gold text-[9px] mb-0.5">Pre-order in cart</p>
                       <p className="font-body text-bone text-xs leading-snug">
