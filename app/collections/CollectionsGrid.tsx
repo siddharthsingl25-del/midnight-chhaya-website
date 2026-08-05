@@ -152,6 +152,21 @@ export default function CollectionsGrid() {
           <SortMenu value={sort} onChange={setSort} />
         </div>
 
+        {/* Category promo banner — big, bold, category-specific. */}
+        {active === "bracelets" ? (
+          <div className="mb-12 border-2 border-gold bg-gradient-to-r from-gold/15 via-gold/5 to-gold/15 py-8 sm:py-12 px-6 text-center">
+            <p className="eyebrow text-gold text-[11px] sm:text-xs mb-3">
+              Limited-time offer
+            </p>
+            <p className="font-display uppercase text-bone text-[clamp(2rem,7vw,5rem)] leading-[1] tracking-wide">
+              Buy 1 Get 1 Free
+            </p>
+            <p className="font-serif italic text-bone-dim text-sm sm:text-base mt-4 max-w-xl mx-auto">
+              Add any 2 bracelets to your cart — the cheaper one is on the house.
+            </p>
+          </div>
+        ) : null}
+
         {/* Audience sub-filter — only on Chains */}
         {showAudienceTabs ? (
           <div className="mb-12 flex flex-wrap items-center gap-x-6 gap-y-2">
