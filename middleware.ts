@@ -21,7 +21,14 @@ export function middleware(req: NextRequest) {
 
   // 1. Legacy vercel.app URL → force-redirect to the branded domain,
   //    preserving path + query. Runs before any other logic.
+  //    EXCEPT for the Razorpay webhook — Razorpay does NOT follow 308
+  //    redirects on webhook POSTs, so a redirect there = silent failure
+  //    for every payment fired while the dashboard still points at the
+  //    old URL. Serve the webhook handler in-place instead.
   if (host.endsWith(".vercel.app") || host === "www.midnightchhaya.com") {
+    if (url.pathname === "/api/payment/webhook" && req.method === "POST") {
+      return NextResponse.next();
+    }
     const redirected = new URL(url.pathname + url.search, `https://${CANONICAL_HOST}`);
     return NextResponse.redirect(redirected, 308);
   }
