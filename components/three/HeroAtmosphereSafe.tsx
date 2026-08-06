@@ -40,9 +40,14 @@ export default function HeroAtmosphereSafe() {
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
-    // Skip on small viewports — the R3F canvas is expensive on cheap
-    // Android phones and Instagram's in-app browser sometimes refuses
-    // to compile WebGL shaders on those devices.
+    // Skip WebGL on:
+    //  - Any Instagram / Facebook in-app browser (their WebView crashes
+    //    with "A problem repeatedly occurred" on WebGL scenes)
+    //  - Any touch device (tablets and phones — desktop keeps the FX)
+    //  - Anything without WebGL support
+    const ua = navigator.userAgent || "";
+    const isInApp = /Instagram|FBAN|FBAV|FB_IAB/i.test(ua);
+    const isTouch = navigator.maxTouchPoints > 0 || /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
     const supportsWebGL = (() => {
       try {
         const canvas = document.createElement("canvas");
@@ -51,7 +56,7 @@ export default function HeroAtmosphereSafe() {
         return false;
       }
     })();
-    setEnabled(window.innerWidth >= 640 && supportsWebGL);
+    setEnabled(!isInApp && !isTouch && supportsWebGL);
   }, []);
 
   if (!enabled) return null;
