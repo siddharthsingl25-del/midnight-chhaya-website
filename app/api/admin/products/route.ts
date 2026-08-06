@@ -117,7 +117,7 @@ export async function POST(req: Request) {
     featured: Boolean(featured),
     for_women: Boolean(for_women),
     variant_kind:
-      variant_kind === "chain" || variant_kind === "car" || variant_kind === "color"
+      variant_kind === "chain" || variant_kind === "car" || variant_kind === "color" || variant_kind === "cable"
         ? variant_kind
         : null,
     badge_text: typeof badge_text === "string" && badge_text.trim() ? badge_text.trim().slice(0, 40) : null,

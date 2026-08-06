@@ -67,7 +67,8 @@ export async function PUT(req: Request, { params }: Params) {
   else if (
     body.variant_kind === "chain" ||
     body.variant_kind === "car" ||
-    body.variant_kind === "color"
+    body.variant_kind === "color" ||
+    body.variant_kind === "cable"
   ) {
     patch.variant_kind = body.variant_kind;
   }

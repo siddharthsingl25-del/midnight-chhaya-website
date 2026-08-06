@@ -37,7 +37,7 @@ export type Product = {
   forWomen: boolean;
   /** Which variant picker (if any) to show on the product detail page.
    * null = no picker. */
-  variantKind: "chain" | "car" | "color" | null;
+  variantKind: "chain" | "car" | "color" | "cable" | null;
   /** Optional short text overlay on the product card (e.g. "NEW", "BEST SELLER"). */
   badgeText: string | null;
   /** Optional image overlay (URL) — takes precedence over badgeText. */
@@ -121,7 +121,8 @@ export function productFromRow(row: ProductRow): Product {
     variantKind:
       row.variant_kind === "chain" ||
       row.variant_kind === "car" ||
-      row.variant_kind === "color"
+      row.variant_kind === "color" ||
+      row.variant_kind === "cable"
         ? row.variant_kind
         : null,
     badgeText: row.badge_text?.trim() || null,
@@ -156,7 +157,10 @@ export function chainFromRow(row: ChainRow): ChainOption {
     costPrice: row.cost_price ?? null,
     stock: row.stock ?? 0,
     kind:
-      row.kind === "car" ? "car" : row.kind === "color" ? "color" : "chain",
+      row.kind === "car" ? "car"
+      : row.kind === "color" ? "color"
+      : row.kind === "cable" ? "cable"
+      : "chain",
     displayOrder: row.display_order ?? 0,
   };
 }
