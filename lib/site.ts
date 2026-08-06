@@ -207,18 +207,17 @@ const HEAVY_SHIPPING_CATEGORIES = new Set(["glasses"]);
 
 /**
  * Shipping for a cart with mixed items.
- *   - Any subtotal >= SHIPPING_THRESHOLD ships free, regardless of
- *     what's in the cart (glasses included).
- *   - Otherwise heavy-category carts (glasses / frames) pay
- *     HEAVY_SHIPPING_FEE, everything else pays the flat SHIPPING_FEE.
+ *   - subtotal >= SHIPPING_THRESHOLD → free
+ *   - otherwise flat SHIPPING_FEE for every order, glasses included
+ *
+ * (The `items` parameter is retained for backward compatibility with
+ * every callsite but is no longer used — heavy-category surcharge was
+ * retired in favour of a single flat rate.)
  */
 export function computeShippingForCart(
-  items: Array<{ category: string }>,
+  _items: Array<{ category: string }>,
   subtotal: number
 ): number {
-  if (subtotal >= SHIPPING_THRESHOLD) return 0;
-  const hasHeavy = items.some((i) => HEAVY_SHIPPING_CATEGORIES.has(i.category));
-  if (hasHeavy) return HEAVY_SHIPPING_FEE;
   return computeShipping(subtotal);
 }
 
