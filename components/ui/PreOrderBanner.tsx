@@ -26,6 +26,12 @@ export default function PreOrderBanner() {
 
   useEffect(() => {
     if (BANNER_MESSAGES.length <= 1) return;
+    // Skip the rotation loop in Instagram/Facebook in-app browsers —
+    // the setInterval + framer motion re-mount adds pressure that can
+    // contribute to WebView crashes. Show only the first message there.
+    if (typeof navigator !== "undefined" && /Instagram|FBAN|FBAV|FB_IAB/i.test(navigator.userAgent || "")) {
+      return;
+    }
     const id = setInterval(() => {
       setIndex((i) => (i + 1) % BANNER_MESSAGES.length);
     }, ROTATE_MS);
