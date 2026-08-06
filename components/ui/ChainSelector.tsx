@@ -31,8 +31,9 @@ export default function ChainSelector({
   value: string | null;
   onChange: (id: string) => void;
   /** Which variant pool to show. 'chain' = necklaces, 'car' = keychain
-   * livery, 'color' = colourways (glasses etc). */
-  kind?: "chain" | "car" | "color";
+   * livery, 'color' = colourways (glasses etc), 'cable' = cable type
+   * (Type-C / Lightning on the chrome earphone). */
+  kind?: "chain" | "car" | "color" | "cable";
 }) {
   const ALL = useChains();
   const CHAIN_OPTIONS = ALL.filter((c) => c.kind === kind);
@@ -43,13 +44,17 @@ export default function ChainSelector({
       ? "Choose a car"
       : kind === "color"
         ? "Choose a colour"
-        : "Choose a chain";
+        : kind === "cable"
+          ? "Choose a cable"
+          : "Choose a chain";
   const previewSelectLabel =
     kind === "car"
       ? "Select this car"
       : kind === "color"
         ? "Select this colour"
-        : "Select this chain";
+        : kind === "cable"
+          ? "Select this cable"
+          : "Select this chain";
 
   // auto-pick the first IN-STOCK variant on mount, so the cart always
   // has one the customer can actually buy. If everything is sold out,

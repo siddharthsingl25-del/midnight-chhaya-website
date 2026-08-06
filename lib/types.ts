@@ -69,7 +69,7 @@ export type ChainOption = {
   stock: number;
   /** Variant kind. Chains attach to necklaces, cars to keychains,
    * colours to any product with multiple colourways (glasses, etc). */
-  kind: "chain" | "car" | "color";
+  kind: "chain" | "car" | "color" | "cable";
   displayOrder: number;
 };
 
