@@ -27,16 +27,6 @@ declare global {
   }
 }
 
-/** True inside Instagram's or Facebook's in-app WebView. These
- * embedded browsers crash on their own Meta Pixel script (double-
- * tracking / memory-pressure), so we skip the pixel there. Meta's
- * fbclid parameter still gets attributed server-side, so no data lost. */
-function isMetaInAppBrowser(): boolean {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent || "";
-  return /Instagram|FBAN|FBAV|FB_IAB/i.test(ua);
-}
-
 export default function MetaPixel() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -48,13 +38,6 @@ export default function MetaPixel() {
     if (typeof window === "undefined" || !window.fbq) return;
     window.fbq("track", "PageView");
   }, [pathname, searchParams]);
-
-  // Skip the pixel entirely on Instagram/Facebook in-app browsers.
-  // Their WebViews crash ("A problem repeatedly occurred") when Meta's
-  // own tracking script runs inside their own embedded browser.
-  if (typeof window !== "undefined" && isMetaInAppBrowser()) {
-    return null;
-  }
 
   return (
     <>
