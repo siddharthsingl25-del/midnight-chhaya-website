@@ -140,15 +140,10 @@ export default function ProductCard({
           <h3 className="font-display text-sm sm:text-lg text-bone gold-underline inline-block leading-tight">
             {product.name}
           </h3>
-          {product.isPreOrder ? (
-            <span className="text-[9px] uppercase tracking-[0.2em] text-gold mt-1">
-              Pre-order
-            </span>
-          ) : null}
+          {/* Pre-order badge removed — customers are informed at checkout. */}
           <span className="font-body text-sm sm:text-base text-bone mt-auto pt-1 flex items-baseline gap-2 flex-wrap">
             <span>{formatPrice(product.price)}</span>
-            {product.isPreOrder &&
-            product.launchPrice != null &&
+            {product.launchPrice != null &&
             product.price != null &&
             product.launchPrice > product.price ? (
               <span className="text-[11px] sm:text-xs text-bone-dim line-through">
@@ -227,7 +222,7 @@ export default function ProductCard({
             <>
               <Plus size={14} strokeWidth={1.75} />
               <span className="eyebrow text-[10px] sm:text-xs text-ink">
-                {product.isPreOrder ? "Pre-order now" : "Add to cart"}
+                Add to cart
               </span>
             </>
           )}

@@ -186,15 +186,15 @@ export default function ProductDetail({
             />
             <Reveal delay={0.15}>
               <div className="flex flex-col gap-1">
-                {product.isPreOrder ? (
-                  <span className="eyebrow text-gold text-[11px]">
-                    Pre-order
-                  </span>
-                ) : null}
+                {/* Pre-order eyebrow removed — customers are informed at
+                 * checkout instead (cart drawer + checkout page both
+                 * carry the "dispatch in 10-15 days" notice for
+                 * non-earbud pre-orders, and category-specific notices
+                 * for earbuds). Keeps the product page feeling like a
+                 * regular product instead of a "not-yet-available" one. */}
                 <p className="font-serif italic text-bone text-4xl sm:text-5xl flex items-baseline gap-3 flex-wrap">
                   <span>{formatPrice(displayedUnitPrice)}</span>
-                  {product.isPreOrder &&
-                  product.launchPrice != null &&
+                  {product.launchPrice != null &&
                   product.price != null &&
                   product.launchPrice > product.price ? (
                     <span className="text-3xl sm:text-4xl text-bone-dim line-through">
@@ -298,7 +298,7 @@ export default function ProductDetail({
                     <>
                       <Plus size={18} strokeWidth={1.75} />
                       <span className="eyebrow text-ink">
-                        {product.isPreOrder ? "Pre-order now" : "Add to cart"}
+                        Add to cart
                       </span>
                     </>
                   )}
