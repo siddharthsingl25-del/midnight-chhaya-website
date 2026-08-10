@@ -379,22 +379,22 @@ export default function CheckoutClient() {
             appliedPromoCode: createData.appliedPromoCode ? createData.appliedCode : null,
           }),
         });
-        if (!verifyRes.ok) {
-          const data = (await verifyRes.json().catch(() => ({}))) as {
-            error?: string;
-            paymentId?: string;
-          };
-          setErrorMsg(
-            `Payment succeeded but post-payment processing failed. Save this Payment ID and message us on Instagram: ${data.paymentId ?? resp.razorpay_payment_id}`
-          );
-          setStatus("error");
-          return;
-        }
-        const verifyData = (await verifyRes.json().catch(() => ({}))) as {
-          orderNumber?: string;
-          paymentId?: string;
-        };
-        setOrderNumber(verifyData.orderNumber ?? verifyData.paymentId ?? resp.razorpay_payment_id);
+        // Whether verify succeeded or not, the payment already went
+        // through on Razorpay — the customer has been charged. The
+        // Razorpay webhook is our server-to-server safety net; it will
+        // save the order within seconds even if this browser-side
+        // verify call fails. Show success either way and never scare
+        // the customer with a "failed" message when their money left
+        // their account.
+        const verifyData = verifyRes.ok
+          ? ((await verifyRes.json().catch(() => ({}))) as {
+              orderNumber?: string;
+              paymentId?: string;
+            })
+          : ({} as { orderNumber?: string; paymentId?: string });
+        setOrderNumber(
+          verifyData.orderNumber ?? verifyData.paymentId ?? resp.razorpay_payment_id
+        );
         // Fire Meta Pixel Purchase event so Meta's ad optimisation
         // learns which audiences convert. Grand total in INR.
         trackFbq("Purchase", {
@@ -407,10 +407,18 @@ export default function CheckoutClient() {
         await refreshStock();
         setStatus("ready");
       } catch {
-        setErrorMsg(
-          `Network error during verification. Your payment may have gone through — save Payment ID ${resp.razorpay_payment_id} and message us on Instagram.`
-        );
-        setStatus("error");
+        // Network glitch on the verify hop — the payment still succeeded
+        // (Razorpay only calls this handler after successful capture),
+        // and the webhook will save the order. Show the success screen.
+        setOrderNumber(resp.razorpay_payment_id);
+        trackFbq("Purchase", {
+          value: amountDueNow,
+          currency: "INR",
+          num_items: lines.reduce((s, { line }) => s + line.qty, 0),
+          content_ids: lines.map(({ line }) => line.slug),
+          content_type: "product",
+        });
+        setStatus("ready");
       }
     };
 
