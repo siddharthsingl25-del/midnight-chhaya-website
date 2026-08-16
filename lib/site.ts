@@ -231,7 +231,7 @@ export const STORE_SENDER = {
   city: "Ludhiana",
   state: "Punjab",
   pincode: "141010",
-  phone: "",
+  phone: "7009308099",
 } as const;
 
 /** Default packaging cost the merchant absorbs on every order (box,
