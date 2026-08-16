@@ -103,9 +103,12 @@ export function renderLabelPage(orders: LabelOrder[], title: string): string {
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; background: #eaeaea; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; color: #000; }
-    .toolbar { position: sticky; top: 0; z-index: 10; background: #111; color: #fff; padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+    .toolbar { position: sticky; top: 0; z-index: 10; background: #111; color: #fff; padding: 12px 16px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
     .toolbar h1 { font-size: 14px; margin: 0; font-weight: 500; letter-spacing: 0.05em; }
-    .toolbar button { background: #d4af37; color: #111; border: none; padding: 8px 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+    .toolbar .actions { display: flex; gap: 8px; }
+    .toolbar button { background: #d4af37; color: #111; border: none; padding: 8px 14px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+    .toolbar button.secondary { background: #fff; color: #111; }
+    .toolbar button[disabled] { opacity: 0.6; cursor: wait; }
     .warn { background: #ff9800; color: #111; padding: 10px 16px; font-size: 12px; text-align: center; }
 
     /* --- A4 sheet, 2x3 grid of 9x9cm labels (6 per page) --- */
@@ -168,12 +171,54 @@ export function renderLabelPage(orders: LabelOrder[], title: string): string {
 <body>
   <div class="toolbar">
     <h1>${escapeHtml(title)} · ${orders.length} label${orders.length === 1 ? "" : "s"}</h1>
-    <button onclick="window.print()">Print / Save as PDF</button>
+    <div class="actions">
+      <button id="pdf-btn" type="button">Download PDF</button>
+      <button class="secondary" type="button" onclick="window.print()">Print</button>
+    </div>
   </div>
   ${senderMissing ? `<div class="warn">⚠ STORE_SENDER is empty. Edit lib/site.ts so the From block prints correctly.</div>` : ""}
   ${sheetsHtml(orders)}
+
+  <!-- Client-side PDF generator: html2canvas snapshots each sheet, jsPDF
+       stitches them into one A4 PDF, browser downloads. Only loads on
+       this label page — main site is unaffected. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    window.addEventListener("load", () => setTimeout(() => window.print(), 400));
+    (function () {
+      const btn = document.getElementById("pdf-btn");
+      const filename = ${JSON.stringify(title.replace(/[^a-z0-9\-]+/gi, "_").toLowerCase() + ".pdf")};
+
+      btn.addEventListener("click", async () => {
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Generating…";
+        try {
+          const sheets = Array.from(document.querySelectorAll(".sheet"));
+          if (!sheets.length) throw new Error("No sheets found.");
+          // A4 in mm — matches the .sheet CSS size
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+          for (let i = 0; i < sheets.length; i++) {
+            const canvas = await window.html2canvas(sheets[i], {
+              scale: 2,
+              backgroundColor: "#ffffff",
+              useCORS: true,
+            });
+            const imgData = canvas.toDataURL("image/png");
+            if (i > 0) pdf.addPage("a4", "portrait");
+            pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
+          }
+          pdf.save(filename);
+        } catch (e) {
+          console.error("[pdf]", e);
+          alert("PDF generation failed. Use the Print button and pick 'Save as PDF' as destination.");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
+      });
+    })();
   </script>
 </body>
 </html>`;
