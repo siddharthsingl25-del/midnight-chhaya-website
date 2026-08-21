@@ -14,6 +14,26 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { Loader2, Upload, X } from "lucide-react";
+import { compressImage } from "@/lib/compressImage";
+
+const mb = (bytes: number) => (bytes / (1024 * 1024)).toFixed(1);
+
+/**
+ * Turn a failed upload response into something the merchant can act on.
+ *
+ * Our route handler always answers with { error }, but an oversized body
+ * never reaches it — Vercel rejects it at the edge with an HTML page, so
+ * res.json() yields nothing and the status code has to carry the meaning.
+ */
+async function uploadErrorMessage(res: Response, sent: File): Promise<string> {
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  if (body.error) return body.error;
+  if (res.status === 413)
+    return `That photo is still too big to upload (${mb(sent.size)} MB) even after compressing. Try a smaller one.`;
+  if (res.status === 401)
+    return "Your admin session expired — reload the page and sign in again.";
+  return `Upload failed (server said ${res.status}). Please try again.`;
+}
 
 export default function ImageUpload({
   value,
@@ -40,18 +60,36 @@ export default function ImageUpload({
     }
     setUploading(true);
     setError("");
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("folder", folder);
     try {
+      /* Shrink before sending: a straight-from-the-camera photo is far
+       * bigger than the 4.5 MB request body Vercel will accept. */
+      const prepared = await compressImage(file);
+
+      /* compressImage hands back the original when it couldn't decode it.
+       * For HEIC that means Chrome — worth saying so, because the upload
+       * would otherwise fail for a reason the merchant can't guess. */
+      if (prepared === file && /image\/(heic|heif)/i.test(file.type)) {
+        setError(
+          "This browser can't read HEIC photos. Export the photo as JPEG and upload that."
+        );
+        return;
+      }
+
+      const fd = new FormData();
+      fd.append("file", prepared);
+      fd.append("folder", folder);
+
       const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
       if (!res.ok) {
-        const d = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(d.error || "Upload failed");
+        setError(await uploadErrorMessage(res, prepared));
         return;
       }
       const { url } = (await res.json()) as { url: string };
       onUploaded(url);
+    } catch {
+      // Previously this threw past the caller as an unhandled rejection and
+      // the widget just sat there with no message.
+      setError("Network error while uploading. Check your connection and try again.");
     } finally {
       setUploading(false);
     }
