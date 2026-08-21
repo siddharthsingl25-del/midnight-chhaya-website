@@ -370,8 +370,13 @@ function ProductForm({
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [exclusive, setExclusive] = useState(product?.exclusive ?? false);
   const [forWomen, setForWomen] = useState(product?.forWomen ?? false);
+  /* variant_kind is now the single source of truth for whether a
+   * variant picker appears — there is no category-based fallback on the
+   * storefront any more. So a brand-new chains product starts with the
+   * chain picker pre-selected (what the old fallback did implicitly);
+   * when editing, we always show exactly what is saved. */
   const [variantKind, setVariantKind] = useState<"" | "chain" | "car" | "color" | "cable">(
-    product?.variantKind ?? ""
+    product ? (product.variantKind ?? "") : "chain"
   );
   const [badgeText, setBadgeText] = useState(product?.badgeText ?? "");
   const [badgeImage, setBadgeImage] = useState(product?.badgeImage ?? "");
@@ -715,7 +720,12 @@ function ProductForm({
               <option value="cable" className="bg-ink text-bone">Cables (customer picks C Type or Lightning)</option>
             </select>
             <p className="mt-1 text-[10px] text-bone-dim font-body">
-              Choose what the customer picks on this product&apos;s detail page. Most products = No picker. Only set this for products where the customer should choose a specific variant.
+              Choose what the customer picks on this product&apos;s detail page.
+              Pick <strong className="text-bone">No picker</strong> to sell this
+              product on its own with no chain / variant choice — that now works
+              for chains-category products too. Only the variants you&apos;ve added
+              under the Chains tab for the chosen kind will show; if there are
+              none, no picker appears.
             </p>
           </label>
 

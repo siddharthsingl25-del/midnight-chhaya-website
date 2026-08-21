@@ -40,12 +40,14 @@ export default function ProductDetail({
   const imageRef = useRef<HTMLDivElement>(null);
   const chains = useChains();
 
-  /* Variant selector is opt-in per product via product.variantKind.
-   * Backward-compat fallback: chain-category products default to the
-   * chain picker when variantKind is null, so existing chain pendants
-   * keep their picker without a data migration. */
+  /* Variant selector is opt-in per product via product.variantKind —
+   * set in the admin product form. null means the merchant chose "No
+   * picker", so no variant chooser is shown regardless of category.
+   * (There is deliberately no category-based fallback here: it used to
+   * force the chain picker onto every chains-category product, which
+   * made "No picker" impossible to select for them.) */
   const variantKind: "chain" | "car" | "color" | "cable" | null =
-    product.variantKind ?? (product.category === "chains" ? "chain" : null);
+    product.variantKind;
   const variantPool = variantKind
     ? chains.filter((c) => c.kind === variantKind)
     : [];
