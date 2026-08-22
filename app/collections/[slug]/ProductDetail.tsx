@@ -52,6 +52,15 @@ export default function ProductDetail({
     ? chains.filter((c) => c.kind === variantKind)
     : [];
   const chainPicker = variantKind !== null && variantPool.length > 0;
+  /* What to call the variant in customer-facing copy. Without this the
+   * stock messages below said "chain" for every kind — a glasses product
+   * with a colour picker read "All chains sold out". */
+  const variantNoun =
+    variantKind === "car" ? "car"
+    : variantKind === "color" ? "colour"
+    : variantKind === "cable" ? "cable"
+    : "chain";
+  const variantNounPlural = `${variantNoun}s`;
   /* Auto-pick the first IN-STOCK variant so the cart always has a
    * buyable variant; ChainSelector's effect reconciles if this one
    * happens to be sold out. */
@@ -259,12 +268,16 @@ export default function ProductDetail({
                   All available units of this piece are already in your cart.
                 </p>
               ) : allChainsSoldOut ? (
-                <p className="eyebrow text-oxblood">All chains sold out — message us to be notified.</p>
+                <p className="eyebrow text-oxblood">
+                  All {variantNounPlural} sold out — message us to be notified.
+                </p>
               ) : chainSoldOut ? (
-                <p className="eyebrow text-oxblood">This chain is sold out — pick another above.</p>
+                <p className="eyebrow text-oxblood">
+                  This {variantNoun} is sold out — pick another above.
+                </p>
               ) : chainExhausted ? (
                 <p className="eyebrow text-oxblood">
-                  This chain is already maxed in your cart — pick another above.
+                  This {variantNoun} is already maxed in your cart — pick another above.
                 </p>
               ) : null}
             </Reveal>
