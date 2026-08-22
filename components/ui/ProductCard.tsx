@@ -39,7 +39,13 @@ export default function ProductCard({
   const stock = useStock(product.slug);
   const soldOut = stock === 0;
   const chains = useChains();
-  const hasChains = chains.length > 0;
+  /* Variant picker is opt-in per product via product.variantKind (set
+   * in the admin product form). Match the detail page: only offer the
+   * chooser when that kind actually has options defined. */
+  const variantKind = product.variantKind;
+  const variantPool = variantKind
+    ? chains.filter((c) => c.kind === variantKind)
+    : [];
 
   /* Block adding more if the customer already has every available
    * unit of this product in their cart. */
@@ -154,6 +160,13 @@ export default function ProductCard({
         </div>
       </Link>
 
+      {/* Restock / availability note, set per product in /admin. */}
+      {product.restockNote ? (
+        <p className="mt-2 eyebrow text-[9px] sm:text-[10px] tracking-[0.12em] text-gold leading-snug">
+          {product.restockNote}
+        </p>
+      ) : null}
+
       {/* Action: sold-out > chain picker > inline add */}
       {soldOut ? (
         <div
@@ -163,18 +176,17 @@ export default function ProductCard({
         >
           <span className="eyebrow text-[10px]">Sold out</span>
         </div>
-      ) : (product.variantKind ??
-          (product.category === "chains" && hasChains ? "chain" : null)) ? (
+      ) : variantKind && variantPool.length > 0 ? (
         (() => {
-          const vk =
-            product.variantKind ??
-            (product.category === "chains" ? "chain" : null);
+          const vk = variantKind;
           const label =
             vk === "car"
               ? "Choose car"
               : vk === "color"
                 ? "Choose colour"
-                : "Choose chain";
+                : vk === "cable"
+                  ? "Choose cable"
+                  : "Choose chain";
           return (
             <Link
               href={`/collections/${product.slug}`}

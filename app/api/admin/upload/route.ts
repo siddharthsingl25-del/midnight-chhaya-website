@@ -34,8 +34,17 @@ export async function POST(req: Request) {
   if (file.size === 0) {
     return NextResponse.json({ error: "Empty file" }, { status: 400 });
   }
-  if (file.size > 8 * 1024 * 1024) {
-    return NextResponse.json({ error: "File too large (max 8 MB)" }, { status: 413 });
+  /* Vercel rejects a request body over 4.5 MB at the edge, before this
+   * handler runs — so an 8 MB ceiling here was unreachable and the real
+   * rejection arrived as a non-JSON error page ("Upload failed" with no
+   * reason). Stay under the platform limit so oversized files get an
+   * answer we actually wrote. The admin UI compresses before sending,
+   * so normal photos land far below this. */
+  if (file.size > 4 * 1024 * 1024) {
+    return NextResponse.json(
+      { error: `Photo is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB, max 4 MB).` },
+      { status: 413 }
+    );
   }
   if (!file.type.startsWith("image/")) {
     return NextResponse.json({ error: "Only images allowed" }, { status: 400 });
@@ -43,10 +52,13 @@ export async function POST(req: Request) {
 
   // Pick a safe extension from the type, randomise the basename.
   const ext =
-    file.type === "image/jpeg" ? "jpg" :
-    file.type === "image/png"  ? "png" :
+    file.type === "image/jpeg" ? "jpg"  :
+    file.type === "image/png"  ? "png"  :
     file.type === "image/webp" ? "webp" :
     file.type === "image/gif"  ? "gif"  :
+    file.type === "image/avif" ? "avif" :
+    file.type === "image/heic" ? "heic" :
+    file.type === "image/heif" ? "heif" :
     "bin";
   const basename = crypto.randomBytes(10).toString("hex");
   // folder by category from query param (optional)

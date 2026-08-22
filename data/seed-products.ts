@@ -26,7 +26,10 @@ export type SeedProduct = {
   exclusive: boolean;
   featured: boolean;
   for_women: boolean;
-  variant_kind?: "chain" | "car" | null;
+  /* Which variant picker the product page shows. There is no
+   * category-based fallback any more, so a new chains product that
+   * should let the customer pick a chain must set this to "chain". */
+  variant_kind?: "chain" | "car" | "color" | "cable" | null;
   display_order: number;
 };
 

@@ -370,9 +370,15 @@ function ProductForm({
   const [featured, setFeatured] = useState(product?.featured ?? false);
   const [exclusive, setExclusive] = useState(product?.exclusive ?? false);
   const [forWomen, setForWomen] = useState(product?.forWomen ?? false);
+  /* variant_kind is now the single source of truth for whether a
+   * variant picker appears — there is no category-based fallback on the
+   * storefront any more. So a brand-new chains product starts with the
+   * chain picker pre-selected (what the old fallback did implicitly);
+   * when editing, we always show exactly what is saved. */
   const [variantKind, setVariantKind] = useState<"" | "chain" | "car" | "color" | "cable">(
-    product?.variantKind ?? ""
+    product ? (product.variantKind ?? "") : "chain"
   );
+  const [restockNote, setRestockNote] = useState(product?.restockNote ?? "");
   const [badgeText, setBadgeText] = useState(product?.badgeText ?? "");
   const [badgeImage, setBadgeImage] = useState(product?.badgeImage ?? "");
   const [isPreOrder, setIsPreOrder] = useState(product?.isPreOrder ?? false);
@@ -446,6 +452,7 @@ function ProductForm({
       exclusive,
       for_women: forWomen,
       variant_kind: variantKind || null,
+      restock_note: restockNote.trim() || null,
       badge_text: badgeText.trim() || null,
       badge_image: badgeImage.trim() || null,
       is_pre_order: isPreOrder,
@@ -715,7 +722,12 @@ function ProductForm({
               <option value="cable" className="bg-ink text-bone">Cables (customer picks C Type or Lightning)</option>
             </select>
             <p className="mt-1 text-[10px] text-bone-dim font-body">
-              Choose what the customer picks on this product&apos;s detail page. Most products = No picker. Only set this for products where the customer should choose a specific variant.
+              Choose what the customer picks on this product&apos;s detail page.
+              Pick <strong className="text-bone">No picker</strong> to sell this
+              product on its own with no chain / variant choice — that now works
+              for chains-category products too. Only the variants you&apos;ve added
+              under the Chains tab for the chosen kind will show; if there are
+              none, no picker appears.
             </p>
           </label>
 
@@ -761,6 +773,19 @@ function ProductForm({
               type="tel"
               inputMode="numeric"
               help="Optional. Only rendered while the pre-order flag is on. Leave blank to skip the discount indicator."
+            />
+          </div>
+
+          {/* Restock / availability note — free text, shown to customers on
+           * the product page and the card whenever it is filled in. */}
+          <div className="border-t border-bone/10 pt-6 flex flex-col gap-4">
+            <p className="eyebrow text-gold">Availability note</p>
+            <Field
+              label="Restock note"
+              value={restockNote}
+              onChange={(v) => setRestockNote(v.slice(0, 80))}
+              placeholder="e.g. Restocking 1-5 September"
+              help="Shown on the product page and the product card whenever it's filled in, sold out or not. Clear it once the piece is back in stock."
             />
           </div>
 

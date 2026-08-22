@@ -40,16 +40,27 @@ export default function ProductDetail({
   const imageRef = useRef<HTMLDivElement>(null);
   const chains = useChains();
 
-  /* Variant selector is opt-in per product via product.variantKind.
-   * Backward-compat fallback: chain-category products default to the
-   * chain picker when variantKind is null, so existing chain pendants
-   * keep their picker without a data migration. */
+  /* Variant selector is opt-in per product via product.variantKind —
+   * set in the admin product form. null means the merchant chose "No
+   * picker", so no variant chooser is shown regardless of category.
+   * (There is deliberately no category-based fallback here: it used to
+   * force the chain picker onto every chains-category product, which
+   * made "No picker" impossible to select for them.) */
   const variantKind: "chain" | "car" | "color" | "cable" | null =
-    product.variantKind ?? (product.category === "chains" ? "chain" : null);
+    product.variantKind;
   const variantPool = variantKind
     ? chains.filter((c) => c.kind === variantKind)
     : [];
   const chainPicker = variantKind !== null && variantPool.length > 0;
+  /* What to call the variant in customer-facing copy. Without this the
+   * stock messages below said "chain" for every kind — a glasses product
+   * with a colour picker read "All chains sold out". */
+  const variantNoun =
+    variantKind === "car" ? "car"
+    : variantKind === "color" ? "colour"
+    : variantKind === "cable" ? "cable"
+    : "chain";
+  const variantNounPlural = `${variantNoun}s`;
   /* Auto-pick the first IN-STOCK variant so the cart always has a
    * buyable variant; ChainSelector's effect reconciles if this one
    * happens to be sold out. */
@@ -239,6 +250,16 @@ export default function ProductDetail({
 
             {/* Stock status — only shows sold-out / cart-exhausted states.
              * "Only N left" low-stock callouts are intentionally hidden. */}
+            {/* Restock / availability note. Merchant-controlled free text,
+             * shown whenever it is set — clearing it in /admin removes it. */}
+            {product.restockNote ? (
+              <Reveal delay={0.31}>
+                <p className="eyebrow tracking-[0.2em] text-gold border-l-2 border-gold/40 pl-3">
+                  {product.restockNote}
+                </p>
+              </Reveal>
+            ) : null}
+
             <Reveal delay={0.32}>
               {soldOut ? (
                 <p className="eyebrow text-oxblood">Sold out — message us to be notified.</p>
@@ -247,12 +268,16 @@ export default function ProductDetail({
                   All available units of this piece are already in your cart.
                 </p>
               ) : allChainsSoldOut ? (
-                <p className="eyebrow text-oxblood">All chains sold out — message us to be notified.</p>
+                <p className="eyebrow text-oxblood">
+                  All {variantNounPlural} sold out — message us to be notified.
+                </p>
               ) : chainSoldOut ? (
-                <p className="eyebrow text-oxblood">This chain is sold out — pick another above.</p>
+                <p className="eyebrow text-oxblood">
+                  This {variantNoun} is sold out — pick another above.
+                </p>
               ) : chainExhausted ? (
                 <p className="eyebrow text-oxblood">
-                  This chain is already maxed in your cart — pick another above.
+                  This {variantNoun} is already maxed in your cart — pick another above.
                 </p>
               ) : null}
             </Reveal>
