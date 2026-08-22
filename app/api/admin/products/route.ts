@@ -55,6 +55,7 @@ export async function POST(req: Request) {
     variant_kind = null,
     badge_text = null,
     badge_image = null,
+    restock_note = null,
     related_slugs = [],
     is_pre_order = false,
     launch_price = null,
@@ -122,6 +123,10 @@ export async function POST(req: Request) {
         : null,
     badge_text: typeof badge_text === "string" && badge_text.trim() ? badge_text.trim().slice(0, 40) : null,
     badge_image: typeof badge_image === "string" && badge_image.trim() ? badge_image.trim() : null,
+    restock_note:
+      typeof restock_note === "string" && restock_note.trim()
+        ? restock_note.trim().slice(0, 80)
+        : null,
     related_slugs: Array.isArray(related_slugs)
       ? (related_slugs as unknown[]).filter((s): s is string => typeof s === "string" && !!s.trim()).map((s) => s.trim()).slice(0, 12)
       : [],

@@ -42,6 +42,10 @@ export type Product = {
   badgeText: string | null;
   /** Optional image overlay (URL) — takes precedence over badgeText. */
   badgeImage: string | null;
+  /** Free-text restock / availability note ("Restocking 1-5 September").
+   * Shown on the product page and card whenever it is set, so the
+   * merchant turns it off by clearing it. Null = nothing shown. */
+  restockNote: string | null;
   /** Manual "related products" override — slugs shown in the Related
    * Pieces section at the bottom of the detail page. Empty = fall back
    * to automatic category siblings. */
@@ -97,6 +101,7 @@ type ProductRow = {
   variant_kind: string | null;
   badge_text: string | null;
   badge_image: string | null;
+  restock_note: string | null;
   related_slugs: string[] | null;
   is_pre_order: boolean | null;
   launch_price: number | null;
@@ -127,6 +132,7 @@ export function productFromRow(row: ProductRow): Product {
         : null,
     badgeText: row.badge_text?.trim() || null,
     badgeImage: row.badge_image?.trim() || null,
+    restockNote: row.restock_note?.trim() || null,
     relatedSlugs: Array.isArray(row.related_slugs) ? row.related_slugs : [],
     isPreOrder: !!row.is_pre_order,
     launchPrice:

@@ -160,6 +160,13 @@ export default function ProductCard({
         </div>
       </Link>
 
+      {/* Restock / availability note, set per product in /admin. */}
+      {product.restockNote ? (
+        <p className="mt-2 eyebrow text-[9px] sm:text-[10px] tracking-[0.12em] text-gold leading-snug">
+          {product.restockNote}
+        </p>
+      ) : null}
+
       {/* Action: sold-out > chain picker > inline add */}
       {soldOut ? (
         <div

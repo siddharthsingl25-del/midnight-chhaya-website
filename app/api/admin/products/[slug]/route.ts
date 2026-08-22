@@ -76,6 +76,9 @@ export async function PUT(req: Request, { params }: Params) {
   else if (typeof body.badge_text === "string") patch.badge_text = body.badge_text.trim().slice(0, 40) || null;
   if (body.badge_image === null || body.badge_image === "") patch.badge_image = null;
   else if (typeof body.badge_image === "string") patch.badge_image = body.badge_image.trim() || null;
+  if (body.restock_note === null || body.restock_note === "") patch.restock_note = null;
+  else if (typeof body.restock_note === "string")
+    patch.restock_note = body.restock_note.trim().slice(0, 80) || null;
   if (Array.isArray(body.related_slugs)) {
     patch.related_slugs = (body.related_slugs as unknown[])
       .filter((s): s is string => typeof s === "string" && !!s.trim())

@@ -241,6 +241,16 @@ export default function ProductDetail({
 
             {/* Stock status — only shows sold-out / cart-exhausted states.
              * "Only N left" low-stock callouts are intentionally hidden. */}
+            {/* Restock / availability note. Merchant-controlled free text,
+             * shown whenever it is set — clearing it in /admin removes it. */}
+            {product.restockNote ? (
+              <Reveal delay={0.31}>
+                <p className="eyebrow tracking-[0.2em] text-gold border-l-2 border-gold/40 pl-3">
+                  {product.restockNote}
+                </p>
+              </Reveal>
+            ) : null}
+
             <Reveal delay={0.32}>
               {soldOut ? (
                 <p className="eyebrow text-oxblood">Sold out — message us to be notified.</p>
