@@ -18,9 +18,9 @@ alter table public.products
 
 -- Current notes the merchant asked for.
 update public.products
-   set restock_note = 'Restocking 1–5 September'
+   set restock_note = 'Restock by 1-5 September'
  where category = 'glasses';
 
 update public.products
-   set restock_note = 'Restocking in 15 days'
+   set restock_note = 'Restock in 15 days'
  where category = 'earbuds';
