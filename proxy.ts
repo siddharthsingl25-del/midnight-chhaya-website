@@ -2,25 +2,21 @@
  * Edge proxy (formerly middleware.ts — the `middleware` convention is
  * deprecated as of Next 16 and renamed to `proxy`).
  *
- * Two jobs:
+ * One job now: MAINTENANCE MODE. While MAINTENANCE is true every request
+ * gets a 503 holding page, except the allowlist below.
  *
- *   1. MAINTENANCE MODE. While MAINTENANCE is true the whole storefront is
- *      closed and every request gets a 503 holding page instead. Flip the
- *      constant to false and redeploy to reopen the shop.
+ * The storefront has moved to Shopify — midnightchhaya.com resolves there,
+ * not here. What remains on Vercel is the merchant's internal tool: /admin
+ * and the data behind it (orders, customers, finance, stock). So the old
+ * public checkout stays closed permanently, and maintenance mode is what
+ * keeps it from quietly taking an order behind Shopify's back.
  *
- *   2. Force every visitor on the legacy vercel.app URL (or the www.
- *      subdomain) to the branded midnightchhaya.com — permanent 308,
- *      preserving path + query.
- *
- * The Razorpay webhook is exempt from BOTH — it must never be redirected
- * (Razorpay does not follow 308s on webhook POSTs) and must never be
- * blocked (a payment that completes during maintenance would otherwise
- * never be recorded and the order would be lost).
+ * The canonical-host redirect that used to force *.vercel.app traffic to
+ * midnightchhaya.com has been removed — it now bounces straight to Shopify
+ * and locks the merchant out of their own admin.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-
-const CANONICAL_HOST = "midnightchhaya.com";
 
 /* ─── Maintenance mode ──────────────────────────────────────────────────
  * Set to false and redeploy to reopen the storefront. */
@@ -104,26 +100,21 @@ const MAINTENANCE_HTML = `<!doctype html>
 
 export function proxy(req: NextRequest) {
   const url = req.nextUrl;
-  const host = req.headers.get("host") ?? "";
   const { pathname } = url;
 
-  const isPaymentWebhook =
-    pathname === "/api/payment/webhook" && req.method === "POST";
+  /* The canonical-host redirect that used to live here is gone.
+   *
+   * midnightchhaya.com now resolves to Shopify, so forcing *.vercel.app
+   * traffic over to it no longer canonicalises anything — it just bounced
+   * the merchant out to Shopify whenever they opened the Vercel URL,
+   * locking them out of /admin and every order, customer and finance
+   * record behind it. The Vercel deployment is now an internal tool
+   * reached at its *.vercel.app hostname, so it must serve that host. */
 
-  /* 1. Canonical host. The webhook is exempt — Razorpay does not follow
-   *    308s on webhook POSTs, so redirecting silently fails payments. */
-  if (host.endsWith(".vercel.app") || host === "www.midnightchhaya.com") {
-    if (!isPaymentWebhook) {
-      const redirected = new URL(
-        pathname + url.search,
-        `https://${CANONICAL_HOST}`
-      );
-      return NextResponse.redirect(redirected, 308);
-    }
-  }
-
-  /* 2. Maintenance. 503 + Retry-After rather than 200, so search engines
-   *    treat the store as temporarily down instead of deindexing it. */
+  /* Maintenance. 503 + Retry-After rather than 200, so nothing treats the
+   * old storefront as live content. Deliberately still on: the shop moved
+   * to Shopify, and the old checkout must not be able to take an order or
+   * a payment behind Shopify's back. Only /admin and the webhooks answer. */
   if (MAINTENANCE && !isAllowedDuringMaintenance(pathname)) {
     return new NextResponse(MAINTENANCE_HTML, {
       status: 503,
