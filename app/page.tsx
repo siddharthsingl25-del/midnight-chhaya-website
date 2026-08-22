@@ -1,4 +1,5 @@
 import Hero from "@/components/sections/Hero";
+import RestockAnnouncement from "@/components/sections/RestockAnnouncement";
 import CategoryTiles from "@/components/sections/CategoryTiles";
 import FeaturedShowcase from "@/components/sections/FeaturedShowcase";
 import PromoImageBanner from "@/components/sections/PromoImageBanner";
@@ -12,6 +13,7 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <RestockAnnouncement />
       <CategoryTiles />
       <FeaturedShowcase />
       <PromoImageBanner />
